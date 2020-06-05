@@ -5,6 +5,7 @@ import {take} from 'rxjs/operators';
 import { ProgressBarService } from './_services/progress-bar.service';
 import { ModalService } from './_services/modal.service';
 import { ModalExampleComponent } from './_components/modal-example/modal-example.component';
+import { ConnectionService } from './_services/connection.service';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +15,8 @@ import { ModalExampleComponent } from './_components/modal-example/modal-example
 export class AppComponent {
   title = 'crypto-fantasia';
 
-  constructor() {}
+  constructor(
+    public connectionService: ConnectionService
+  ) {}
 
 }

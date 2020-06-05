@@ -1,7 +1,8 @@
 <div class="main-container">
     <app-header></app-header>
     <app-sub-nav-bar></app-sub-nav-bar>
-    <div class="content-container">
+    <app-waiter></app-waiter>
+    <div class="content-container" *ngIf="connectionService.isConnected">
         <app-vertical-left-bar></app-vertical-left-bar>
         <div fxLayout="column" style="width: 100%;">
             <app-progress-bar></app-progress-bar>
@@ -12,6 +13,9 @@
             </div>
             <app-dock-container [height]="480"></app-dock-container>
         </div>
+    </div>
+    <div class="content-container" *ngIf="!connectionService.isConnected">
+        <app-connection-page></app-connection-page>
     </div>
     <app-footer></app-footer>
 </div>

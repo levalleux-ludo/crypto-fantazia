@@ -2,6 +2,18 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatInputModule } from '@angular/material/input';
+import { MatCardModule } from '@angular/material/card';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTableModule } from '@angular/material/table';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -19,6 +31,8 @@ import { NavBarComponent } from './_components/nav-bar/nav-bar.component';
 import { SubNavBarComponent } from './_components/sub-nav-bar/sub-nav-bar.component';
 import { HeaderComponent } from './_components/header/header.component';
 import { VerticalLeftBarComponent } from './_components/vertical-left-bar/vertical-left-bar.component';
+import { ConnectionPageComponent } from './_components/connection-page/connection-page.component';
+import { WaiterComponent } from './_components/waiter/waiter.component';
 
 @NgModule({
   declarations: [
@@ -34,7 +48,9 @@ import { VerticalLeftBarComponent } from './_components/vertical-left-bar/vertic
     NavBarComponent,
     SubNavBarComponent,
     HeaderComponent,
-    VerticalLeftBarComponent
+    VerticalLeftBarComponent,
+    ConnectionPageComponent,
+    WaiterComponent
   ],
   imports: [
     BrowserModule,
@@ -42,7 +58,20 @@ import { VerticalLeftBarComponent } from './_components/vertical-left-bar/vertic
     ClarityModule,
     BrowserAnimationsModule,
     FlexLayoutModule,
-    HttpClientModule
+    HttpClientModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatToolbarModule,
+    MatInputModule,
+    MatCardModule,
+    MatMenuModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTableModule,
+    MatDividerModule,
+    MatSlideToggleModule,
+    MatSelectModule,
+    MatProgressSpinnerModule
   ],
   providers: [],
   bootstrap: [AppComponent],

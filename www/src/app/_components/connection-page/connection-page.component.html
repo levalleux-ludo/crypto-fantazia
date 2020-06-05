@@ -1,0 +1,33 @@
+<div class="login-wrapper">
+    <form class="login" [formGroup]="form">
+        <section class="title">
+            <h3 class="welcome">Welcome to</h3>
+            Crypto Fantasia
+        </section>
+        <div class="login-group">
+            <h5 class="hint">Please Enter Your Name</h5>
+            <clr-input-container>
+                <label class="clr-sr-only">your name</label>
+                <input type="text" name="username" clrInput placeholder="Enter your name" formControlName="username" />
+            </clr-input-container>
+            <clr-checkbox-wrapper>
+                <label>Remember me</label>
+                <input type="checkbox" name="rememberMe" clrCheckbox formControlName="rememberMe" />
+            </clr-checkbox-wrapper>
+        </div>
+        <div class="btn-group btn-primary">
+            <mat-card>
+                <mat-card-content>
+                    <button [disabled]="!isValid() || isConnecting" class="btn btn-primary" (click)="createSession()">Create A New Session</button>
+                </mat-card-content>
+            </mat-card>
+            <mat-card>
+                <mat-card-content>
+                    <button [disabled]="!form.valid || isConnecting" class="btn btn-primary" (click)="connectSession()">Connect An Existing Session</button>
+                </mat-card-content>
+            </mat-card>
+        </div>
+
+    </form>
+
+</div>
