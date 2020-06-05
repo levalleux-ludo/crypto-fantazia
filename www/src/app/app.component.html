@@ -1,35 +1,17 @@
 <div class="main-container">
-    <header class="header header-6">
-        the header
-    </header>
-    <nav class="subnav">
-        the subnav
-    </nav>
+    <app-header></app-header>
+    <app-sub-nav-bar></app-sub-nav-bar>
     <div class="content-container">
+        <app-vertical-left-bar></app-vertical-left-bar>
         <div fxLayout="column" style="width: 100%;">
             <app-progress-bar></app-progress-bar>
             <app-alert></app-alert>
-            <div class="nav-divider"></div>
             <app-modal></app-modal>
             <div class="content-area" style="height: calc(100% - 480px);">
                 <app-dummy-content></app-dummy-content>
             </div>
             <app-dock-container [height]="480"></app-dock-container>
         </div>
-        <clr-vertical-nav class="vertical-nav" [clrVerticalNavCollapsible]="true" [clrVerticalNavCollapsed]="false" [clr-nav-level]="1">
-            <a clrVerticalNavLink>Charmander</a>
-            <div class="nav-divider"></div>
-            <a clrVerticalNavLink>Credit</a>
-            <div class="nav-divider"></div>
-            <clr-vertical-nav-group>
-                People
-                <clr-vertical-nav-group-children>
-                    <a clrVerticalNavLink *ngFor="let person of ['Alice', 'Bob', 'Charlie']">{{person}}</a>
-                </clr-vertical-nav-group-children>
-            </clr-vertical-nav-group>
-        </clr-vertical-nav>
     </div>
-    <div class="clr-footer">
-        Footer
-    </div>
+    <app-footer></app-footer>
 </div>
