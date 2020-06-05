@@ -1,0 +1,4 @@
+<div *ngIf="!progressBarService.progressIsHidden || progressBarService.loopingIsHidden" class="progress-bar-container">
+    <clr-progress-bar *ngIf="!progressBarService.progressIsHidden" [clrValue]="progressBarService.progressValue" [clrMax]="progressBarService.max" clrLabeled clrFade [clrDisplayval]="progressBarService.displayValue"></clr-progress-bar>
+    <clr-progress-bar *ngIf="!progressBarService.loopingIsHidden" clrLoop></clr-progress-bar>
+</div>

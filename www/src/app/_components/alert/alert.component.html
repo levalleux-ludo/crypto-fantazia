@@ -1,0 +1,20 @@
+<div *ngIf="alertService.alerts.length > 0" class="alerts-container">
+    <clr-alert *ngFor="let alert of alertService.alerts" [clrAlertType]="alert.config.clrAlertType" [clrAlertClosable]="alert.config.clrAlertClosable" [clrAlertAppLevel]="alert.config.clrAlertAppLevel" (clrAlertClosedChange)="onClose(alert.alertId)">
+        <clr-alert-item>
+            <span class="alert-text">
+    {{alert.config.message}}
+</span>
+            <div class="alert-actions" *ngIf="alert.config.actions">
+                <clr-dropdown>
+                    <button class="dropdown-toggle" clrDropdownTrigger>
+                {{alert.config.actions.label}}
+      <clr-icon shape="caret down"></clr-icon>
+  </button>
+                    <clr-dropdown-menu clrPosition="bottom-right">
+                        <a *ngFor="let option of alert.config.actions.options" class="dropdown-item" clrDropdownItem (click)="option.callback()">{{option.label}}</a>
+                    </clr-dropdown-menu>
+                </clr-dropdown>
+            </div>
+        </clr-alert-item>
+    </clr-alert>
+</div>

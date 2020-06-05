@@ -1,0 +1,8 @@
+https://clarity.design/documentation/get-started
+> ng new www
+> cd www
+> ng add @clr/angular
+https://www.thehumblelab.com/getting-started-with-clarityui/
+https://medium.com/@chen.reuven/how-use-angular-alert-clarity-component-or-others-components-programmatic-5d23629e3337
+
+
