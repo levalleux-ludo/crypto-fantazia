@@ -1,0 +1,16 @@
+.dock-container {
+    background-color: gray;
+}
+
+.dock-left {
+    width: 400px;
+    overflow: auto;
+    height: 100%;
+}
+
+.dock-right {
+    width: calc(100% - 500px);
+    overflow: auto;
+    height: 100%;
+    background-color: yellow;
+}

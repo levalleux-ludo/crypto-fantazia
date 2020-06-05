@@ -6,28 +6,15 @@
         the subnav
     </nav>
     <div class="content-container">
-        <div class="content-area">
+        <div fxLayout="column" style="width: 100%;">
             <app-progress-bar></app-progress-bar>
             <app-alert></app-alert>
             <div class="nav-divider"></div>
-            <clr-modal [(clrModalOpen)]="opened" [clrModalClosable]="false">
-                <h3 class="modal-title">No "x" in the top-right corner</h3>
-                <div class="modal-body">
-                    <p>Clicking on the backdrop doesn't do anything.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" (click)="opened = false">
-                      I'm the only way to close the modal!
-                  </button>
-                </div>
-            </clr-modal>
-            the content
-            <div class="btn-group btn-primary">
-                <button class="btn" (click)="openPopup()">Open Popup</button>
-                <button class="btn" (click)="alert('hello world!')">Alert</button>
-                <button class="btn" (click)="download()">Download</button>
-                <button class="btn">Delete</button>
+            <app-modal></app-modal>
+            <div class="content-area" style="height: calc(100% - 480px);">
+                <app-dummy-content></app-dummy-content>
             </div>
+            <app-dock-container [height]="480"></app-dock-container>
         </div>
         <clr-vertical-nav class="vertical-nav" [clrVerticalNavCollapsible]="true" [clrVerticalNavCollapsed]="false" [clr-nav-level]="1">
             <a clrVerticalNavLink>Charmander</a>
@@ -41,5 +28,8 @@
                 </clr-vertical-nav-group-children>
             </clr-vertical-nav-group>
         </clr-vertical-nav>
+    </div>
+    <div class="clr-footer">
+        Footer
     </div>
 </div>

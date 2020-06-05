@@ -1,0 +1,11 @@
+<clr-modal [(clrModalOpen)]="modalService.opened" [clrModalClosable]="false">
+    <h3 class="modal-title">No "x" in the top-right corner</h3>
+    <div class="modal-body">
+        <p>Clicking on the backdrop doesn't do anything.</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-primary" (click)="modalService.hideModal()">
+    I'm the only way to close the modal!
+</button>
+    </div>
+</clr-modal>
