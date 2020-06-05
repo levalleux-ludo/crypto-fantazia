@@ -3,6 +3,7 @@ import { AlertService, IAlertType } from 'src/app/_services/alert.service';
 import { ProgressBarService } from 'src/app/_services/progress-bar.service';
 import { ModalService } from 'src/app/_services/modal.service';
 import { ModalExampleComponent } from '../modal-example/modal-example.component';
+import { ApiService } from 'src/app/_services/api.service';
 
 @Component({
   selector: 'app-dummy-content',
@@ -14,7 +15,8 @@ export class DummyContentComponent implements OnInit {
   constructor(
     private alertService: AlertService,
     private progressBarService: ProgressBarService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private apiService: ApiService
   ) { }
 
   ngOnInit(): void {
@@ -70,6 +72,14 @@ export class DummyContentComponent implements OnInit {
         clearInterval(interval);
       }
     }, 500);
+  }
+
+  connect() {
+    this.apiService.get<string>('').subscribe((result) => {
+      this.alertService.show({ message: JSON.stringify(result) });
+    }, err => {
+      this.alertService.error(JSON.stringify(err));
+    });
   }
 
 }

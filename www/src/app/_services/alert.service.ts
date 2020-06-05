@@ -58,6 +58,13 @@ export class AlertService {
     return {alertId: this.alertCount, onClose$: close};
   }
 
+  error(err: any) {
+    this.show({
+      message: err.toString(),
+      clrAlertType: IAlertType.DANGER
+    });
+  }
+
   onClose(value: any): any {
    this.alertsMap.delete(value);
   //  this.alerts = this.alertsMap.values();
