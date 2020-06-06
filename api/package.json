@@ -5,9 +5,12 @@
     "main": "index.js",
     "dependencies": {
         "@types/cors": "^2.8.6",
+        "@types/uuid": "^8.0.0",
         "body-parser": "^1.19.0",
+        "conseiljs": "^0.4.2",
         "cors": "^2.8.5",
-        "express": "^4.17.1"
+        "express": "^4.17.1",
+        "uuid": "^8.1.0"
     },
     "devDependencies": {
         "@types/body-parser": "^1.19.0",
@@ -22,8 +25,9 @@
         "typescript": "^3.9.3"
     },
     "scripts": {
-        "start": "tsc && node build/index.js",
-        "start-dev": "start cmd /C \"tsc --watch\" && nodemon build/index.js",
+        "build": "tsc",
+        "start": "npm run build && set \"TEZOS_ACCOUNTS_DIR=%CD%\\..\\tezos\\accounts\" && node build/api/src/index.js",
+        "start-dev": "start /B cmd /C \"npm run build --watch\" && set \"TEZOS_ACCOUNTS_DIR=%CD%\\..\\tezos\\accounts\" && nodemon build/api/src/index.js",
         "test": "mocha"
     },
     "author": "",

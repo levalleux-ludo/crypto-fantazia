@@ -1,0 +1,24 @@
+{
+  "mnemonic": [
+    "diagram",
+    "cage",
+    "metal",
+    "wash",
+    "biology",
+    "broccoli",
+    "dragon",
+    "typical",
+    "pigeon",
+    "chief",
+    "path",
+    "receive",
+    "elephant",
+    "group",
+    "east"
+  ],
+  "secret": "b47425e0e069ed670f0df4832542c5ae7e3d5f48",
+  "amount": "24875558661",
+  "pkh": "tz1bwKJe27WPPXwkbNbTfC4d2rkV7eCb5v44",
+  "password": "YlYMeLF18X",
+  "email": "fqsdgvca.vlkfqifp@tezos.example.org"
+}

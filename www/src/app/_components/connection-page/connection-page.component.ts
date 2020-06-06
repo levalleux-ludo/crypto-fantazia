@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ConnectionService } from 'src/app/_services/connection.service';
 import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 import { WaiterService } from 'src/app/_services/waiter.service';
+import { GameService } from 'src/app/_services/game.service';
+import { AlertService } from 'src/app/_services/alert.service';
 
 @Component({
   selector: 'app-connection-page',
@@ -17,7 +19,9 @@ export class ConnectionPageComponent implements OnInit, OnDestroy {
   constructor(
     private connectionService: ConnectionService,
     private fb: FormBuilder,
-    private waiterService: WaiterService
+    private waiterService: WaiterService,
+    private gameService: GameService,
+    private alertService: AlertService
   ) { }
 
   ngOnDestroy(): void {
@@ -36,7 +40,13 @@ export class ConnectionPageComponent implements OnInit, OnDestroy {
   createSession() {
     this.waiterTask = this.waiterService.addTask();
     this.isConnecting = true;
-    this.connectionService.connect(this.form.value);
+    this.connectionService.connect(this.form.value).then((connectionData) => {
+      this.gameService.createSession(connectionData.username).subscribe(({sessionId}) => {
+        this.alertService.show({message: 'game session created with Id:' + sessionId});
+      }, err => {
+        this.alertService.error(err);
+      });
+    });
   }
 
   connectSession() {

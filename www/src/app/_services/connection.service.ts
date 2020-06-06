@@ -16,12 +16,15 @@ export class ConnectionService {
   connected = new Subject<ConnectionData>();
   constructor() { }
 
-  connect(data: ConnectionData) {
-    setTimeout(() => {
-      this.username = data.username;
-      this.isConnected = true;
-      this.connected.next(data);
-    }, 5000);
+  async connect(data: ConnectionData): Promise<ConnectionData> {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        this.username = data.username;
+        this.isConnected = true;
+        this.connected.next(data);
+        resolve(data);
+      }, 5000);
+    });
   }
 
   disconnect() {

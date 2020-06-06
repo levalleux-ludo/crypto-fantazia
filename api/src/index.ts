@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import { router as gameController } from './game.controller';
 
 // const express = require( "express" );
 const app = express();
@@ -15,7 +16,13 @@ app.get( "/", ( req: express.Request, res: express.Response ) => {
     res.send( { "message": "Hello world 2!" } );
 } );
 
+app.use('/game', gameController);
+
 console.log('Hello World 2!');
+console.log("TEZOS_ACCOUNTS_DIR", process.env.TEZOS_ACCOUNTS_DIR);
+
+// TODO: ajouter ts-node/register a la commande de debug
+
 
 // start the Express server
 app.listen( port, () => {

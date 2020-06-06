@@ -19,4 +19,9 @@ export class ApiService {
     const url = `${this.host}:${this.port}/${apiUrl}`;
     return this.http.get<T>(url);
   }
+
+  post<T>(apiUrl: string, data: any): Observable<T> {
+    const url = `${this.host}:${this.port}/${apiUrl}`;
+    return this.http.post<T>(url, data, this.httpOptions);
+  }
 }
