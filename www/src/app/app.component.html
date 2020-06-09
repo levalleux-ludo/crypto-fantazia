@@ -2,20 +2,23 @@
     <app-header></app-header>
     <!-- <app-sub-nav-bar></app-sub-nav-bar> -->
     <app-waiter></app-waiter>
-    <div class="content-container" *ngIf="connectionService.isConnected">
+    <div class="content-container" *ngIf="gameService.isConnected">
         <app-vertical-left-bar></app-vertical-left-bar>
         <div fxLayout="column" style="width: 100%;">
             <app-progress-bar></app-progress-bar>
             <app-alert></app-alert>
-            <app-modal></app-modal>
             <div class="content-area" style="height: calc(100% - 480px);">
-                <app-dummy-content></app-dummy-content>
+                <app-game-status></app-game-status>
             </div>
             <app-dock-container [height]="480"></app-dock-container>
         </div>
     </div>
-    <div class="content-container" *ngIf="!connectionService.isConnected">
-        <app-connection-page></app-connection-page>
+    <div class="content-container" *ngIf="!gameService.isConnected">
+        <div fxLayout="column" style="width: 100%;">
+            <app-alert></app-alert>
+            <app-connection-page></app-connection-page>
+        </div>
     </div>
+    <app-modal></app-modal>
     <app-footer></app-footer>
 </div>

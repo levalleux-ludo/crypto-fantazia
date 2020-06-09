@@ -11,10 +11,15 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\build\\index.js",
+            "program": "${workspaceFolder}\\tests\\index.ts",
+            "preLaunchTask": "tsc: build - tsconfig.json",
             "outFiles": [
-                "${workspaceFolder}/**/*.js"
-            ]
+                "${workspaceFolder}\\build\\tests\\index.js"
+            ],
+            "env": {
+                "TEZOS_ACCOUNTS_DIR":"${workspaceFolder}\\accounts",
+                "TEZOS_CONTRACTS_DIR":"${workspaceFolder}\\contracts"
+            }
         },
         {
             "type": "node",

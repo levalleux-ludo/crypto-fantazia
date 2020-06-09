@@ -24,6 +24,7 @@ export class ModalComponent implements OnInit {
       if (componentClass !== undefined) {
         const componentFactory = this.componentFactoryResolver.resolveComponentFactory(componentClass);
         const componentRef = viewContainerRef.createComponent(componentFactory);
+        console.log('component created', componentRef);
       }
     });
   }

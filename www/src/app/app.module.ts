@@ -14,6 +14,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MaterialFileInputModule } from 'ngx-material-file-input';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -33,6 +34,10 @@ import { HeaderComponent } from './_components/header/header.component';
 import { VerticalLeftBarComponent } from './_components/vertical-left-bar/vertical-left-bar.component';
 import { ConnectionPageComponent } from './_components/connection-page/connection-page.component';
 import { WaiterComponent } from './_components/waiter/waiter.component';
+import { FantaSymbolComponent } from './_components/fanta-symbol/fanta-symbol.component';
+import { TezosConnectComponent } from './_components/tezos-connect/tezos-connect.component';
+import { ChooseSessionDialogComponent } from './_components/choose-session-dialog/choose-session-dialog.component';
+import { GameStatusComponent } from './_components/game-status/game-status.component';
 
 @NgModule({
   declarations: [
@@ -50,7 +55,11 @@ import { WaiterComponent } from './_components/waiter/waiter.component';
     HeaderComponent,
     VerticalLeftBarComponent,
     ConnectionPageComponent,
-    WaiterComponent
+    WaiterComponent,
+    FantaSymbolComponent,
+    TezosConnectComponent,
+    ChooseSessionDialogComponent,
+    GameStatusComponent
   ],
   imports: [
     BrowserModule,
@@ -71,12 +80,14 @@ import { WaiterComponent } from './_components/waiter/waiter.component';
     MatDividerModule,
     MatSlideToggleModule,
     MatSelectModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MaterialFileInputModule
   ],
   providers: [],
   bootstrap: [AppComponent],
   entryComponents: [
-    ModalExampleComponent
+    ModalExampleComponent,
+    ChooseSessionDialogComponent
   ]
 })
 export class AppModule { }

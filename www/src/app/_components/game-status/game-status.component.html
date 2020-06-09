@@ -1,0 +1,14 @@
+<p>game-status works!</p>
+<label>Current status:</label>
+<div>{{gameService.game?.status}}</div>
+<mat-spinner *ngIf="gameService.game?.status === 'in_creation'"></mat-spinner>
+<label>Game contract:</label>
+<div>{{gameService.game?.contractAddresses.game}}</div>
+<button (click)="getPlayers()">Read Game contract</button>
+<label>Players</label>
+<div *ngFor="let player of ['alice', 'bob', 'charlie']">{{player}}</div>
+<label>Token contract:</label>
+<div>{{gameService.game?.contractAddresses.token}}</div>
+<label>My balance in game:</label>
+<div></div>
+<button>Start game</button>

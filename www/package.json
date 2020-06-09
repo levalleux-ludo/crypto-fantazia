@@ -26,19 +26,23 @@
         "@clr/icons": "^3.0.0",
         "@clr/ui": "^3.0.0",
         "@webcomponents/webcomponentsjs": "^2.0.0",
+        "conseiljs": "^0.4.2",
         "hammerjs": "^2.0.8",
+        "ngx-material-file-input": "^2.1.1",
+        "path": "^0.12.7",
         "rxjs": "~6.5.4",
         "tslib": "^1.10.0",
         "zone.js": "~0.10.2"
     },
     "devDependencies": {
+        "@angular-builders/custom-webpack": "^9.1.0",
         "@angular-devkit/build-angular": "~0.900.6",
         "@angular/cli": "~9.0.6",
         "@angular/compiler-cli": "~9.0.6",
         "@angular/language-service": "~9.0.6",
-        "@types/node": "^12.11.1",
         "@types/jasmine": "~3.5.0",
         "@types/jasminewd2": "~2.0.3",
+        "@types/node": "^12.12.45",
         "codelyzer": "^5.1.2",
         "jasmine-core": "~3.5.0",
         "jasmine-spec-reporter": "~4.2.1",
@@ -51,5 +55,10 @@
         "ts-node": "~8.3.0",
         "tslint": "~5.18.0",
         "typescript": "~3.7.5"
+    },
+    "browser": {
+        "fs": false,
+        "path": false,
+        "os": false
     }
 }

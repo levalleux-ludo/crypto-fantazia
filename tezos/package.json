@@ -12,6 +12,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
+        "bignumber.js": "^9.0.0",
         "conseiljs": "^0.4.2"
     },
     "devDependencies": {

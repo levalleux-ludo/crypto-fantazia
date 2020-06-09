@@ -1,11 +1,42 @@
 <div class="login-wrapper">
     <form class="login" [formGroup]="form">
-        <section class="title">
-            <h3 class="welcome">Welcome to</h3>
-            Crypto Fantasia
-        </section>
+        <div style="height: 250px; overflow: auto;">
+            <section class="title">
+                <h3 class="welcome">Welcome to</h3>
+                {{"\u212d"}}rypto {{"\u2131"}}antasia
+            </section>
+            <section class="title">
+                <h3 class="welcome">Welcome to</h3>
+                {{"\u228F"}}rypto {{"\u2AED"}}antasia
+            </section>
+            <section class="title">
+                <h3 class="welcome">Welcome to</h3>
+                {{"\u228F"}}rypto {{"\u2552"}}antasia
+            </section>
+            <section class="title">
+                <h3 class="welcome">Welcome to</h3>
+                {{"\u2201"}}rypto {{"\u222E"}}antasia
+            </section>
+            <section class="title">
+                <h3 class="welcome">Welcome to</h3>
+                {{"\u2282"}}rypto {{"\u222E"}}antasia
+            </section>
+            <div>you've earn
+                <app-fanta-symbol [htmlString]="'\u2131'"></app-fanta-symbol> 100</div>
+            <span>{{"\u2131"}} 1050</span>
+            <span>{{"\u2AED"}} 1050</span>
+            <span>{{"\u0444"}} 1050</span>
+            <span>{{"\u0424"}} 1050</span>
+            <span>{{"\u222F"}} 1050</span>
+            <span>{{"\u23C1"}} 1050</span>
+            <span>{{"\u2552"}} 1050</span>
+            <span>{{"\u2554"}} 1050</span>
+            <span>{{"\u23C1"}} 1050</span>
+            <span>{{"\u222E"}} 1050</span>
+            <span>{{"\u23C1"}} 1050</span>
+        </div>
         <div class="login-group">
-            <h5 class="hint">Please Enter Your Name</h5>
+            <h5 class="hint">Your Name</h5>
             <clr-input-container>
                 <label class="clr-sr-only">your name</label>
                 <input type="text" name="username" clrInput placeholder="Enter your name" formControlName="username" />
@@ -14,6 +45,8 @@
                 <label>Remember me</label>
                 <input type="checkbox" name="rememberMe" clrCheckbox formControlName="rememberMe" />
             </clr-checkbox-wrapper>
+            <h5 class="hint">Your Tezos Wallet</h5>
+            <app-tezos-connect></app-tezos-connect>
         </div>
         <div class="btn-group btn-primary">
             <mat-card>
@@ -23,7 +56,7 @@
             </mat-card>
             <mat-card>
                 <mat-card-content>
-                    <button [disabled]="!form.valid || isConnecting" class="btn btn-primary" (click)="connectSession()">Connect An Existing Session</button>
+                    <button [disabled]="!isValid() || isConnecting" class="btn btn-primary" (click)="connectSession()">Connect An Existing Session</button>
                 </mat-card-content>
             </mat-card>
         </div>

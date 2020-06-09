@@ -32,6 +32,23 @@ And it became obvious that, while the so famous Monopoly game has learnt all of 
 
 ### Video
 
-## Repository
+## Technical Description
+
+### Source Repository
+
+### Architecture
+
+Frontend
+Backend (data store, random nb generation, game contract creation/deployment)
+Smart Contracts
+
+Tezos, ConseilJS
+Unity3D
+Angular cli
+Clarity
+Magic Link
+
+
+
 
 

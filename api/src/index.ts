@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { router as gameController } from './game.controller';
+import { connect } from './db/db';
 
 // const express = require( "express" );
 const app = express();
@@ -21,8 +22,8 @@ app.use('/game', gameController);
 console.log('Hello World 2!');
 console.log("TEZOS_ACCOUNTS_DIR", process.env.TEZOS_ACCOUNTS_DIR);
 
-// TODO: ajouter ts-node/register a la commande de debug
-
+// connect to DB
+connect();
 
 // start the Express server
 app.listen( port, () => {

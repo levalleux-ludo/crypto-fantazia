@@ -1,0 +1,28 @@
+<clr-modal [(clrModalOpen)]="modalService.opened" [clrModalClosable]="false">
+    <h3 class="modal-title">Select the session you want to connect</h3>
+    <div class="modal-body">
+        <p>Clicking on the backdrop doesn't do anything.???</p>
+        <div>a variable: {{my_var}}</div>
+        <clr-radio-container>
+            <label>Full radio</label>
+
+            <clr-radio-wrapper *ngFor="let session of allSessions" style="height: 60px;">
+                <input type="radio" clrRadio [disabled]="(session.status !== 'created')" value="{{session.sessionId}}" [(ngModel)]="selectedSession" />
+                <label>{{session.name}}{{(session.status !== 'created') ? ' (' + session.status + ')' : ''}}</label>
+            </clr-radio-wrapper>
+            <clr-control-helper>Helper text</clr-control-helper>
+
+            <clr-control-error>This field is required!</clr-control-error>
+        </clr-radio-container>
+    </div>
+    <div class="modal-footer">
+        <div class="btn-group btn-primary">
+            <button type="button" class="btn btn-primary" (click)="modalService.hideModal()">
+          Cancel
+        </button>
+            <button [disabled]="selectedSession == undefined" type="button" class="btn btn-primary" (click)="connect()">
+          Connect
+        </button>
+        </div>
+    </div>
+</clr-modal>

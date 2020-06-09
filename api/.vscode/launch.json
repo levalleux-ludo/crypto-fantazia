@@ -16,7 +16,10 @@
             "outFiles": [
                 "${workspaceFolder}/build/api/**/*.js"
             ],
-            "env": {"TEZOS_ACCOUNTS_DIR":"${workspaceFolder}\\..\\tezos\\accounts"}
+            "env": {
+                "TEZOS_ACCOUNTS_DIR":"${workspaceFolder}\\..\\tezos\\accounts",
+                "TEZOS_CONTRACTS_DIR":"${workspaceFolder}\\..\\tezos\\contracts"
+            }
         }
     ]
 }

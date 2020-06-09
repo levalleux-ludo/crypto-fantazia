@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
+import { GameService } from './game.service';
 
 export interface ConnectionData {
   username: string;
@@ -14,22 +15,24 @@ export class ConnectionService {
   isConnected = false;
   username = '';
   connected = new Subject<ConnectionData>();
-  constructor() { }
+  constructor(
+    private gameService: GameService
+  ) { }
 
   async connect(data: ConnectionData): Promise<ConnectionData> {
     return new Promise((resolve, reject) => {
-      setTimeout(() => {
         this.username = data.username;
         this.isConnected = true;
         this.connected.next(data);
         resolve(data);
-      }, 5000);
     });
   }
 
   disconnect() {
     this.username = '';
     this.isConnected = false;
+    this.gameService.isConnected = false;
+    this.gameService.game = undefined;
   }
 
   waitConnected$(): Subject<ConnectionData> {

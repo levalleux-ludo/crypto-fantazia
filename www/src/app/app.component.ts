@@ -6,6 +6,7 @@ import { ProgressBarService } from './_services/progress-bar.service';
 import { ModalService } from './_services/modal.service';
 import { ModalExampleComponent } from './_components/modal-example/modal-example.component';
 import { ConnectionService } from './_services/connection.service';
+import { GameService } from './_services/game.service';
 
 @Component({
   selector: 'app-root',
@@ -16,7 +17,8 @@ export class AppComponent {
   title = 'crypto-fantasia';
 
   constructor(
-    public connectionService: ConnectionService
+    public connectionService: ConnectionService,
+    public gameService: GameService
   ) {}
 
 }

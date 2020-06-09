@@ -1,5 +1,5 @@
 import { tezosService } from "./tezos.service";
-import { KeyStore } from "conseiljs";
+import { KeyStore, Tzip7ReferenceTokenHelper } from "conseiljs";
 
 export const originator = 'tz1bwKJe27WPPXwkbNbTfC4d2rkV7eCb5v44';
 export const issuer = 'tz1fV4G1dwVXwXfrrBKvpWUg5B1HNUKYhcki';
@@ -12,9 +12,11 @@ class TokenService {
 
     async createContract(keyStore: KeyStore): Promise<string> {
         return new Promise((resolve, reject) => {
-            tezosService.deployContract(
+            Tzip7ReferenceTokenHelper.deployContract(
+                tezosService.getNode(),
                 keyStore,
                 100_000,
+                keyStore.publicKeyHash,
                 true,
                 0
             ).then((groupId) => {

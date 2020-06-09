@@ -4,6 +4,11 @@ import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms'
 import { WaiterService } from 'src/app/_services/waiter.service';
 import { GameService } from 'src/app/_services/game.service';
 import { AlertService } from 'src/app/_services/alert.service';
+import { TezosService } from 'src/app/_services/tezos.service';
+import { eLocalStorageDataKey } from 'src/constants';
+import { ModalService } from 'src/app/_services/modal.service';
+import { ChooseSessionDialogComponent } from '../choose-session-dialog/choose-session-dialog.component';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-connection-page',
@@ -21,7 +26,9 @@ export class ConnectionPageComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private waiterService: WaiterService,
     private gameService: GameService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private tezosService: TezosService,
+    private modalService: ModalService
   ) { }
 
   ngOnDestroy(): void {
@@ -31,32 +38,76 @@ export class ConnectionPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    let username = '';
+    let rememberMe = false;
+    const stored = localStorage.getItem(eLocalStorageDataKey.USERNAME);
+    if (stored) {
+      username = stored;
+      rememberMe = true;
+    }
     this.form = this.fb.group({
-      username: new FormControl('', Validators.required),
-      rememberMe: new FormControl(false)
+      username: new FormControl(username, Validators.required),
+      rememberMe: new FormControl(rememberMe)
     });
+  }
+
+  storeUsername() {
+    if (this.form.controls.rememberMe.value) {
+      localStorage.setItem(eLocalStorageDataKey.USERNAME, this.form.controls.username.value);
+    } else {
+      localStorage.removeItem(eLocalStorageDataKey.USERNAME);
+    }
   }
 
   createSession() {
     this.waiterTask = this.waiterService.addTask();
+    this.storeUsername();
     this.isConnecting = true;
     this.connectionService.connect(this.form.value).then((connectionData) => {
-      this.gameService.createSession(connectionData.username).subscribe(({sessionId}) => {
-        this.alertService.show({message: 'game session created with Id:' + sessionId});
+      this.gameService.createSession(connectionData.username).subscribe((game) => {
+        this.alertService.show({message: 'game session created with Id:' + game.sessionId});
+        this.gameService.isConnected = true;
+        this.gameService.game = game;
       }, err => {
-        this.alertService.error(err);
+        this.alertService.error(JSON.stringify(err));
       });
     });
   }
 
   connectSession() {
     this.waiterTask = this.waiterService.addTask();
+    this.storeUsername();
     this.isConnecting = true;
-    this.connectionService.connect(this.form.value);
+    this.modalService.showModal(ChooseSessionDialogComponent).pipe(take(1)).subscribe((sessionId) => {
+      if (!sessionId) {
+        this.waiterService.removeTask(this.waiterTask);
+        this.isConnecting = false;
+      } else {
+        this.connectionService.connect(this.form.value).then((connectionData) => {
+          const subscription = this.gameService.connectSession(sessionId, connectionData.username).subscribe((game) => {
+            subscription.unsubscribe(); // be sure we subscribe onyl once at a time
+            this.alertService.show({message: 'connected game with sessionId:' + game.sessionId});
+            this.gameService.isConnected = true;
+            this.gameService.game = game;
+          }, err => {
+            this.alertService.error(JSON.stringify(err));
+          });
+        }).catch(err => {
+          this.waiterService.removeTask(this.waiterTask);
+          this.isConnecting = false;
+          this.alertService.error(JSON.stringify(err));
+        });
+      }
+    }, err => {
+      this.waiterService.removeTask(this.waiterTask);
+      this.isConnecting = false;
+      this.alertService.error(JSON.stringify(err));
+    });
+    // this.connectionService.connect(this.form.value);
   }
 
   isValid() {
-    return this.form.valid;
+    return this.form.valid && this.tezosService.isConnected;
   }
 
 }
