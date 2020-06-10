@@ -1,14 +1,14 @@
 import { v4 as uuid } from 'uuid';
 import { tezosService } from '../../tezos/src/tezos.service'
 import { originator } from '../../tezos/src/token.service'
-import { GameContract } from './contracts/game/game.contract';
-import { TokenContract } from './contracts/token/token.contract';
+import { GameContract } from '../../tezos/src/game.contract';
+import { TokenContract } from '../../tezos/src/token.contract';
 import Game, { IGame } from './db/game.model';
 import { resolve } from 'dns';
 import { KeyStore } from '../../tezos/node_modules/conseiljs/dist';
 
 class GameService {
-    async create(): Promise<IGame> {
+    async create(creator: string): Promise<IGame> {
         return new Promise(async (resolve, reject) => {
             try {
                 const sessionId = uuid();
@@ -17,13 +17,18 @@ class GameService {
                 const game = new Game({
                     sessionId: sessionId,
                     status: 'in_creation',
+                    creator: creator,
                     contractAddresses: {
                         game: null,
                         token: null
                     }
                 });
                 await game.save();
-                this.createContracts(keyStore, sessionId);
+                // createContract is called asynchronously
+                this.createContracts(keyStore, sessionId).then(async (contracts) => {
+                    game.status = 'created';
+                    await game.save();
+                });
                 resolve(game);
             } catch (err) {
                 reject(err)
@@ -31,7 +36,7 @@ class GameService {
         });
     }
 
-    async createContracts(keyStore: KeyStore, sessionId: string) {
+    async createContracts(keyStore: KeyStore, sessionId: string): Promise<{game: GameContract, token: TokenContract} | undefined> {
         try {
             const game = await Game.findOne({sessionId: sessionId});
             if (!game) throw new Error('Unable to find the game with sessionId ' + sessionId);
@@ -40,20 +45,24 @@ class GameService {
             // store gameContract.address for session
             console.log(`Game Contract created at ${gameContract.address} for sessionId ${sessionId}`);
             game.contractAddresses.game = gameContract.address;
-            this.checkGameIsCreated(game);
             await game.save();
 
             const tokenContract = await TokenContract.deploy(keyStore);
             // store tokenContract.address for session
             console.log(`Token Contract created at ${tokenContract.address} for sessionId ${sessionId}`);
             game.contractAddresses.token = tokenContract.address;
-            this.checkGameIsCreated(game);
             await game.save();
+
+            return {
+                game: gameContract,
+                token: tokenContract
+            };
 
         } catch(err) {
             console.error(err);
             this.deleteGame(sessionId);
         }
+        return undefined;
     }
 
     async deleteGame(sessionId: string) {

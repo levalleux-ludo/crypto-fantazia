@@ -18,6 +18,7 @@ export class TezosService {
   private _connected = false;
   private _account = undefined;
   private _networkInfo = undefined;
+  private _keyStore: KeyStore = undefined;
 
   constructor(
     private waiterService: WaiterService,
@@ -33,6 +34,10 @@ export class TezosService {
 
   public get account(): any {
     return this._account;
+  }
+
+  public get keyStore(): KeyStore {
+    return this._keyStore;
   }
 
   async initialize(): Promise<void> {
@@ -99,12 +104,14 @@ export class TezosService {
         if (accountInfos.length !== 1) {
           throw new Error(`No account info or more than one for address ${keyStore.publicKeyHash}: nb results:${accountInfos.length}`);
         }
+        this._keyStore = keyStore;
         this._account = accountInfos[0];
         this._connected = true;
       });
     } else {
       this._connected = false;
       this._account = undefined;
+      this._keyStore = undefined;
     }
   }
 

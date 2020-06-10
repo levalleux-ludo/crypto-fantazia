@@ -1,10 +1,25 @@
-import { tezosService } from '../../../../tezos/src/tezos.service';
-import { AbstractContract } from '../../../../tezos/src/abstract.contract';
-import { KeyStore } from 'conseiljs';
-
+import { AbstractContract } from "./abstract.contract";
+import { MichelsonMap } from "@taquito/taquito";
 import gameContract from './game.contract.json';
+import { KeyStore } from "conseiljs";
+import { tezosService } from "./tezos.service";
+import { sign } from "crypto";
 
-export class GameContract extends AbstractContract {
+export interface GameContractStorage {
+    originator_address: string;
+    originator_pubKey: string;
+    players: MichelsonMap<number, string>;
+    playersSet: any[];
+    status: string;
+    nextPlayer: string;
+    nextPlayerIdx: number;
+    nextDices: number;
+    debug: number;
+    alreadyRegistered: boolean;
+    counter: number;
+}
+
+export class GameContract extends AbstractContract<GameContractStorage> {
     public static async deploy(keyStore: KeyStore): Promise<GameContract> {
         const address = await tezosService.deployContract(
             JSON.stringify(gameContract),
@@ -15,7 +30,8 @@ export class GameContract extends AbstractContract {
     }
     public static async retrieve(address: string): Promise<GameContract> {
         // TODO: check if contract is correctly deployed at specified address
-        return new GameContract(address);
+        const contract = new GameContract(address);
+        return contract;
     }
     protected constructor(address: string) {
         super(address);
@@ -48,6 +64,8 @@ export class GameContract extends AbstractContract {
         };
     };
     
-    
+    async register(keyStore: KeyStore, random: number, signature: string) {
+        return tezosService.invokeContract(keyStore, this._address, 'register', [random, signature]);
+    }
 
 }

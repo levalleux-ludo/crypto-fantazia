@@ -4,6 +4,7 @@
     "description": "",
     "main": "index.js",
     "dependencies": {
+        "@taquito/taquito": "^6.3.0-wallet.4",
         "@types/cors": "^2.8.6",
         "@types/uuid": "^8.0.0",
         "bignumber.js": "^9.0.0",

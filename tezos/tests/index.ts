@@ -1,11 +1,12 @@
 import { tezosService } from "../src/tezos.service";
 import { originator, tokenService } from "../src/token.service";
 
-import gameContract from '../contracts/game-contract.json';
+import sampleContract from '../contracts/sample-contract.json';
+import { SampleContract } from "../src/sample.contract";
 
 console.log('Hello World!');
 
-const gameStorage = 
+const sampleStorage = 
 {
     "prim": "Pair",
     "args": [
@@ -17,7 +18,7 @@ const gameStorage =
 }
 
 const redeploy = false;
-const gameContractAddress = 'KT1BLuqcTJr2csiiZecpeEPmC9mHQh7hevN2';
+const sampleContractAddress = 'KT1BLuqcTJr2csiiZecpeEPmC9mHQh7hevN2';
 
 tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
     console.log('Originator Account is initialized:', keyStore);
@@ -58,38 +59,71 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
         new Promise<string>((resolve2, reject2) => {
             if (redeploy) {
                 tezosService.deployContract(
-                    JSON.stringify(gameContract),
-                    JSON.stringify(gameStorage),
+                    JSON.stringify(sampleContract),
+                    JSON.stringify(sampleStorage),
                     keyStore
                 ).then(address => resolve2(address)
                 ).catch(err => reject2(err));
             } else {
-                resolve2(gameContractAddress);
+                resolve2(sampleContractAddress);
             }
         }).then((address) => {
-            tezosService.readContract(address).then((storage) => {
-                console.log(`initial storage: ${JSON.stringify(storage)}`);
-                tezosService.parseContract(address).then((entryPointsMap) => {
 
-                    // const setNumGuestsEP = entryPointsMap.get('setNumGuests');
-                    // const params = setNumGuestsEP?.generateInvocationPair('"christmas party"', 19);
-                    // console.log('params', params?.parameters);
-                    // tezosService.invokeContract(keyStore, address, params?.parameters, params?.entrypoint).then(() => {
-                    tezosService.invokeContract(keyStore, address, 'setNumGuests', ['"easter"', 12]).then(() => {
-                        console.log('The End !');
-                        resolve();
+            const gameContract = new SampleContract('KT1UfWhmWx13Nvd7rECZUjs3oQNJfFRRmVRn');
+            gameContract.update().then((gameStorage) => {
+                console.log('game storage:', JSON.stringify(gameStorage));
+            }).catch(err => {
+                console.error(err)
+            });
+            const contract = new SampleContract(address);
+            contract.update().then(() => {
+                console.log('SampleContract.owner:', contract.storage?.owner);
+                contract.storage?.nameToEvent.forEach((value, key) => {
+                    console.log(`Event ${key}: ${JSON.stringify(value)}`);
+                });
+                const easterEvent = contract.storage?.nameToEvent.get('easter');
+                if (!easterEvent) {
+                    throw new Error('Unable to find the easter event in the contract storage');
+                }
+                const easterNumGuest = parseInt(easterEvent.numGuests.valueOf());
+                tezosService.readContract(address).then((storage) => {
+                    console.log(`initial storage: ${JSON.stringify(storage)}`);
+                    tezosService.parseContract(address).then((entryPointsMap) => {
+    
+                        // const setNumGuestsEP = entryPointsMap.get('setNumGuests');
+                        // const params = setNumGuestsEP?.generateInvocationPair('"christmas party"', 19);
+                        // console.log('params', params?.parameters);
+                        // tezosService.invokeContract(keyStore, address, params?.parameters, params?.entrypoint).then(() => {
+                        tezosService.invokeContract(keyStore, address, 'setNumGuests', ['"easter"', easterNumGuest + 1 ]).then(() => {
+                            contract.update().then(() => {
+                                console.log('SampleContract.owner:', contract.storage?.owner);
+                                contract.storage?.nameToEvent.forEach((value, key) => {
+                                    console.log(`Event ${key}: ${JSON.stringify(value)}`);
+                                });
+                    
+                                console.log('The End !');
+                                resolve();
+                            }).catch(err => {
+                                console.error('[ERROR] invoke game contract failed with error:' + err);
+                                resolve();
+                            })
+                        }).catch(err => {
+                            console.error('[ERROR] invoke game contract failed with error:' + err);
+                            resolve();
+                        })
                     }).catch(err => {
-                        console.error('[ERROR] invoke game contract failed with error:' + err);
+                        console.error('[ERROR] parse game contract failed with error:' + err);
                         resolve();
                     })
                 }).catch(err => {
-                    console.error('[ERROR] parse game contract failed with error:' + err);
+                    console.error('[ERROR] read game contract failed with error:' + err);
                     resolve();
                 })
             }).catch(err => {
-                console.error('[ERROR] read game contract failed with error:' + err);
-                resolve();
-            })
+                console.error(err);
+                throw err;
+            });
+            
         }).catch(err => {
             console.error(`[ERROR] deploy game contract failed with error:${err}`);
             resolve();

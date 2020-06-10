@@ -4,9 +4,9 @@
 <mat-spinner *ngIf="gameService.game?.status === 'in_creation'"></mat-spinner>
 <label>Game contract:</label>
 <div>{{gameService.game?.contractAddresses.game}}</div>
-<button (click)="getPlayers()">Read Game contract</button>
+<button (click)="gameService.getPlayers()">Read Game contract</button>
 <label>Players</label>
-<div *ngFor="let player of ['alice', 'bob', 'charlie']">{{player}}</div>
+<div *ngFor="let player of gameService.players">{{player}}</div>
 <label>Token contract:</label>
 <div>{{gameService.game?.contractAddresses.token}}</div>
 <label>My balance in game:</label>

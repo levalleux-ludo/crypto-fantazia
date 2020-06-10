@@ -10,7 +10,13 @@ router.get('/:sessionId', getBySessionId);
 
 
 function create(req: express.Request, res: express.Response, next: express.NextFunction) {
-    gameService.create().then((gameCreationResponseData) => {
+    if (!req.body) {
+        throw new Error("body is required in request");
+    }
+    if (!req.body.creator) {
+        throw new Error("'creator' field is required in request body");
+    }
+    gameService.create(req.body.creator as string).then((gameCreationResponseData) => {
         res.json( gameCreationResponseData );
     }).catch(err => next(err));
 }

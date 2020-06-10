@@ -9,6 +9,7 @@ import { eLocalStorageDataKey } from 'src/constants';
 import { ModalService } from 'src/app/_services/modal.service';
 import { ChooseSessionDialogComponent } from '../choose-session-dialog/choose-session-dialog.component';
 import { take } from 'rxjs/operators';
+import { exec } from 'child_process';
 
 @Component({
   selector: 'app-connection-page',
@@ -68,6 +69,16 @@ export class ConnectionPageComponent implements OnInit, OnDestroy {
         this.alertService.show({message: 'game session created with Id:' + game.sessionId});
         this.gameService.isConnected = true;
         this.gameService.game = game;
+        const subscription = this.gameService.onStatusChange.subscribe((newStatus) => {
+          if (newStatus === 'created') {
+            if (!this.gameService.contract) {
+              throw new Error('Game contract is not set');
+            }
+            this.gameService.contract.register(this.tezosService.keyStore, 123456789, 'ljlqksjflkqsfqs').then(() => {
+              this.alertService.show({message: 'Successfully registered to the game contract'});
+            }).catch(err => this.alertService.error(JSON.stringify(err)));
+          }
+        });
       }, err => {
         this.alertService.error(JSON.stringify(err));
       });

@@ -5,6 +5,8 @@ import * as path from 'path';
 import BigNumber from 'bignumber.js'
 
 import { networkInterfaces } from 'os';
+import { Tezos } from '@taquito/taquito';
+import {InMemorySigner} from '@taquito/signer';
 
 const platform = 'tezos';
 const tezosNode = 'https://tezos-dev.cryptonomic-infra.tech:443';
@@ -23,6 +25,12 @@ export interface IdentityData {
     pkh: string;
     secret: string;
 }
+
+Tezos.setProvider({
+    rpc: tezosNode,
+    signer: new InMemorySigner('edskRu8Tv5h8MPcHMdsF7JugmHhNCqhyb891LHdBggc3zYAkvs3aTYe8eHNZCEngGrf4bY4s6eGjR5Y9X6dVCEAdnewei1XaST')
+});
+
 
 class TezosService {
 

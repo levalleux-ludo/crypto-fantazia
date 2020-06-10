@@ -1,10 +1,18 @@
 import { KeyStore } from 'conseiljs';
-import { tokenService } from '../../../../tezos/src/token.service';
-import { AbstractContract } from '../../../../tezos/src/abstract.contract';
+import { MichelsonMap } from '@taquito/taquito';
+import { AbstractContract } from './abstract.contract';
+import { tokenService } from './token.service';
 
 const initialStorage = {}
 
-export class TokenContract extends AbstractContract {
+export interface TokenContractStorage {
+    admin: string;
+    ledger: MichelsonMap<any, any>;
+    paused: boolean,
+    totalSupply: number
+}
+
+export class TokenContract extends AbstractContract<TokenContractStorage> {
     public static async deploy(keyStore: KeyStore): Promise<TokenContract> {
         const address = await tokenService.createContract(
             keyStore

@@ -15,6 +15,4 @@ export class GameStatusComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  getPlayers() {}
-
 }
