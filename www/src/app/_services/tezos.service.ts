@@ -19,6 +19,7 @@ export class TezosService {
   private _account = undefined;
   private _networkInfo = undefined;
   private _keyStore: KeyStore = undefined;
+  public isConnecting = false;
 
   constructor(
     private waiterService: WaiterService,
@@ -67,6 +68,8 @@ export class TezosService {
 
   connect(walletFile: File): Promise<void> {
     return new Promise((resolve, reject) => {
+      this.isConnecting = true;
+      const waiterTask = this.waiterService.addTask();
       new Promise((resolve2, reject2) => {
         if (!this._initialized) {
           this.initialize().then(() => {
@@ -80,11 +83,21 @@ export class TezosService {
         fileReader.onload = (e) => {
           console.log('read file', fileReader.result);
           this.submitWallet(JSON.parse(fileReader.result as string)).then(() => {
+            this.isConnecting = false;
             resolve();
-          }).catch(err => reject(err));
+          }).catch(err => {
+            reject(err);
+          }).finally(() => {
+            this.isConnecting = false;
+            this.waiterService.removeTask(waiterTask);
+          });
         };
         fileReader.readAsText(walletFile);
-      }).catch(err => reject(err));
+      }).catch(err => {
+        this.isConnecting = false;
+        this.waiterService.removeTask(waiterTask);
+        reject(err);
+      });
     });
   }
 

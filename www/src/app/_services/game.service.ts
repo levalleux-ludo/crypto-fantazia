@@ -10,6 +10,7 @@ import { AlertService } from './alert.service';
 import { TezosService } from './tezos.service';
 import { WaiterService } from './waiter.service';
 import { KeyStore } from '../../../../tezos/node_modules/conseiljs/dist';
+import { fadeSlide } from '@clr/angular';
 
 export enum eGameCreationStatus {
   NONE = 'NONE',
@@ -88,15 +89,11 @@ export class GameService {
     return this._game;
   }
 
-  get isGameMaster$(): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      if (this._game
-        && this.contracts.game) {
-        resolve(this.gameCreator === this.tezosService.account.account_id);
-      } else {
-        resolve(false);
-      }
-    });
+  get isGameMaster(): boolean {
+    return (this._game
+      && this.contracts.game
+      && (this.gameCreator === this.tezosService.account.account_id)
+    );
   }
 
   // async setContract(): Promise<void> {
@@ -125,6 +122,7 @@ export class GameService {
   }
 
   async createSession(): Promise<any> {
+    this.disconnect();
     return new Promise((resolve, reject) => {
       const creator = this.tezosService.account.account_id;
       this.apiService.post<IGame>('game/create', { creator }).subscribe(async (game) => {
@@ -138,6 +136,7 @@ export class GameService {
   }
 
   async connectSession(sessionId: string): Promise<any> {
+    this.disconnect();
     return new Promise((resolve, reject) => {
       this.apiService.get<IGame>(`game/${sessionId}`).subscribe(async (game) => {
         await this.updateStatus(game);
@@ -385,6 +384,8 @@ export class GameService {
       this.contracts.game.stopWatching();
     }
     this.isConnected = false;
+    this.isRegistered = false;
+    this.isRegistering = false;
     this._game = undefined;
     this.playingStatus = '';
     this.creationStatus = eGameCreationStatus.NONE;
@@ -396,6 +397,10 @@ export class GameService {
 
   getAllSessions(): Observable<any[]> {
     return this.apiService.get<any[]>(`game`);
+  }
+
+  iAmNextPlayer() {
+    return this.nextPlayer && this.nextPlayer === this.tezosService.account.account_id;
   }
 
 }

@@ -3,7 +3,7 @@
         <div>
             <img src="../../../assets/Forecast-Tezos-Price-Prediction-2020-XTZ-1280x720.png" height="100px;">
         </div>
-        <div fxFlex *ngIf="!tezosService.isConnected" [formGroup]="formDoc" style="width:500px;">
+        <div fxFlex *ngIf="!tezosService.isConnected && !tezosService.isConnecting" [formGroup]="formDoc" style="width:500px;">
             <mat-form-field class="clr-form-control" style="width:500px; border: none; color: white;">
                 <ngx-mat-file-input formControlName="walletFile" accept=".json" placeholder="Select your wallet file"></ngx-mat-file-input>
                 <mat-icon matSuffix>vpn_key</mat-icon>

@@ -30,7 +30,7 @@
 
 <label>My balance in game:</label>
 <div class="btn-group btn-primary">
-    <div class="btn-group btn-primary" *ngIf="gameService.isGameMaster$ && gameService.isRegistered">
+    <div class="btn-group btn-primary" *ngIf="gameService.isGameMaster && gameService.isRegistered">
         <button [disabled]="gameService.playingStatus !== 'created'" class="btn btn-primary" (click)="gameService.start()">Start</button>
         <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameService.freeze()">Freeze</button>
         <button [disabled]="gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameService.resume()">Resume</button>

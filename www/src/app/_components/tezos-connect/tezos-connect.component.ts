@@ -3,6 +3,7 @@ import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { FileInput } from 'ngx-material-file-input';
 import { KeyStore } from 'conseiljs';
 import { TezosService } from 'src/app/_services/tezos.service';
+import { AlertService } from 'src/app/_services/alert.service';
 
 @Component({
   selector: 'app-tezos-connect',
@@ -15,7 +16,8 @@ export class TezosConnectComponent implements OnInit {
 
   constructor(
     private _fb: FormBuilder,
-    public tezosService: TezosService
+    public tezosService: TezosService,
+    private alertService: AlertService
   ) { }
 
   ngOnInit(): void {
@@ -28,7 +30,13 @@ export class TezosConnectComponent implements OnInit {
 
     this.formDoc.get('walletFile').valueChanges.subscribe((val: FileInput) => {
       console.log('onchange', val);
-      this.tezosService.connect(val.files[0]);
+      const alert = this.alertService.show({message: `Please wait for your Tezos account is activated ...`});
+      this.tezosService.connect(val.files[0]).then(() => {
+      }).catch((err) => {
+        this.alertService.error(err);
+      }).finally(() => {
+        this.alertService.onClose(alert.alertId);
+      })
     });
 
     this.tezosService.initialize();
