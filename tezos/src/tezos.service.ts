@@ -158,8 +158,8 @@ class TezosService {
         // })
         const entryPointsMap = await this.parseContract(address);
         const ep = entryPointsMap.get(entryPoint);
-        // const params = ep?.generateInvocationPair(...parameters);
-        const params = parameters.length > 0 ? ep?.generateInvocationPair(...parameters) : undefined;
+        const params = ep?.generateInvocationPair(...parameters);
+        // const params = parameters.length > 0 ? ep?.generateInvocationPair(...parameters) : undefined;
         console.log('params', params?.parameters);
 
         const fee = Number((await TezosConseilClient.getFeeStatistics(conseilServer, conseilServer.network, OperationKindType.Transaction))[0]['high']);
@@ -169,25 +169,22 @@ class TezosService {
         console.log(`initial storage: ${JSON.stringify(storageResult)}`);
         const parameterFormat = TezosParameterFormat.Michelson;
 
-        const gas = 100000;
-        const storageCost = 10;
-        // await TezosNodeWriter.testContractInvocationOperation(
-        //     tezosNode,
-        //     'main',
-        //     keystore,
-        //     address,
-        //     0, // amount
-        //     fee, // fee
-        //     5000, // storage_limit
-        //     100000, // gas_limit
-        //     entryPoint,
-        //     parameters.length > 0 ? params?.parameters : undefined,
-        //     // params?.parameters,
-        //     parameters.length > 0 ? parameterFormat : undefined
-        // ).then(async ({ gas, storageCost }) => {
+        await TezosNodeWriter.testContractInvocationOperation(
+            tezosNode,
+            'main',
+            keystore,
+            address,
+            0, // amount
+            fee, // fee
+            5000, // storage_limit
+            100000, // gas_limit
+            entryPoint,
+            params?.parameters,
+            parameterFormat
+        ).then(async ({ gas, storageCost }) => {
             console.log(`gas: ${gas}, storageCost:${storageCost}`);
         // const gas = 100000;
-            const factor = 1;
+            const factor = 2; // is avoiding Tx failed with gas_exhausted.operation ??
         // const storageCost = 5000;
             const nodeResult = await TezosNodeWriter.sendContractInvocationOperation(
                 tezosNode,
@@ -210,10 +207,10 @@ class TezosService {
             console.log(`Completed invocation of ${conseilResult.destination}`);
             storageResult = await TezosNodeReader.getContractStorage(tezosNode, address);
             console.log(`modified storage: ${JSON.stringify(storageResult)}`);
-        // }).catch(err => {
-        //     console.error(err);
-        //     throw new Error(err);
-        // });
+        }).catch(err => {
+            console.error(err);
+            throw new Error(err);
+        });
     
     }
 
