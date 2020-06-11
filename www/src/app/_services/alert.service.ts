@@ -48,7 +48,7 @@ export class AlertService {
     return Array.from(this.alertsMap.values());
   }
 
-  show(config: IAlertConfig): {alertId: number, onClose$: any} {
+  show(config: IAlertConfig): {alertId: number, onClose$: Subject<any>} {
     this.alertCount++;
     const alertConfig = {...this.defaultAlertConfig, ...config};
     this.alertsMap.set(this.alertCount, {alertId: this.alertCount, config: alertConfig });
@@ -58,8 +58,8 @@ export class AlertService {
     return {alertId: this.alertCount, onClose$: close};
   }
 
-  error(err: any) {
-    this.show({
+  error(err: any): {alertId: number, onClose$: Subject<any>}  {
+    return this.show({
       message: err.toString(),
       clrAlertType: IAlertType.DANGER
     });

@@ -1,14 +1,40 @@
 <p>game-status works!</p>
-<label>Current status:</label>
-<div>{{gameService.game?.status}}</div>
-<mat-spinner *ngIf="gameService.game?.status === 'in_creation'"></mat-spinner>
-<label>Game contract:</label>
-<div>{{gameService.game?.contractAddresses.game}}</div>
-<button (click)="gameService.getPlayers()">Read Game contract</button>
-<label>Players</label>
-<div *ngFor="let player of gameService.players">{{player}}</div>
-<label>Token contract:</label>
-<div>{{gameService.game?.contractAddresses.token}}</div>
+<div>
+    <label>Current status:</label>
+    <div>{{gameService.creationStatus}}:{{gameService.playingStatus}}</div>
+</div>
+<div>
+    <mat-spinner *ngIf="gameService.creationStatus === 'IN_CREATION'"></mat-spinner>
+</div>
+<div>
+    <label>Game contract:</label>
+    <div>{{gameService.game?.contractAddresses.game}}</div>
+</div>
+<div>
+    <label>Players</label>
+    <div *ngFor="let player of gameService.players">{{player}}</div>
+</div>
+<div>
+    <label>Token contract:</label>
+    <div>{{gameService.game?.contractAddresses.token}}</div>
+</div>
+<div>
+    <label>Game Creator:</label>
+    <div>{{gameService.gameCreator}}</div>
+</div>
+<div>
+    <label>Next Player:</label>
+    <div>{{gameService.nextPlayer}}</div>
+</div>
+
+
 <label>My balance in game:</label>
-<div></div>
-<button>Start game</button>
+<div class="btn-group btn-primary">
+    <div class="btn-group btn-primary" *ngIf="gameService.isGameMaster$ && gameService.isRegistered">
+        <button [disabled]="gameService.playingStatus !== 'created'" class="btn btn-primary" (click)="gameService.start()">Start</button>
+        <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameService.freeze()">Freeze</button>
+        <button [disabled]="gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameService.resume()">Resume</button>
+        <button [disabled]="gameService.playingStatus !== 'started' && gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameService.end()">End</button>
+    </div>
+    <button class="btn btn-primary" (click)="gameService.disconnect()">Exit Game</button>
+</div>

@@ -25,7 +25,7 @@ class GameService {
                 });
                 await game.save();
                 // createContract is called asynchronously
-                this.createContracts(keyStore, sessionId).then(async (contracts) => {
+                this.createContracts(keyStore, sessionId, creator).then(async (contracts) => {
                     game.status = 'created';
                     await game.save();
                 });
@@ -36,12 +36,12 @@ class GameService {
         });
     }
 
-    async createContracts(keyStore: KeyStore, sessionId: string): Promise<{game: GameContract, token: TokenContract} | undefined> {
+    async createContracts(keyStore: KeyStore, sessionId: string, creator: string): Promise<{game: GameContract, token: TokenContract} | undefined> {
         try {
             const game = await Game.findOne({sessionId: sessionId});
             if (!game) throw new Error('Unable to find the game with sessionId ' + sessionId);
 
-            const gameContract = await GameContract.deploy(keyStore);
+            const gameContract = await GameContract.deploy(keyStore, creator);
             // store gameContract.address for session
             console.log(`Game Contract created at ${gameContract.address} for sessionId ${sessionId}`);
             game.contractAddresses.game = gameContract.address;
@@ -86,11 +86,11 @@ class GameService {
                 if (!game) {
                     throw new Error('Unable to find Game with sessionId=' + sessionId);
                 }
-                const keyStore = await tezosService.getAccount(originator);
+                // const keyStore = await tezosService.getAccount(originator);
                 // get gameContract address for session
-                const gameContract = await GameContract.retrieve(game.contractAddresses.game);
+                // const gameContract = await GameContract.retrieve(game.contractAddresses.game);
                 // get tokenContract.address for session
-                const tokenContract = await TokenContract.retrieve(game.contractAddresses.token);
+                // const tokenContract = await TokenContract.retrieve(game.contractAddresses.token);
                 resolve(game);
             } catch (err) {
                 reject(err);

@@ -13,11 +13,16 @@ export class ModalService {
 
   constructor() { }
 
-  showModal(componentClass: Type<any>): Observable<any> {
+  showModal(componentClass: Type<any>): Promise<any> {
     this.componentClass = componentClass;
     this.onShow.emit(this.componentClass);
     this.opened = true;
-    return this.onClose.asObservable();
+    return new Promise((resolve, reject) => {
+      const subscription = this.onClose.subscribe((value) => {
+        subscription.unsubscribe();
+        resolve(value);
+      }, err => reject(err));
+    });
   }
 
   hideModal(value?: any) {

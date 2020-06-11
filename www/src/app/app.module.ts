@@ -38,6 +38,10 @@ import { FantaSymbolComponent } from './_components/fanta-symbol/fanta-symbol.co
 import { TezosConnectComponent } from './_components/tezos-connect/tezos-connect.component';
 import { ChooseSessionDialogComponent } from './_components/choose-session-dialog/choose-session-dialog.component';
 import { GameStatusComponent } from './_components/game-status/game-status.component';
+import { GameFailurePageComponent } from './_components/game-failure-page/game-failure-page.component';
+import { GameCreationPageComponent } from './_components/game-creation-page/game-creation-page.component';
+import { PlaygroundPageComponent } from './_components/playground-page/playground-page.component';
+import { GameOverPageComponent } from './_components/game-over-page/game-over-page.component';
 
 @NgModule({
   declarations: [
@@ -59,7 +63,11 @@ import { GameStatusComponent } from './_components/game-status/game-status.compo
     FantaSymbolComponent,
     TezosConnectComponent,
     ChooseSessionDialogComponent,
-    GameStatusComponent
+    GameStatusComponent,
+    GameFailurePageComponent,
+    GameCreationPageComponent,
+    PlaygroundPageComponent,
+    GameOverPageComponent
   ],
   imports: [
     BrowserModule,

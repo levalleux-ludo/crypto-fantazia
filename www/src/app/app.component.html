@@ -2,23 +2,25 @@
     <app-header></app-header>
     <!-- <app-sub-nav-bar></app-sub-nav-bar> -->
     <app-waiter></app-waiter>
-    <div class="content-container" *ngIf="gameService.isConnected">
-        <app-vertical-left-bar></app-vertical-left-bar>
-        <div fxLayout="column" style="width: 100%;">
-            <app-progress-bar></app-progress-bar>
-            <app-alert></app-alert>
-            <div class="content-area" style="height: calc(100% - 480px);">
-                <app-game-status></app-game-status>
-            </div>
-            <app-dock-container [height]="480"></app-dock-container>
-        </div>
-    </div>
-    <div class="content-container" *ngIf="!gameService.isConnected">
-        <div fxLayout="column" style="width: 100%;">
-            <app-alert></app-alert>
-            <app-connection-page></app-connection-page>
-        </div>
-    </div>
     <app-modal></app-modal>
+    <div fxLayout="column" style="width: 100%;  height: 100%;">
+        <app-progress-bar></app-progress-bar>
+        <app-alert></app-alert>
+        <div class="content-container" *ngIf="!connectionService.isConnected || !gameService.isConnected">
+            <app-connection-page style="width: 100%;  height: 100%;"></app-connection-page>
+        </div>
+        <div class="content-container" *ngIf="connectionService.isConnected && gameService.creationStatus === 'PLAYING'">
+            <app-playground-page style="width: 100%;  height: 100%;"></app-playground-page>
+        </div>
+        <div class="content-container" *ngIf="connectionService.isConnected && (gameService.creationStatus === 'IN_CREATION' || gameService.creationStatus === 'READY')">
+            <app-game-creation-page style="width: 100%;  height: 100%;"></app-game-creation-page>
+        </div>
+        <div class="content-container" *ngIf="connectionService.isConnected && gameService.creationStatus === 'FAILED'">
+            <app-game-failure-page style="width: 100%;  height: 100%;"></app-game-failure-page>
+        </div>
+        <div class="content-container" *ngIf="connectionService.isConnected && gameService.creationStatus === 'ENDED'">
+            <app-game-over-page style="width: 100%;  height: 100%;"></app-game-over-page>
+        </div>
+    </div>
     <app-footer></app-footer>
 </div>

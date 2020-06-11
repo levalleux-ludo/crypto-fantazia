@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as util from 'util';
-import { TezosWalletUtil, KeyStore, ConseilOperator, TezosConseilClient, Tzip7ReferenceTokenHelper, TezosNodeWriter, OperationResult, ConseilQueryBuilder, ConseilDataClient, ConseilMetadataClient, TezosNodeReader, TezosParameterFormat, OperationKindType, TezosContractIntrospector, EntryPoint } from 'conseiljs';
+import { TezosWalletUtil, KeyStore, ConseilOperator, TezosConseilClient, Tzip7ReferenceTokenHelper, TezosNodeWriter, OperationResult, ConseilQueryBuilder, ConseilDataClient, ConseilMetadataClient, TezosNodeReader, TezosParameterFormat, OperationKindType, TezosContractIntrospector, EntryPoint, CryptoUtils, TezosMessageUtils } from 'conseiljs';
 import * as path from 'path';
 import BigNumber from 'bignumber.js'
 
@@ -145,12 +145,21 @@ class TezosService {
         return conseilResult.originated_contracts;
     }
 
-    async invokeContract(keystore: KeyStore, address: string, entryPoint: string, parameters: any[]) {
+    async invokeContract(keystore: KeyStore, address: string, entryPoint: string, parameters: any[], onTxCreated?: (or: OperationResult) => void) {
 
         console.log(`invokeContract`);
+        // parameters.forEach((param, index, array) => {
+        //     if ( util.isString(param) && param.charAt(0) !== '"') {
+        //         console.log("transform param", param);
+        //         param = '"' + param + '"';
+        //         console.log('after:', param)
+        //         array[index] = param;
+        //     }
+        // })
         const entryPointsMap = await this.parseContract(address);
         const ep = entryPointsMap.get(entryPoint);
-        const params = ep?.generateInvocationPair(...parameters);
+        // const params = ep?.generateInvocationPair(...parameters);
+        const params = parameters.length > 0 ? ep?.generateInvocationPair(...parameters) : undefined;
         console.log('params', params?.parameters);
 
         const fee = Number((await TezosConseilClient.getFeeStatistics(conseilServer, conseilServer.network, OperationKindType.Transaction))[0]['high']);
@@ -159,20 +168,23 @@ class TezosService {
         let storageResult = await TezosNodeReader.getContractStorage(tezosNode, address);
         console.log(`initial storage: ${JSON.stringify(storageResult)}`);
         const parameterFormat = TezosParameterFormat.Michelson;
-    
-        await TezosNodeWriter.testContractInvocationOperation(
-            tezosNode,
-            'main',
-            keystore,
-            address,
-            0, // amount
-            fee, // fee
-            5000, // storage_limit
-            100000, // gas_limit
-            params?.entrypoint,
-            params?.parameters,
-            parameterFormat
-        ).then(async ({ gas, storageCost }) => {
+
+        const gas = 100000;
+        const storageCost = 10;
+        // await TezosNodeWriter.testContractInvocationOperation(
+        //     tezosNode,
+        //     'main',
+        //     keystore,
+        //     address,
+        //     0, // amount
+        //     fee, // fee
+        //     5000, // storage_limit
+        //     100000, // gas_limit
+        //     entryPoint,
+        //     parameters.length > 0 ? params?.parameters : undefined,
+        //     // params?.parameters,
+        //     parameters.length > 0 ? parameterFormat : undefined
+        // ).then(async ({ gas, storageCost }) => {
             console.log(`gas: ${gas}, storageCost:${storageCost}`);
         // const gas = 100000;
             const factor = 1;
@@ -186,9 +198,9 @@ class TezosService {
                 '', // derivationPath
                 factor*storageCost, //storage_limit
                 factor*gas, // gas_limit
-                params?.entrypoint,
-                params?.parameters,
-                parameterFormat
+                entryPoint,
+                parameters.length > 0 ? params?.parameters : undefined,
+                parameters.length > 0 ? parameterFormat : undefined
             );
         
             const groupId = TezosService.clearRPCOperationGroupHash(nodeResult.operationGroupID);
@@ -198,10 +210,10 @@ class TezosService {
             console.log(`Completed invocation of ${conseilResult.destination}`);
             storageResult = await TezosNodeReader.getContractStorage(tezosNode, address);
             console.log(`modified storage: ${JSON.stringify(storageResult)}`);
-        }).catch(err => {
-            console.error(err);
-            throw new Error(err);
-        });
+        // }).catch(err => {
+        //     console.error(err);
+        //     throw new Error(err);
+        // });
     
     }
 
@@ -261,6 +273,17 @@ class TezosService {
         const accountFile = path.join(accountsWalletFolder, `${account}.json`);
 
         return this.getAccountFromFile(accountFile);
+    }
+
+    async make_signature(payload: Buffer, privateKey: string): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const key = TezosMessageUtils.writeKeyWithHint(privateKey, 'edpk');
+            const hash = CryptoUtils.simpleHash(payload, 32);
+            CryptoUtils.signDetached(hash, key).then((signedBuffer) => {
+                const signature = TezosMessageUtils.readSignatureWithHint(signedBuffer, 'edsig');
+                resolve(signature);
+            }).catch(err => reject(err));
+        })
     }
 
 }

@@ -51,12 +51,12 @@
         <div class="btn-group btn-primary">
             <mat-card>
                 <mat-card-content>
-                    <button [disabled]="!isValid() || isConnecting" class="btn btn-primary" (click)="createSession()">Create A New Session</button>
+                    <button [disabled]="!isValid() || isConnecting" class="btn btn-primary" (click)="submit(true)">Create A New Session</button>
                 </mat-card-content>
             </mat-card>
             <mat-card>
                 <mat-card-content>
-                    <button [disabled]="!isValid() || isConnecting" class="btn btn-primary" (click)="connectSession()">Connect An Existing Session</button>
+                    <button [disabled]="!isValid() || isConnecting" class="btn btn-primary" (click)="submit(false)">Connect An Existing Session</button>
                 </mat-card-content>
             </mat-card>
         </div>

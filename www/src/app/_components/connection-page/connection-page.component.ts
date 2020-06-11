@@ -23,7 +23,7 @@ export class ConnectionPageComponent implements OnInit, OnDestroy {
   waiterTask: string;
 
   constructor(
-    private connectionService: ConnectionService,
+    public connectionService: ConnectionService,
     private fb: FormBuilder,
     private waiterService: WaiterService,
     private gameService: GameService,
@@ -39,83 +39,116 @@ export class ConnectionPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    let username = '';
-    let rememberMe = false;
-    const stored = localStorage.getItem(eLocalStorageDataKey.USERNAME);
-    if (stored) {
-      username = stored;
-      rememberMe = true;
-    }
     this.form = this.fb.group({
-      username: new FormControl(username, Validators.required),
-      rememberMe: new FormControl(rememberMe)
+      username: new FormControl(this.connectionService.username, Validators.required),
+      rememberMe: new FormControl(this.connectionService.rememberMe)
     });
   }
 
-  storeUsername() {
-    if (this.form.controls.rememberMe.value) {
-      localStorage.setItem(eLocalStorageDataKey.USERNAME, this.form.controls.username.value);
-    } else {
-      localStorage.removeItem(eLocalStorageDataKey.USERNAME);
-    }
-  }
+  // storeUsername() {
+  //   if (this.form.controls.rememberMe.value) {
+  //     localStorage.setItem(eLocalStorageDataKey.USERNAME, this.form.controls.username.value);
+  //   } else {
+  //     localStorage.removeItem(eLocalStorageDataKey.USERNAME);
+  //   }
+  // }
 
-  createSession() {
-    this.waiterTask = this.waiterService.addTask();
-    this.storeUsername();
+  submit(newSession: boolean) {
     this.isConnecting = true;
+    this.waiterTask = this.waiterService.addTask();
     this.connectionService.connect(this.form.value).then((connectionData) => {
-      this.gameService.createSession(connectionData.username).subscribe((game) => {
-        this.alertService.show({message: 'game session created with Id:' + game.sessionId});
-        this.gameService.isConnected = true;
-        this.gameService.game = game;
-        const subscription = this.gameService.onStatusChange.subscribe((newStatus) => {
-          if (newStatus === 'created') {
-            if (!this.gameService.contract) {
-              throw new Error('Game contract is not set');
-            }
-            this.gameService.contract.register(this.tezosService.keyStore, 123456789, 'ljlqksjflkqsfqs').then(() => {
-              this.alertService.show({message: 'Successfully registered to the game contract'});
-            }).catch(err => this.alertService.error(JSON.stringify(err)));
-          }
+      if (newSession) {
+        this.gameService.createSession().then((game) => {
+          this.alertService.show({message: 'game session created with Id:' + game.sessionId});
+          this.isConnecting = false;
+        }).catch(err => {
+          this.alertService.error(JSON.stringify(err));
+          this.isConnecting = false;
         });
-      }, err => {
-        this.alertService.error(JSON.stringify(err));
-      });
-    });
-  }
-
-  connectSession() {
-    this.waiterTask = this.waiterService.addTask();
-    this.storeUsername();
-    this.isConnecting = true;
-    this.modalService.showModal(ChooseSessionDialogComponent).pipe(take(1)).subscribe((sessionId) => {
-      if (!sessionId) {
-        this.waiterService.removeTask(this.waiterTask);
-        this.isConnecting = false;
       } else {
-        this.connectionService.connect(this.form.value).then((connectionData) => {
-          const subscription = this.gameService.connectSession(sessionId, connectionData.username).subscribe((game) => {
-            subscription.unsubscribe(); // be sure we subscribe onyl once at a time
-            this.alertService.show({message: 'connected game with sessionId:' + game.sessionId});
-            this.gameService.isConnected = true;
-            this.gameService.game = game;
-          }, err => {
-            this.alertService.error(JSON.stringify(err));
-          });
+        this.modalService.showModal(ChooseSessionDialogComponent).then((sessionId) => {
+          if (!sessionId) {
+            this.waiterService.removeTask(this.waiterTask);
+            this.isConnecting = false;
+          } else {
+              this.gameService.connectSession(sessionId).then((game) => {
+                this.alertService.show({message: 'connected game with sessionId:' + game.sessionId});
+                this.isConnecting = false;
+              }, err => {
+                this.alertService.error(JSON.stringify(err));
+                this.isConnecting = false;
+              });
+          }
         }).catch(err => {
           this.waiterService.removeTask(this.waiterTask);
           this.isConnecting = false;
           this.alertService.error(JSON.stringify(err));
         });
+
       }
-    }, err => {
+    }).catch(err => {
       this.waiterService.removeTask(this.waiterTask);
       this.isConnecting = false;
       this.alertService.error(JSON.stringify(err));
     });
-    // this.connectionService.connect(this.form.value);
   }
+
+  // createSession() {
+  //   this.waiterTask = this.waiterService.addTask();
+  //   // this.storeUsername();
+  //   // this.isConnecting = true;
+  //   this.connectionService.connect(this.form.value).then((connectionData) => {
+  //     this.gameService.createSession(connectionData.username).subscribe((game) => {
+  //       this.alertService.show({message: 'game session created with Id:' + game.sessionId});
+  //       this.gameService.isConnected = true;
+  //       this.gameService.game = game;
+  //       const subscription = this.gameService.onStatusChange.subscribe((newStatus) => {
+  //         if (newStatus === 'created') {
+  //           if (!this.gameService.contract) {
+  //             throw new Error('Game contract is not set');
+  //           }
+  //           this.gameService.contract.register(this.tezosService.keyStore, 123456789, 'ljlqksjflkqsfqs').then(() => {
+  //             this.alertService.show({message: 'Successfully registered to the game contract'});
+  //           }).catch(err => this.alertService.error(JSON.stringify(err)));
+  //         }
+  //       });
+  //     }, err => {
+  //       this.alertService.error(JSON.stringify(err));
+  //     });
+  //   });
+  // }
+
+  // connectSession() {
+  //   this.waiterTask = this.waiterService.addTask();
+  //   // this.storeUsername();
+  //   // this.isConnecting = true;
+  //   this.modalService.showModal(ChooseSessionDialogComponent).pipe(take(1)).subscribe((sessionId) => {
+  //     if (!sessionId) {
+  //       this.waiterService.removeTask(this.waiterTask);
+  //       // this.isConnecting = false;
+  //     } else {
+  //       this.connectionService.connect(this.form.value).then((connectionData) => {
+  //         const subscription = this.gameService.connectSession(sessionId, connectionData.username).subscribe((game) => {
+  //           subscription.unsubscribe(); // be sure we subscribe onyl once at a time
+  //           this.alertService.show({message: 'connected game with sessionId:' + game.sessionId});
+  //           this.gameService.isConnected = true;
+  //           this.gameService.game = game;
+  //         }, err => {
+  //           this.alertService.error(JSON.stringify(err));
+  //         });
+  //       }).catch(err => {
+  //         this.waiterService.removeTask(this.waiterTask);
+  //         // this.isConnecting = false;
+  //         this.alertService.error(JSON.stringify(err));
+  //       });
+  //     }
+  //   }, err => {
+  //     this.waiterService.removeTask(this.waiterTask);
+  //     this.isConnecting = false;
+  //     this.alertService.error(JSON.stringify(err));
+  //   });
+  //   // this.connectionService.connect(this.form.value);
+  // }
 
   isValid() {
     return this.form.valid && this.tezosService.isConnected;

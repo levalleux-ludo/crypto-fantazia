@@ -19,26 +19,30 @@ export abstract class AbstractContract<T> {
     public get storage(): T | undefined {
         return this._storage;
     }
-    public startWatching(period_ms: number, onChange?: () => void) {
+    public startWatching(period_ms: number, onChange?: (storage: T) => void) {
         if (this.watcher) {
             throw new Error('Unable to start watching because watching already active');
         }
-        this.watcher = setInterval(() => {
+        const callback = () => {
             try {
-                this.update().then((newStorage) => {
+                // this.update().then((newStorage) => {
+                    const newStorage = this._storage as any;
                     const newStorageStr = JSON.stringify(newStorage);
                     if (newStorageStr !== this.oldStorageStr) {
                         console.log('Change detected in contract at ' + this.address);
                         this.oldStorageStr = newStorageStr;
                         if (onChange) {
-                            onChange();
+                            onChange(newStorage);
                         }
                     }
-                });
+                    setTimeout(callback, period_ms);
+                // });
             } catch (err) {
                 console.error('Error when updating contract:' + JSON.stringify(err));
+                setTimeout(callback, period_ms);
             }
-        }, period_ms);
+        }
+        this.watcher = setTimeout(callback, period_ms);
     }
     public stopWatching() {
         if (!this.watcher) {

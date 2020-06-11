@@ -1,0 +1,9 @@
+<div style="width: 100%;  height: 100%;" fxLayout="row">
+    <app-vertical-left-bar></app-vertical-left-bar>
+    <div fxLayout="column" style="width: 100%;">
+        <div class="content-area" style="height: calc(100% - 480px);">
+            <app-game-status></app-game-status>
+        </div>
+        <app-dock-container [height]="480"></app-dock-container>
+    </div>
+</div>
