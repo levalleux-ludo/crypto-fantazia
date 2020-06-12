@@ -69,8 +69,10 @@ export class AlertService {
    this.alertsMap.delete(value);
   //  this.alerts = this.alertsMap.values();
    const close = this.closeMap.get(value);
-   this.closeMap.delete(value);
-   close.next(value);
-   close.complete();
+   if (close) {
+    this.closeMap.delete(value);
+    close.next(value);
+    close.complete();
+   }
   }
 }

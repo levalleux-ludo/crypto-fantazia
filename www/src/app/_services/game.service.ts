@@ -158,11 +158,14 @@ export class GameService {
           this.isRegistered = true;
         } else {
           this.showAlert('Game Contract has been created. Now registering current player ...');
-          this.contracts.game.register(this.tezosService.keyStore, 123456789, 'xxxxxxxx').then(() => {
-            this.showAlert('registering completed');
-          });
+          this.contracts.game.register(this.tezosService.keyStore, 123456789, 'xxxxxxxx').then((txOper) => {
+            this.showAlert('returns from register call:' + txOper.txHash);
+            txOper.onConfirmed.then((blockId) => {
+                console.log('Tx confirmed', txOper.txHash, blockId);
+            }).catch(err => this.alertError('register tx failed:' + err))
+          }).catch(err => this.alertError('Error during register call:' + err));
         }
-      }).catch(err => this.alertService.error(JSON.stringify(err)));
+      }).catch(err => this.alertError(JSON.stringify(err)));
     }
   }
 
@@ -304,18 +307,12 @@ export class GameService {
   }
 
   async start() {
-    if (this.contracts.game) {
-      this.callContract(
-        (ks) => this.contracts.game.start(ks),
-        (txHash) => {
-          this.showAlert(`game start requested (txHash:${txHash}) ...`);
-        },
-        (txHash, blockId) => {
-          this.showAlert(`game successfully started (txHash:${txHash}, blockId:${blockId})`);
-          this.updateFromGameContract();
-        }
-      );
-    }
+    const sessionId = this.game.sessionId;
+    this.apiService.post<{txHash: string}>(`game/${sessionId}/start`, {}).subscribe(async ({txHash}) => {
+      this.showAlert(`Game starting request in progress ... (txHash:${txHash})`);
+    }, err => {
+      this.alertError(err);
+    });
   }
 
   async freeze() {
@@ -376,7 +373,8 @@ export class GameService {
       this.alertService.onClose(this.alert.alertId);
       this.alert = undefined;
     }
-    this.alert = this.alertService.error(err);
+    console.error(err);
+    this.alertService.error(JSON.stringify(err));
   }
 
   disconnect() {

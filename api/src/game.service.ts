@@ -47,7 +47,7 @@ class GameService {
             game.contractAddresses.game = gameContract.address;
             await game.save();
 
-            const tokenContract = await TokenContract.deploy(keyStore);
+            const tokenContract = await TokenContract.deploy(keyStore, gameContract.address);
             // store tokenContract.address for session
             console.log(`Token Contract created at ${tokenContract.address} for sessionId ${sessionId}`);
             game.contractAddresses.token = tokenContract.address;
@@ -100,6 +100,35 @@ class GameService {
 
     async getAll(): Promise<IGame[]> {
         return await Game.find();
+    }
+
+    async startSession(sessionId: string): Promise<{txHash: string}> {
+        const game = await Game.findOne({sessionId: sessionId});
+        if (!game) {
+            throw new Error('Unable to find Game with sessionId=' + sessionId);
+        }
+        const keyStore = await tezosService.getAccount(originator);
+        const gameContract = await GameContract.retrieve(game.contractAddresses.game);
+        // const opResult = await gameContract.start(keyStore, game.contractAddresses.token, 1500);
+        // console.log(`START GAME requested: txHash:${opResult.txHash} ...`);
+        // opResult.onConfirmed.then((blockId) => {
+        await gameContract.start(keyStore, game.contractAddresses.token, 1500).then((txOper) => {
+            console.log('returns from start call:' + txOper.txHash);
+            txOper.onConfirmed.then((blockId) => {
+                console.log('Tx confirmed', txOper.txHash, blockId);
+                console.log(`START GAME request succeed`);
+            }).catch(err => {
+                console.log(`[ERROR] START GAME request failed with error: ${err}`);
+                throw new Error(`[ERROR] START GAME request failed with error: ${err}`);
+            });
+        }).catch(err => {
+            console.error(`Error during start call: ${err.id}, ${err.message}`);
+            throw new Error(`[ERROR] START GAME request failed with error: ${err}`);
+        });
+        game.status = 'started';
+        await game.save();
+        // return {txHash: opResult.txHash};
+        return {txHash: 'unknown'};
     }
 }
 

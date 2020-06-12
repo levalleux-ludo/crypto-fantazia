@@ -7,7 +7,7 @@ export const router = express.Router();
 router.post('/create', create);
 router.get('/', getAll);
 router.get('/:sessionId', getBySessionId);
-
+router.post('/:sessionId/start', startSession);
 
 function create(req: express.Request, res: express.Response, next: express.NextFunction) {
     if (!req.body) {
@@ -32,3 +32,10 @@ function getAll(req: express.Request, res: express.Response, next: express.NextF
         res.json( games );
     }).catch(err => next(err));
 }
+
+function startSession(req: express.Request, res: express.Response, next: express.NextFunction) {
+    gameService.startSession(req.params.sessionId).then((result) => {
+        res.json( result );
+    }).catch(err => next(err));
+}
+

@@ -26,8 +26,11 @@ export class TokenContract extends AbstractContract<TokenContractStorage> {
             JSON.stringify(tokenContract),
             JSON.stringify(this.getInitialStorage(administrator)),
             keyStore
-        );
-        return new TokenContract(address);
+        ).catch(err => {
+            console.error('Error during token contract deployment:' + err);
+            throw(new Error('Error during token contract deployment:' + err));
+        });
+    return new TokenContract(address);
     }
     public static async retrieve(address: string): Promise<TokenContract> {
         const contract = new TokenContract(address);

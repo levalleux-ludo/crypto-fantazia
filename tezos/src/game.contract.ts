@@ -29,7 +29,10 @@ export class GameContract extends AbstractContract<GameContractStorage> {
             JSON.stringify(gameContract),
             JSON.stringify(this.getInitialStorage(keyStore, creator_address)),
             keyStore
-        );
+        ).catch(err => {
+            console.error('Error during game contract deployment:' + err);
+            throw(new Error('Error during game contract deployment:' + err));
+        });
         return new GameContract(address);
     }
     public static async retrieve(address: string): Promise<GameContract> {
@@ -74,12 +77,14 @@ export class GameContract extends AbstractContract<GameContractStorage> {
         const operationName = 'register';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.register;
-        return this.callMethodTaquito(keyStore, operationName, operation, random, fake_signature);
+        const callParams = { fee: 400000, gasLimit: 400000, storageLimit: 100 };
+        return this.callMethodTaquito(keyStore, operationName, callParams, operation, random, fake_signature);
     }
 
     async callMethodTaquito(
         keyStore: KeyStore,
         operationName: string,
+        callParams: any | undefined,
         operation: (ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>),
         ...args: any[]
     ): Promise<{txHash: string, onConfirmed: Promise<number>}> {
@@ -96,7 +101,7 @@ export class GameContract extends AbstractContract<GameContractStorage> {
                          throw new Error('Too many parameters: ' + args);
                      }
 
-                    method.send().then((txOperation: TransactionOperation) => {
+                    method.send(callParams).then((txOperation: TransactionOperation) => {
                         console.log(`returns from ${operationName} call: ${txOperation}`);
                         resolve({
                             txHash: txOperation.hash,
@@ -116,9 +121,26 @@ export class GameContract extends AbstractContract<GameContractStorage> {
 
     async start(keyStore: KeyStore, tokenAddress: string, initialBalance: number): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'start';
-        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
-         = (ci: any) => ci.methods.start;
-         return this.callMethodTaquito(keyStore, operationName, operation, initialBalance, tokenAddress);
+        Tezos.setProvider({ signer: new InMemorySigner(keyStore.privateKey) });
+        return new Promise((resolve, reject) => {
+            Tezos.contract.at(this._address).then((ci) => {
+                try {
+                    ci.methods.start(initialBalance, tokenAddress).send({ fee: 400000, gasLimit: 400000, storageLimit: 200 }).then((txOperation: TransactionOperation) => {
+                        console.log(`returns from ${operationName} call: ${txOperation}`);
+                        resolve({
+                            txHash: txOperation.hash,
+                            onConfirmed: txOperation.confirmation(1, 10, 180)
+                        });
+                    }).catch(err => {
+                        console.error(`Error during ${operationName} call: ${err.id}, ${err.message}`);
+                        reject(err);
+                    });
+                } catch (err) {
+                    console.error(`Error during ${operationName} call: ${err.id}, ${err.message}`);
+                    reject(err);
+                }
+            });
+        });
     }
 
     // async start(keyStore: KeyStore, tokenAddress: string, initialBalance: number) {
@@ -129,35 +151,35 @@ export class GameContract extends AbstractContract<GameContractStorage> {
         const operationName = 'testCallToken';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.testCallToken;
-         return this.callMethodTaquito(keyStore, operationName, operation, tokenAddress);        
+         return this.callMethodTaquito(keyStore, operationName, undefined, operation, tokenAddress);        
     }
 
     async testCallTokenAdminOnly(keyStore: KeyStore, tokenAddress: string) {
         const operationName = 'testCallTokenAdminOnly';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.testCallTokenAdminOnly;
-         return this.callMethodTaquito(keyStore, operationName, operation, tokenAddress);        
+         return this.callMethodTaquito(keyStore, operationName, undefined, operation, tokenAddress);        
     }
 
     async end(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'end';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.end;
-        return this.callMethodTaquito(keyStore, operationName, operation);
+        return this.callMethodTaquito(keyStore, operationName, undefined, operation);
     }
 
     async freeze(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'freeze';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.freeze;
-         return this.callMethodTaquito(keyStore, operationName, operation);
+         return this.callMethodTaquito(keyStore, operationName, undefined, operation);
     }
 
     async resume(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'resume';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.resume;
-         return this.callMethodTaquito(keyStore, operationName, operation);
+         return this.callMethodTaquito(keyStore, operationName, undefined, operation);
     }
 
     async play(keyStore: KeyStore) {
@@ -168,7 +190,7 @@ export class GameContract extends AbstractContract<GameContractStorage> {
         const operationName = 'setInitialBalances';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.resume;
-         return this.callMethodTaquito(keyStore, operationName, operation);
+         return this.callMethodTaquito(keyStore, operationName, undefined, operation);
     }
 
     async isRegistered(account: string): Promise<boolean> {
