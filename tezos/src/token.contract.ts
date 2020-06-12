@@ -1,15 +1,17 @@
 import { KeyStore } from 'conseiljs';
-import { MichelsonMap } from '@taquito/taquito';
+import { MichelsonMap, BigMapAbstraction } from '@taquito/taquito';
 import { AbstractContract } from './abstract.contract';
 import { tokenService } from './token.service';
 import { tezosService } from './tezos.service';
 import tokenContract from './token.contract.json';
+import BigNumber from 'bignumber.js';
+import { resolve } from 'dns';
 
 const initialStorage = {}
 
 export interface TokenContractStorage {
     admin: string;
-    balances: MichelsonMap<any, any>;
+    balances: BigMapAbstraction;
     paused: boolean,
     totalSupply: number,
     lastCaller: string
@@ -52,5 +54,30 @@ export class TokenContract extends AbstractContract<TokenContractStorage> {
         super(address);
     }
 
+    public async getBalances(players: Array<string>): Promise<Map<string, number>> {
+        return new Promise((resolve, reject) => {
+            const balances = new Map<string, number>();
+            const promises = [];
+            for (let address of players) {
+                promises.push(new Promise((resolve2, reject2) => {
+                    this._storage?.balances.get(address).then((account) => {
+                        if (account) {
+                            const value = ((account as any).balance as BigNumber).toNumber();
+                            balances.set(address, value);
+                        }
+                        resolve2();
+                    }).catch(err => {
+                        console.error(err);
+                        resolve2(); // trace but never fail
+                    })
+                }));
+            }
+            Promise.all(promises).then(() => {
+                resolve(balances);
+            }).catch(() => {
+                resolve(new Map<string, number>()); // never fail
+            })
+        });
+    }
 
 }

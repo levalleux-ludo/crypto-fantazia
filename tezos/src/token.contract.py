@@ -46,6 +46,17 @@ class FakeTokenContract(sp.Contract):
         sp.if (params.f != sp.sender) & (self.data.admin != sp.sender):
             self.data.balances[params.f].approvals[sp.sender] = sp.as_nat(self.data.balances[params.f].approvals[sp.sender] - params.amount)
 
+    @sp.entry_point
+    def getBalance(self, params):
+        sp.transfer(self.data.balances[params.arg.owner].balance, sp.tez(0), sp.contract(sp.TNat, params.target).open_some())
+
+    @sp.entry_point
+    def resetBalance(self, params):
+        sp.verify(sp.sender == self.data.admin)
+        sp.if self.data.balances.contains(params.address):
+            self.data.totalSupply = sp.as_nat(self.data.totalSupply - self.data.balances[params.address].balance)
+            del self.data.balances[params.address]
+
     def addAddressIfNecessary(self, address):
         sp.if ~ self.data.balances.contains(address):
             self.data.balances[address] = sp.record(balance = 0, approvals = {})

@@ -11,6 +11,7 @@ import { TezosService } from './tezos.service';
 import { WaiterService } from './waiter.service';
 import { KeyStore } from '../../../../tezos/node_modules/conseiljs/dist';
 import { fadeSlide } from '@clr/angular';
+import { tokenService } from '../../../../tezos/src/token.service';
 
 export enum eGameCreationStatus {
   NONE = 'NONE',
@@ -41,6 +42,8 @@ export class GameService {
   nextPlayer = undefined;
   gameCreator = undefined;
   alert: {alertId: number, onClose$: Subject<any>} | undefined;
+  balances = new Map<string, number> ();
+  waiterTask: string;
 
   _game = undefined;
 
@@ -87,6 +90,14 @@ export class GameService {
 
   get game(): IGame {
     return this._game;
+  }
+
+  get myBalance(): number {
+    return this.balanceOf(this.tezosService.account.account_id);
+  }
+
+  balanceOf(player: string): number {
+    return this.balances.get(player) || 0;
   }
 
   get isGameMaster(): boolean {
@@ -213,16 +224,26 @@ export class GameService {
       if (this._game.status === 'in_creation') {
         // get creation progress status
         this.creationStatus = eGameCreationStatus.IN_CREATION;
-      } else if (this._game.status === 'created') {
+      } else {
         await this.checkContracts();
       }
       await this.updateFromGameContract();
+      await this.updateFromTokenContract();
       // await this.updatePlayers();
       if (!this.isRegistering && !this.isRegistered) {
         this.registerWhenPossible();
       }
     } else {
       this.disconnect();
+    }
+  }
+
+  async updateFromTokenContract() {
+    if (this.contracts.token) {
+      await this.contracts.token.update();
+      await this.contracts.token.getBalances(this.players).then(balances => {
+        this.balances = balances;
+      });
     }
   }
 
@@ -237,10 +258,18 @@ export class GameService {
       this.playingStatus = storage.status;
       switch (storage.status) {
         case 'created': {
+          if ((this.creationStatus !== eGameCreationStatus.READY) && this.waiterTask) {
+            this.waiterService.removeTask(this.waiterTask);
+            this.waiterTask = undefined;
+          }
           this.creationStatus = eGameCreationStatus.READY;
           break;
         }
         case 'started': {
+          if ((this.creationStatus !== eGameCreationStatus.PLAYING) && this.waiterTask) {
+            this.waiterService.removeTask(this.waiterTask);
+            this.waiterTask = undefined;
+          }
           this.creationStatus = eGameCreationStatus.PLAYING;
           break;
         }
@@ -271,7 +300,7 @@ export class GameService {
       promises.push(p);
     }
     if (!this.contracts.token) {
-      const p = await this.getContract<TokenContract>(eContractType.GAME).then((tokenContract) => {
+      const p = await this.getContract<TokenContract>(eContractType.TOKEN).then((tokenContract) => {
         this.contracts.token = tokenContract;
       }).catch(err => { /* fail is acceptable meaning that contract is not created yet */ });
       promises.push(p);
@@ -286,7 +315,7 @@ export class GameService {
     onSent: (txHash: string) => void,
     onSuccess: (txHash: string, blockId: number) => void
   ) {
-    const waiterTask = this.waiterService.addTask();
+    this.waiterTask = this.waiterService.addTask();
     method(this.tezosService.keyStore).then((resultOperation) => {
       resultOperation.onConfirmed.then(
         (blockId) => {
@@ -295,21 +324,42 @@ export class GameService {
       ).catch(
         err => this.alertService.error(err)
       ).finally(
-        () => this.waiterService.removeTask(waiterTask)
+        () => {
+          this.waiterService.removeTask(this.waiterTask);
+          this.waiterTask = undefined;
+        }
       );
       onSent(resultOperation.txHash);
     }).catch(
       err => {
         this.alertService.error(err);
-        this.waiterService.removeTask(waiterTask);
+        this.waiterService.removeTask(this.waiterTask);
+        this.waiterTask = undefined;
       }
     );
   }
 
   async start() {
     const sessionId = this.game.sessionId;
+    this.waiterTask = this.waiterService.addTask();
     this.apiService.post<{txHash: string}>(`game/${sessionId}/start`, {}).subscribe(async ({txHash}) => {
       this.showAlert(`Game starting request in progress ... (txHash:${txHash})`);
+      // DO no remove the this.waiterTask now, because the tx is not confirmed at the moment.
+      // When confirmed, the GAME changes state, then the waiterTask will be removed
+    }, err => {
+      this.alertError(err);
+      this.waiterService.removeTask(this.waiterTask);
+      this.waiterTask = undefined;
+    });
+  }
+
+  async reset() {
+    const sessionId = this.game.sessionId;
+    this.waiterTask = this.waiterService.addTask();
+    this.apiService.post<{txHash: string}>(`game/${sessionId}/reset`, {}).subscribe(async ({txHash}) => {
+      this.showAlert(`Game reset request in progress ... (txHash:${txHash})`);
+      // DO no remove the this.waiterTask now, because the tx is not confirmed at the moment.
+      // When confirmed, the GAME changes state, then the waiterTask will be removed
     }, err => {
       this.alertError(err);
     });
@@ -391,6 +441,7 @@ export class GameService {
       game: undefined,
       token: undefined
     };
+    this.balances = new Map();
   }
 
   getAllSessions(): Observable<any[]> {

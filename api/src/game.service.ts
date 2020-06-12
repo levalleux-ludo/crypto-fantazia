@@ -112,23 +112,52 @@ class GameService {
         // const opResult = await gameContract.start(keyStore, game.contractAddresses.token, 1500);
         // console.log(`START GAME requested: txHash:${opResult.txHash} ...`);
         // opResult.onConfirmed.then((blockId) => {
-        await gameContract.start(keyStore, game.contractAddresses.token, 1500).then((txOper) => {
-            console.log('returns from start call:' + txOper.txHash);
-            txOper.onConfirmed.then((blockId) => {
-                console.log('Tx confirmed', txOper.txHash, blockId);
-                console.log(`START GAME request succeed`);
-            }).catch(err => {
-                console.log(`[ERROR] START GAME request failed with error: ${err}`);
-                throw new Error(`[ERROR] START GAME request failed with error: ${err}`);
-            });
-        }).catch(err => {
+        const txOper = await gameContract.start(keyStore, game.contractAddresses.token, 1500).catch(err => {
             console.error(`Error during start call: ${err.id}, ${err.message}`);
             throw new Error(`[ERROR] START GAME request failed with error: ${err}`);
         });
+        console.log('returns from start call:' + txOper.txHash);
+        txOper.onConfirmed.then((blockId) => {
+            console.log('Tx confirmed', txOper.txHash, blockId);
+            console.log(`START GAME request succeed`);
+        }).catch(err => {
+            console.log(`[ERROR] START GAME request failed with error: ${err}`);
+            throw new Error(`[ERROR] START GAME request failed with error: ${err}`);
+        });
         game.status = 'started';
+        await gameContract.update().then(storage => {
+            game.players = Array.from(storage.players.values());
+        })
         await game.save();
-        // return {txHash: opResult.txHash};
-        return {txHash: 'unknown'};
+        return {txHash: txOper.txHash};
+    }
+
+    async resetSession(sessionId: string): Promise<{txHash: string}> {
+        const game = await Game.findOne({sessionId: sessionId});
+        if (!game) {
+            throw new Error('Unable to find Game with sessionId=' + sessionId);
+        }
+        const keyStore = await tezosService.getAccount(originator);
+        const gameContract = await GameContract.retrieve(game.contractAddresses.game);
+        // const opResult = await gameContract.start(keyStore, game.contractAddresses.token, 1500);
+        // console.log(`START GAME requested: txHash:${opResult.txHash} ...`);
+        // opResult.onConfirmed.then((blockId) => {
+        const txOper = await gameContract.reset(keyStore, game.contractAddresses.token).catch(err => {
+            console.error(`Error during reset call: ${err.id}, ${err.message}`);
+            throw new Error(`[ERROR] RESET GAME request failed with error: ${err}`);
+        });
+        console.log('returns from reset call:' + txOper.txHash);
+        txOper.onConfirmed.then((blockId) => {
+            console.log('Tx confirmed', txOper.txHash, blockId);
+            console.log(`RESET GAME request succeed`);
+        }).catch(err => {
+            console.log(`[ERROR] RESET GAME request failed with error: ${err}`);
+            throw new Error(`[ERROR] RESET GAME request failed with error: ${err}`);
+        });
+        game.status = 'created';
+        game.players = [];
+        await game.save();
+        return {txHash: txOper.txHash};
     }
 }
 

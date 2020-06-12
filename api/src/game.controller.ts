@@ -8,6 +8,7 @@ router.post('/create', create);
 router.get('/', getAll);
 router.get('/:sessionId', getBySessionId);
 router.post('/:sessionId/start', startSession);
+router.post('/:sessionId/reset', resetSession);
 
 function create(req: express.Request, res: express.Response, next: express.NextFunction) {
     if (!req.body) {
@@ -39,3 +40,8 @@ function startSession(req: express.Request, res: express.Response, next: express
     }).catch(err => next(err));
 }
 
+function resetSession(req: express.Request, res: express.Response, next: express.NextFunction) {
+    gameService.resetSession(req.params.sessionId).then((result) => {
+        res.json( result );
+    }).catch(err => next(err));
+}

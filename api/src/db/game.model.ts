@@ -7,7 +7,8 @@ export interface IGame extends Document {
     contractAddresses: {
         game: string;
         token: string;
-    }
+    },
+    players: string[]
 }
 
 const GameSchema: Schema = new Schema({
@@ -17,7 +18,8 @@ const GameSchema: Schema = new Schema({
     contractAddresses: {
         game: { type: String, required: false },
         token: { type: String, required: false }
-    }
+    },
+    players: {type: [String], required: false, default: []}
 });
 
 export default mongoose.model<IGame>('Game', GameSchema);

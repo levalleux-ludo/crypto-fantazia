@@ -125,7 +125,7 @@ export class GameContract extends AbstractContract<GameContractStorage> {
         return new Promise((resolve, reject) => {
             Tezos.contract.at(this._address).then((ci) => {
                 try {
-                    ci.methods.start(initialBalance, tokenAddress).send({ fee: 400000, gasLimit: 400000, storageLimit: 200 }).then((txOperation: TransactionOperation) => {
+                    ci.methods.start(initialBalance, tokenAddress).send({ fee: 400000, gasLimit: 800000, storageLimit: 200 }).then((txOperation: TransactionOperation) => {
                         console.log(`returns from ${operationName} call: ${txOperation}`);
                         resolve({
                             txHash: txOperation.hash,
@@ -180,6 +180,13 @@ export class GameContract extends AbstractContract<GameContractStorage> {
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.resume;
          return this.callMethodTaquito(keyStore, operationName, undefined, operation);
+    }
+
+    async reset(keyStore: KeyStore, tokenAddress: string): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+        const operationName = 'reset';
+        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+         = (ci: any) => ci.methods.reset;
+         return this.callMethodTaquito(keyStore, operationName, { fee: 400000, gasLimit: 800000, storageLimit: 200 }, operation, tokenAddress);
     }
 
     async play(keyStore: KeyStore) {

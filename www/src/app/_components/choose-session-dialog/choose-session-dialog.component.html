@@ -7,8 +7,8 @@
             <label>Full radio</label>
 
             <clr-radio-wrapper *ngFor="let session of allSessions" style="height: 60px;">
-                <input type="radio" clrRadio [disabled]="(session.status !== 'created') && (session.status !== 'in_creation')" value="{{session.sessionId}}" [(ngModel)]="selectedSession" />
-                <label>{{session.name}}{{(session.status !== 'created') ? ' (' + session.status + ')' : ''}}</label>
+                <input type="radio" clrRadio value="{{session.sessionId}}" [(ngModel)]="selectedSession" />
+                <label>{{session.name}}{{' (status:' + session.status + ', created by:' + session.creator + ')'}}</label>
             </clr-radio-wrapper>
             <clr-control-helper>Helper text</clr-control-helper>
 

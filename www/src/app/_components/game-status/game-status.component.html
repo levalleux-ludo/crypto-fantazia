@@ -12,7 +12,9 @@
 </div>
 <div>
     <label>Players</label>
-    <div *ngFor="let player of gameService.players">{{player}}</div>
+    <div *ngFor="let player of gameService.players">
+        <div><a href="https://carthagenet.tzstats.com/{{player}}" target="_blank">{{player}}</a></div>
+    </div>
 </div>
 <div>
     <label>Token contract:</label>
@@ -20,18 +22,22 @@
 </div>
 <div>
     <label>Game Creator:</label>
-    <div>{{gameService.gameCreator}}</div>
+    <div><a href="https://carthagenet.tzstats.com/{{gameService.gameCreator}}" target="_blank">{{gameService.gameCreator}}</a></div>
 </div>
 <div>
     <label>Next Player:</label>
     <div>{{gameService.nextPlayer}}</div>
 </div>
 
+<div>
+    <label>My balance in game:</label>
+    <div>{{gameService.myBalance}}</div>
+</div>
 
-<label>My balance in game:</label>
 <div class="btn-group btn-primary">
     <div class="btn-group btn-primary" *ngIf="gameService.isGameMaster && gameService.isRegistered">
         <button [disabled]="gameService.playingStatus !== 'created'" class="btn btn-primary" (click)="gameService.start()">Start</button>
+        <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameService.reset()">Reset</button>
         <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameService.freeze()">Freeze</button>
         <button [disabled]="gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameService.resume()">Resume</button>
         <button [disabled]="gameService.playingStatus !== 'started' && gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameService.end()">End</button>

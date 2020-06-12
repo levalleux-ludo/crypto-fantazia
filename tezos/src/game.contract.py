@@ -18,9 +18,7 @@ class FakeTokenContract(sp.Contract):
         sp.verify(sp.sender == self.data.admin)
         self.addAddressIfNecessary(params.to)
         self.data.balances[params.to].balance += params.value
-        #self.data.balances[params.to].balance += 1500
         self.data.totalSupply += params.value
-        #self.data.totalSupply += 1500
     
     @sp.entry_point
     def setCaller(self):
@@ -50,6 +48,17 @@ class FakeTokenContract(sp.Contract):
         self.data.balances[params.t].balance += params.amount
         sp.if (params.f != sp.sender) & (self.data.admin != sp.sender):
             self.data.balances[params.f].approvals[sp.sender] = sp.as_nat(self.data.balances[params.f].approvals[sp.sender] - params.amount)
+
+    @sp.entry_point
+    def getBalance(self, params):
+        sp.transfer(self.data.balances[params.arg.owner].balance, sp.tez(0), sp.contract(sp.TNat, params.target).open_some())
+
+    @sp.entry_point
+    def resetBalance(self, params):
+        sp.verify(sp.sender == self.data.admin)
+        sp.if self.data.balances.contains(params.address):
+            self.data.totalSupply = sp.as_nat(self.data.totalSupply - self.data.balances[params.address].balance)
+            del self.data.balances[params.address]
 
     def addAddressIfNecessary(self, address):
         sp.if ~ self.data.balances.contains(address):
@@ -87,7 +96,7 @@ class GameContract(sp.Contract):
     @sp.entry_point
     def start(self, params):
         sp.verify(self.data.status == 'created', 'Start only allowed when game is in created state')
-        #sp.verify(sp.sender == self.data.originator_address, 'Only originator is allowed to start game')
+        sp.verify(sp.sender == self.data.originator_address, 'Only originator is allowed to start game')
         sp.set_type(params.token, sp.TAddress)
         sp.set_type(params.initialBalance, sp.TIntOrNat)
         self.data.status = 'started'
@@ -96,12 +105,12 @@ class GameContract(sp.Contract):
         self.giveInitialBalance(params.token)
         
     @sp.entry_point
-    def reset(self, parmas):
+    def reset(self, params):
         sp.verify(sp.sender == self.data.originator_address, 'Only originator is allowed to reset game')
         self.data.status = 'created'
         self.data.nextPlayerIdx = -1
         self.data.nextPlayer = self.data.originator_address
-        # TODO: reset players balance in token contract
+        self.resetInitialBalance(params.token)
     
     @sp.entry_point
     def end(self, params):
@@ -158,13 +167,20 @@ class GameContract(sp.Contract):
     def giveInitialBalance(self, token):
         # tk : type of params expected by 'mint' entry_point
         tk = sp.TRecord(to = sp.TAddress, value = sp.TNat)
-        #tk = sp.TRecord(to = sp.TAddress)
         # h_mint: handle to the 'mint' entry_point of the token contract
         h_mint = sp.contract(tk, token, entry_point = "mint").open_some()
         sp.for player in self.data.playersSet.elements():
             param = sp.record(to = player, value = 1500)
-            #param = sp.record(to = player)
             call(h_mint, param)
+
+    def resetInitialBalance(self, token):
+        # tk : type of params expected by 'resetBalance' entry_point
+        tk = sp.TRecord(address = sp.TAddress)
+        # h_resetBalance: handle to the 'resetBalance' entry_point of the token contract
+        h_resetBalance = sp.contract(tk, token, entry_point = "resetBalance").open_some()
+        sp.for player in self.data.playersSet.elements():
+            param = sp.record(address = player)
+            call(h_resetBalance, param)
 
 
 @sp.add_test(name = "GameContract Test")
@@ -226,10 +242,10 @@ def test():
     scenario.h2("Test play on not started game (expect to fail)")
     scenario += contract.play().run (sender = alice, valid = False)
     
-    #scenario.h2("Test start game from unauthorized user (expect to fail)")
-    #scenario += contract.start(token = token.address, initialBalance = 1500).run(sender = bob, valid = False)
+    scenario.h2("Test start game from unauthorized user (expect to fail)")
+    scenario += contract.start(token = token.address, initialBalance = 1500).run(sender = bob, valid = False)
     # Verify expected results
-    #scenario.verify(contract.data.status == 'created')
+    scenario.verify(contract.data.status == 'created')
 
     scenario.h2("Test start game")
     scenario += contract.start(token = token.address, initialBalance = 1500).run(sender = originator)
@@ -242,9 +258,14 @@ def test():
     scenario += token
 
     scenario.h2("Reset game")
-    scenario += contract.reset().run(sender = originator)
+    scenario += contract.reset(token = token.address).run(sender = originator)
     # Verify expected results
     scenario.verify(contract.data.status == 'created')
+    
+    scenario.verify(token.data.balances.contains(alice.address) == False)
+    scenario.verify(token.data.balances.contains(bob.address) == False)
+    scenario.verify(token.data.totalSupply == 0)
+    scenario += token
 
     scenario.h2("Start game again")
     scenario += contract.start(token = token.address, initialBalance = 0).run(sender = originator)
@@ -252,6 +273,11 @@ def test():
     scenario.verify(contract.data.status == 'started')
     scenario.verify(contract.data.nextPlayerIdx == 0)
     scenario.verify(contract.data.nextPlayer == alice.address)
+
+    scenario.verify(token.data.balances[alice.address].balance == 1500)
+    scenario.verify(token.data.balances[bob.address].balance == 1500)
+    scenario.verify(token.data.totalSupply == 3000)
+    scenario += token
     
     scenario.h2("Test register after game started (expect to fail)")
     randomValue = 543219876

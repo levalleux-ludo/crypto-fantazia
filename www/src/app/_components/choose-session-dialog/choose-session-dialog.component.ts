@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ModalService } from 'src/app/_services/modal.service';
 import { GameService } from 'src/app/_services/game.service';
+import { TezosService } from 'src/app/_services/tezos.service';
 
 @Component({
   selector: 'app-choose-session-dialog',
@@ -20,18 +21,25 @@ export class ChooseSessionDialogComponent implements OnInit {
 
   constructor(
     public modalService: ModalService,
-    private gameService: GameService
+    private gameService: GameService,
+    private tezosService: TezosService
   ) { }
 
   ngOnInit(): void {
     this.gameService.getAllSessions().subscribe((games) => {
       this.allSessions = games.map(game => {
-        return {
-          sessionId: game.sessionId,
-          name: game.sessionId,
-          status: game.status
-        };
-      });
+        if ((game.status === 'in_creation')
+          || (game.status === 'created')
+          || ((game.status === 'started') && game.players.includes(this.tezosService.account.account_id))
+          ) {
+          return {
+            sessionId: game.sessionId,
+            name: game.sessionId,
+            status: game.status,
+            creator: game.creator
+          };
+        }
+      }).filter(item => item !== undefined);
       console.log("AllSessions:", this.allSessions);
     });
   }
