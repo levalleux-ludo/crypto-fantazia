@@ -10,13 +10,13 @@ class TokenService {
 
     constructor() {}
 
-    async createContract(keyStore: KeyStore): Promise<string> {
+    async createContract(keyStore: KeyStore, administrator?: string): Promise<string> {
         return new Promise((resolve, reject) => {
             Tzip7ReferenceTokenHelper.deployContract(
                 tezosService.getNode(),
                 keyStore,
                 100_000,
-                keyStore.publicKeyHash,
+                administrator ? administrator : keyStore.publicKeyHash,
                 true,
                 0
             ).then((groupId) => {

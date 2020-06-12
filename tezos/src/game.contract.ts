@@ -69,43 +69,74 @@ export class GameContract extends AbstractContract<GameContractStorage> {
         }
     };
     
-    async register(keyStore: KeyStore, random: number, signature: string) {
+    async register(keyStore: KeyStore, random: number, signature: string): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const fake_signature = await tezosService.make_signature(Buffer.from(signature), keyStore.privateKey);
-        return tezosService.invokeContract(keyStore, this._address, 'register', [random, '"' + fake_signature + '"']);
+        const operationName = 'register';
+        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+         = (ci: any) => ci.methods.register;
+        return this.callMethodTaquito(keyStore, operationName, operation, random, fake_signature);
     }
 
     async callMethodTaquito(
         keyStore: KeyStore,
         operationName: string,
-        operation: (ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+        operation: (ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>),
+        ...args: any[]
     ): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         Tezos.setProvider({ signer: new InMemorySigner(keyStore.privateKey) });
         return new Promise((resolve, reject) => {
             Tezos.contract.at(this._address).then((ci) => {
                 try {
-                    operation(ci)(null).send().then((txOperation: TransactionOperation) => {
+                    let method = args.length === 0 ? operation(ci)(null)
+                     : args.length === 1 ? operation(ci)(args[0])
+                     : args.length === 2 ? operation(ci)(args[0], args[1])
+                     : args.length === 3 ? operation(ci)(args[0], args[1], args[2])
+                     : undefined;
+                     if (!method) {
+                         throw new Error('Too many parameters: ' + args);
+                     }
+
+                    method.send().then((txOperation: TransactionOperation) => {
                         console.log(`returns from ${operationName} call: ${txOperation}`);
                         resolve({
                             txHash: txOperation.hash,
                             onConfirmed: txOperation.confirmation(1, 10, 180)
                         });
                     }).catch(err => {
-                        console.error(`Error during ${operationName} call: ${err}`);
+                        console.error(`Error during ${operationName} call: ${err.id}, ${err.message}`);
                         reject(err);
                     });
                 } catch (err) {
-                    console.error(`Error during ${operationName} call: ${JSON.stringify(err)}`);
+                    console.error(`Error during ${operationName} call: ${err.id}, ${err.message}`);
                     reject(err);
                 }
             });
         });
     }
 
-    async start(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+    async start(keyStore: KeyStore, tokenAddress: string, initialBalance: number): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'start';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.start;
-         return this.callMethodTaquito(keyStore, operationName, operation);
+         return this.callMethodTaquito(keyStore, operationName, operation, initialBalance, tokenAddress);
+    }
+
+    // async start(keyStore: KeyStore, tokenAddress: string, initialBalance: number) {
+    //      return tezosService.invokeContract(keyStore, this._address, 'start', [initialBalance, '"' + tokenAddress + '"']);
+    // }
+
+    async testCallToken(keyStore: KeyStore, tokenAddress: string) {
+        const operationName = 'testCallToken';
+        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+         = (ci: any) => ci.methods.testCallToken;
+         return this.callMethodTaquito(keyStore, operationName, operation, tokenAddress);        
+    }
+
+    async testCallTokenAdminOnly(keyStore: KeyStore, tokenAddress: string) {
+        const operationName = 'testCallTokenAdminOnly';
+        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+         = (ci: any) => ci.methods.testCallTokenAdminOnly;
+         return this.callMethodTaquito(keyStore, operationName, operation, tokenAddress);        
     }
 
     async end(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
@@ -131,6 +162,13 @@ export class GameContract extends AbstractContract<GameContractStorage> {
 
     async play(keyStore: KeyStore) {
         return tezosService.invokeContract(keyStore, this._address, 'play', []);
+    }
+
+    async setInitialBalances(keyStore: KeyStore) {
+        const operationName = 'setInitialBalances';
+        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+         = (ci: any) => ci.methods.resume;
+         return this.callMethodTaquito(keyStore, operationName, operation);
     }
 
     async isRegistered(account: string): Promise<boolean> {

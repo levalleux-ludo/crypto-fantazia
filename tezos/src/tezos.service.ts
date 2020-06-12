@@ -133,7 +133,7 @@ class TezosService {
             100000, // fee,
             '', // derivationPath
             5000, // storage_limit
-            100000, // gas_limit
+            200000, // gas_limit
             contract,
             storage,
             TezosParameterFormat.Micheline
@@ -177,14 +177,14 @@ class TezosService {
             0, // amount
             fee, // fee
             5000, // storage_limit
-            100000, // gas_limit
+            200000, // gas_limit
             entryPoint,
             params?.parameters,
             parameterFormat
         ).then(async ({ gas, storageCost }) => {
             console.log(`gas: ${gas}, storageCost:${storageCost}`);
         // const gas = 100000;
-            const factor = 2; // is avoiding Tx failed with gas_exhausted.operation ??
+            const factor = 1; // is avoiding Tx failed with gas_exhausted.operation ??
         // const storageCost = 5000;
             const nodeResult = await TezosNodeWriter.sendContractInvocationOperation(
                 tezosNode,
