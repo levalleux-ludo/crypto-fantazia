@@ -66,6 +66,8 @@ class FakeTokenContract(sp.Contract):
 
 class GameContract(sp.Contract):
     def __init__(self, originator_address, originator_pubKey, creator_address):
+        # TODO: add data structure for quarantine
+        # TODO: add currentLap counter
         self.init(
             originator_address = originator_address,
             originator_pubKey = originator_pubKey,
@@ -134,8 +136,39 @@ class GameContract(sp.Contract):
     def play(self, params):
         sp.verify(self.data.status == 'started', 'Play only allowed when game is in started state')
         sp.verify(self.data.nextPlayer == sp.sender, 'Only the next player is allowed to play now')
+        # TODO: verify signature and payload match
+        # TODO: verify that option chosen by the player is listed in payload
+        # TODO: distribute PoW rewards (dice1) to MINING_FARM owners according to their hashrate
+        # call mining contract REWARD(dice1) -> compute reward % numLap -> compute reward[ownerX] = reward * hashrateX / totalHashrate -> token.mint(rewardX, ownerX)
+        # TODO: distribute PoS rewards (dice2)  to BAKERY owners according to their stakes
+        # call bakery contract REWARD(dice1) -> compute reward % numLap -> compute reward[ownerX] = reward * stakeX / totalStake -> token.mint(rewardX, ownerX)
+        # TODO: apply OPTION:
+        # if GENESIS: call token.mint(player, 200)
+        # if COVID: if player owns immunity passport, do nothing, else move player position to quarantine + set player in quarantine mode until lap = currentLap+1
+        # if QUARANTINE: do nothing
+        # if ASSET BUY: call asset.transfer(assetId, player) --> token.transfer(price, newOwner -> oldOwner) or token.burn() if no oldOwner
+        # if ASSET PAY RENT: call asset.rent(assetId, player) --> token.transfer(asset.rentRate * owner_prorata, asset.owner) + for each shareholder token.transfer(asset.rentRate * share_prorata, shareholder)
+        # if CHANCE/COMMUNITY_CHEST:
+        #   receive_amount (N)  -> token.mint(N, player)
+        #   pay_amount (N) -> token.burn(N, player)
+        #   pay_amount_per_company (N) -> asset.getAssets(owner).count -> token.burn(N*count, player)
+        #   pay_amount_per_mining_farm (N) -> asset.getAssets(owner, type=MINING_FARM).count -> token.burn(N*count, player)
+        #   pay_amount_per_bakery (N) -> asset.getAssets(owner, type=BAKERY).count -> token.burn(N*count, player)
+        #   go_to_quarantine: same COVID
+        #   go_to_space (X) -> player.position = X, if X < oldPosition, token.mint(200, player)
+        #   move_n_spaces (X) -> player.position += X, if newPosition >= nbSpaces, newPosition -= nbSpaces, token.mint(200, player)
+        #   covid_immunity -> player.hasImmunity = true
         self.findNextPlayer()
-        
+
+    # TODO: contracts calls outside of play:
+    # SALE ASSET on MARKETPLACE: call marketplace contract SALE(price, asset) --> onSales.add(asset)
+    # BUY ASSET on MARKETPLACE: call marketplace contract BUY(price, asset) --> token.transfer(price newOwner -> oldOwner) + token.mint(10%, marketplace.owner)--> asset.owner = newOwner
+    # ASSET.INVEST: call asset contract INVEST(asset) -> token.brun(investCost, player)--> asset.investLevel++, compute new rentRate 
+    # ASSET.IEO: call exchange contract LAUNCH_IEO(asset, token_price) --> onSales(asset, nbTokens)
+    # ASSET.BUY_TOKEN: call exchange contract BUY_TOKEN(asset) --> token.transfer(token_price, asset.owner) + token.mint(10% exchange owner) --> asset.shareHolder.add (player), set owner_prorata--
+    # MINING_FARM.INVEST: call mining contract UPGRADE(assetId) -> token.burn(cost, player) -> hashrate[assetId]++, totalHashrate++
+    # BAKERY.STAKE: call bakery contract STAKE(assetId) -> token.burn(cost, player) -> stake[assetId]++, totalStake++
+
     @sp.entry_point
     def setCreator(self, params):
         sp.set_type(params.creator_address, sp.TAddress)
@@ -161,6 +194,8 @@ class GameContract(sp.Contract):
     def findNextPlayer(self):
         nbPlayers = sp.to_int(sp.len(self.data.players))
         self.data.nextPlayerIdx = sp.to_int((self.data.nextPlayerIdx + 1) % nbPlayers)
+        # TODO: replace modulo with test if >= nbPlayers, then increment numLap
+        # TODO: check if nextPlayer in Quarantine, then if lapUntil >= numLap call findNextPlayer again, else remove player from quarantine 
         self.data.nextPlayer = self.data.players[self.data.nextPlayerIdx]
         
     #def giveInitialBalance(self, token, initialBalance):
