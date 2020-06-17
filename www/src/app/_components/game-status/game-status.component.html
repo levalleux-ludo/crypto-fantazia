@@ -36,11 +36,11 @@
 
 <div class="btn-group btn-primary">
     <div class="btn-group btn-primary" *ngIf="gameService.isGameMaster && gameService.isRegistered">
-        <button [disabled]="gameService.playingStatus !== 'created'" class="btn btn-primary" (click)="gameService.start()">Start</button>
-        <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameService.reset()">Reset</button>
-        <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameService.freeze()">Freeze</button>
-        <button [disabled]="gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameService.resume()">Resume</button>
-        <button [disabled]="gameService.playingStatus !== 'started' && gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameService.end()">End</button>
+        <button [disabled]="gameService.playingStatus !== 'created'" class="btn btn-primary" (click)="gameController.start()">Start</button>
+        <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameController.reset()">Reset</button>
+        <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameController.freeze()">Freeze</button>
+        <button [disabled]="gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameController.resume()">Resume</button>
+        <button [disabled]="gameService.playingStatus !== 'started' && gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameController.end()">End</button>
     </div>
     <button class="btn btn-primary" (click)="gameService.disconnect()">Exit Game</button>
 </div>

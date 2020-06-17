@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
@@ -12,8 +12,12 @@ export class ApiService {
   protected httpOptions = {
     headers: new HttpHeaders({'Content-Type': 'application/json' })
   };
+  protected eventSource;
 
-  constructor(protected http: HttpClient) { }
+  constructor(
+    protected http: HttpClient,
+    protected zone: NgZone
+    ) { }
 
   get<T>(apiUrl: string): Observable<T> {
     const url = `${this.host}:${this.port}/${apiUrl}`;
@@ -23,5 +27,33 @@ export class ApiService {
   post<T>(apiUrl: string, data: any): Observable<T> {
     const url = `${this.host}:${this.port}/${apiUrl}`;
     return this.http.post<T>(url, data, this.httpOptions);
+  }
+
+  connectSSE(apiUrl: string): Observable<any> {
+    const url = `${this.host}:${this.port}/${apiUrl}`;
+    return new Observable((observer) => {
+      if (this.eventSource) {
+        this.eventSource.close();
+        this.eventSource = undefined;
+      }
+      this.eventSource = new EventSource(url);
+      this.eventSource.addEventListener('message', message => {
+        console.log(`on message1, data=${JSON.stringify(message)}`);
+      });
+      this.eventSource.onmessage = (event) => {
+        console.log(`on message2, event=${JSON.stringify(event)}`);
+        this.zone.run(() => observer.next(JSON.parse(event.data)));
+      };
+      this.eventSource.onerror = (err) => {
+        observer.error(err);
+      };
+    });
+  }
+
+  disconnectSSE() {
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = undefined;
+    }
   }
 }

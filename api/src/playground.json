@@ -1,0 +1,96 @@
+{
+    "spaces": [{
+            "type": "GENESIS"
+        },
+        {
+            "type": "STARTUP"
+        },
+        {
+            "type": "STARTUP"
+        },
+        {
+            "type": "MINING_FARM"
+        },
+        {
+            "type": "CHANCE"
+        },
+        {
+            "type": "STARTUP"
+        },
+        {
+            "type": "STARTUP"
+        },
+        {
+            "type": "COMMUNITY"
+        },
+        {
+            "type": "BAKERY"
+        },
+        {
+            "type": "STARTUP"
+        },
+        {
+            "type": "EXCHANGE"
+        },
+        {
+            "type": "QUARANTINE"
+        },
+        {
+            "type": "STARTUP"
+        },
+        {
+            "type": "STARTUP"
+        },
+        {
+            "type": "MINING_FARM"
+        },
+        {
+            "type": "STARTUP"
+        },
+        {
+            "type": "COMMUNITY"
+        },
+        {
+            "type": "COVID"
+        },
+        {
+            "type": "STARTUP"
+        },
+        {
+            "type": "BAKERY"
+        },
+        {
+            "type": "STARTUP"
+        },
+        {
+            "type": "CHANCE"
+        },
+        {
+            "type": "MARKETPLACE"
+        },
+        {
+            "type": "STARTUP"
+        }
+    ],
+    "images": [{
+            "type": "CHANCE",
+            "image": "chance.png"
+        },
+        {
+            "type": "COMMUNITY",
+            "image": "CommunityChest.png"
+        },
+        {
+            "type": "GENESIS",
+            "image": "genesis.png"
+        },
+        {
+            "type": "COVID",
+            "image": "Covid.png"
+        },
+        {
+            "type": "QUARANTINE",
+            "image": "Quarantine.png"
+        }
+    ]
+}

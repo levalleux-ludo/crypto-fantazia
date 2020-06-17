@@ -1,9 +1,10 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import config from '../config.json';
-// var events = require('events');
-// var eventEmitter = new events.EventEmitter();
+import { EventEmitter } from 'events';
 
 let isConnected = false;
+
+export const dbEvents = new EventEmitter();
 
 export const connect = () => {
     const dbURI = process.env.mongodb_uri || config.connectionString;
@@ -23,19 +24,19 @@ export const connect = () => {
         }).on('connected', function() {
             console.log('MongoDB connected!');
             isConnected = true;
-            // eventEmitter.emit('connected');
+            dbEvents.emit('connected');
         }).once('open', function() {
             console.log('MongoDB connection opened!');
             isConnected = true;
         }).on('reconnected', function() {
             console.log('MongoDB reconnected!');
             isConnected = true;
-            // eventEmitter.emit('connected');
+            dbEvents.emit('connected');
         }).on('disconnected', function() {
             console.log('MongoDB disconnected!');
             console.log(getStatus());
             isConnected = false;
-            // eventEmitter.emit('disconnected');
+            dbEvents.emit('disconnected');
             mongoose.connect(dbURI, dbOptions);
         });
 
@@ -50,4 +51,25 @@ export function getStatus() {
     }
 }
 
-connect();
+export async function dropCollectionIfExist(collectionName: string): Promise<void> {
+    return new Promise<void>(async (resolve, reject) => {
+        await mongoose.connection.db.listCollections({name: collectionName})
+        .next(async function(err, collInfo) {
+            if (collInfo) {
+                await mongoose.connection.db.dropCollection(collectionName, (err, result) => {
+                    if (err) {
+                        console.error(`Error while dropping collection ${collectionName}:${err}`);
+                        reject(err);
+                    } else {
+                        console.log(`Collection ${collectionName} successfully dropped`);
+                        resolve();
+                    }
+                });   
+            } else {
+                // collection does not exist
+                resolve();
+            }
+        });
+    });
+}
+

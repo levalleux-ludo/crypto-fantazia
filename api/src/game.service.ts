@@ -6,9 +6,31 @@ import { TokenContract } from '../../tezos/src/token.contract';
 import Game, { IGame } from './db/game.model';
 import { resolve } from 'dns';
 import { KeyStore } from '../../tezos/node_modules/conseiljs/dist';
+import { turnService } from './turn.service';
+import { sseService, eEventType } from './sse.service';
+import { spaceService } from './space.service';
+import { eSpaceType } from './db/space.model';
+
+export const GameConfig = {
+    nbSpaces: 24,
+    nbChancesOrCC: 48
+}
+
+export enum ePlayOption {
+    NOTHING, // do nothing
+    GENESIS, // receive income
+    COVID, // go to quarantine
+    ASSET_BUY, // buy asset
+    ASSET_PAY_RENT, // pay rent for asset
+    CHANCE, // get a chance card
+    COMMUNITY_CHEST // get a community_chest card
+}
 
 class GameService {
-    async create(creator: string): Promise<IGame> {
+
+    currentPlayer: string | undefined;
+
+    async create(creator: string, createContract = true): Promise<IGame> {
         return new Promise(async (resolve, reject) => {
             try {
                 const sessionId = uuid();
@@ -25,10 +47,12 @@ class GameService {
                 });
                 await game.save();
                 // createContract is called asynchronously
-                this.createContracts(keyStore, sessionId, creator).then(async (contracts) => {
-                    game.status = 'created';
-                    await game.save();
-                });
+                if (createContract) {
+                    this.createContracts(keyStore, sessionId, creator).then(async (contracts) => {
+                        game.status = 'created';
+                        await game.save();
+                    });
+                }
                 resolve(game);
             } catch (err) {
                 reject(err)
@@ -127,6 +151,9 @@ class GameService {
         game.status = 'started';
         await gameContract.update().then(storage => {
             game.players = Array.from(storage.players.values());
+            for (let player of game.players) {
+                game.positions.set(player, 0);
+            }
         })
         await game.save();
         return {txHash: txOper.txHash};
@@ -158,6 +185,131 @@ class GameService {
         game.players = [];
         await game.save();
         return {txHash: txOper.txHash};
+    }
+
+    async rollDices(sessionId: string, player: string): Promise<any> {
+        const game = await Game.findOne({sessionId: sessionId});
+        if (!game) {
+            throw new Error('Unable to find Game with sessionId=' + sessionId);
+        }
+        if (game.status != 'started') {
+            throw new Error('Can not play game with status =' + game.status);
+        }
+        if (!game.positions.has(player)) {
+            throw new Error('Can not find position of player =' + player);
+        }
+        if (!game.contractAddresses.game) {
+            throw new Error('GameContract address is not set');
+        }
+        const gameContract = await GameContract.retrieve(game.contractAddresses.game);
+        if (!gameContract) {
+            throw new Error('Unable to retrieve GameContract from address ' + game.contractAddresses.game);
+        }
+        if (gameContract.storage?.nextPlayer !== player) {
+            throw new Error(`Player ${player} is not allowed to play now (expected player: ${gameContract.storage?.nextPlayer})`);
+        }
+        if (this.currentPlayer === player) {
+            throw new Error(`Player ${player} is already playing`);
+        }
+
+        const oldPosition = game.positions.get(player) as any;
+        // TODO: check oldPosition is the same is GameContract and in DB
+        // if (gameContract.storage.positions.get(player) !== oldPosition) {
+            // throw new Error(`Not consistent position for player ${player}: position in DB: ${oldPosition}, position in smart contract: ${gameContract.storage.positions.get(player)}`);
+        // }
+        this.currentPlayer = player;
+
+        const dice1 = 1 + Math.floor(6 * Math.random());
+        const dice2 = 1 + Math.floor(6 * Math.random());
+        const cardId = Math.floor(GameConfig.nbChancesOrCC * Math.random());
+        const newPosition = (oldPosition + dice1 + dice2) % GameConfig.nbSpaces;
+        console.log(`Roll the dices player ${player}: D1:${dice1}, D2:${dice2} => new Position: ${newPosition}`);
+        const options = await this.getAvailableOptions(this.currentPlayer, oldPosition, newPosition);
+        const payload = {
+            dice1: dice1,
+            dice2: dice2,
+            newPosition: newPosition,
+            cardId: cardId,
+            options: options // The smart contract will verify that the chose option is in the list
+            // TODO: add assetId ?, it can still be retrieved from newPosition. 
+        }
+        const keyStore = await tezosService.getAccount(originator);
+        const signature = await tezosService.make_signature(Buffer.from(JSON.stringify(payload)), keyStore.privateKey);
+        game.positions.set(player, newPosition);
+        const turn = await turnService.create(
+            sessionId,
+            player,
+            oldPosition,
+            newPosition,
+            [dice1, dice2],
+            cardId,
+            signature);
+        game.turns.push(turn.id);
+        await game.save();
+        // and update position in contract ?
+
+        // sseService.send (sessionId, player, newPosition, [dice1, dice2], cardId)
+        sseService.notify(sessionId, eEventType.TURN_STARTED, {
+            player,
+            dices: [dice1, dice2],
+            newPosition: newPosition,
+            cardId: cardId,
+            signature
+        });
+
+        // Le joueur J recoit le payload et la signature
+        // La mise a jour de la position de J dans la DB est detectee par tous les joueurs qui mettent 
+        // a jour le plateau de jeu (nouvelle position de J)
+        // On stocke aussi le(s) cardId dans la DB, ainsi les joueurs peuvent afficher la description de la 
+        // case sur laquelle J est tombé (à partir de sa position et cardId si chance ou cc)
+        
+        // Le joueur J fait son choix (le cas echeant)
+        // puis il envoie la tx Play() au gamecontrat
+        // NOTE: la signature et le payload sont envoyes au GameContract dans la Tx play()
+        // Le contract peut alors verifier la nouvelle position du joueur et sa cardId et executer
+        // le contrat correspondant avec les options choisies
+        return { payload, signature };
+    }
+
+    async getAvailableOptions(player: string, oldPosition: number, newPosition: number): Promise<ePlayOption[]> {
+        const spaceDetails = await spaceService.getBySpaceId(newPosition);
+        if (spaceDetails === null) {
+            throw new Error(`Unable to compute options for space with id ${newPosition}`);
+        }
+        const options = [];
+        if (newPosition < oldPosition) {
+            // means that we've passed through Genesis Block
+            options.push(ePlayOption.GENESIS);
+        }
+        switch (spaceDetails.type) {
+            case eSpaceType.GENESIS:
+            case eSpaceType.QUARANTINE: {
+                options.push(ePlayOption.NOTHING);
+                break;
+            }
+            case eSpaceType.COVID: {
+                options.push(ePlayOption.COVID);
+                break;
+            }
+            case eSpaceType.CHANCE: {
+                options.push(ePlayOption.CHANCE);
+                break;
+            }
+            case eSpaceType.COMMUNITY: {
+                options.push(ePlayOption.COMMUNITY_CHEST);
+                break;
+            }
+            default: { // Assets
+                // TODO: check if the asset already owns to a player and if a different player
+                // already owned and same player -> options.push(ePlayOption.NOTHING);
+                // already owned and different player -> options.push(ePlayOption.ASSET_PAY_RENT);
+                // not already owned
+                options.push(ePlayOption.ASSET_BUY);
+                options.push(ePlayOption.NOTHING);
+                break;
+            }
+        }
+
     }
 }
 

@@ -8,14 +8,14 @@ export class ModalService {
 
   opened = false;
   componentClass = undefined;
-  onShow: EventEmitter<Type<any>> = new EventEmitter();
+  onShow: EventEmitter<{componentClass: Type<any>, argsMap: any}> = new EventEmitter();
   onClose: Subject<any> = new Subject();
 
   constructor() { }
 
-  showModal(componentClass: Type<any>): Promise<any> {
+  showModal(componentClass: Type<any>, argsMap?: any): Promise<any> {
     this.componentClass = componentClass;
-    this.onShow.emit(this.componentClass);
+    this.onShow.emit({componentClass: this.componentClass, argsMap});
     this.opened = true;
     return new Promise((resolve, reject) => {
       const subscription = this.onClose.subscribe((value) => {

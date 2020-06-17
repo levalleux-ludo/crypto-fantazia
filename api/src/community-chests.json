@@ -1,0 +1,84 @@
+{
+    "community-chests": [{
+            "text": "Advance to the GENESIS BLOCK. Collect %AMOUNT%",
+            "amount": 200,
+            "space": 0,
+            "impl": "go_to_space"
+        },
+        {
+            "text": "Bank error in your favor; Collect %AMOUNT%",
+            "amount": 100,
+            "impl": "receive_amount"
+        },
+        {
+            "text": "Crypto-kitties's back. Transactions Fees are pumping. Pay %AMOUNT%",
+            "amount": 50,
+            "impl": "pay_amount"
+        },
+        {
+            "text": "Income Tax Refund. You receive %AMOUNT%",
+            "amount": 50,
+            "impl": "receive_amount"
+        },
+        {
+            "text": "You've made a conference about Blockchain. Receive %AMOUNT%",
+            "amount": 50,
+            "impl": "receive_amount"
+        },
+        {
+            "text": "Code Security Audit. All of your companies must pay %AMOUNT%",
+            "amount": 50,
+            "impl": "pay_amount_per_company"
+        },
+        {
+            "text": "You've caught COVID-19. Go to quarantine and you miss you next turn.",
+            "amount": 0,
+            "impl": "go_to_quarantine"
+        },
+        {
+            "text": "You've got support from Crypto activists. They give you %AMOUNT%",
+            "amount": 100,
+            "impl": "receive_amount"
+        },
+        {
+            "text": "One of your crypto startup gets listed on a major exchanges. You receive %AMOUNT%",
+            "amount": 100,
+            "impl": "receive_amount"
+        },
+        {
+            "text": "Advance to %SPACE%. If you pass the ICO space, you receive %AMOUNT%",
+            "amount": 100,
+            "space": 12,
+            "impl": "go_to_space"
+        },
+        {
+            "text": "You've completed a bug bounty. You receive %AMOUNT%",
+            "amount": 100,
+            "impl": "receive_amount"
+        },
+        {
+            "text": "Crypto-Market is getting bullish. You receive %AMOUNT%",
+            "amount": 100,
+            "impl": "receive_amount"
+        },
+        {
+            "text": "Crypto-Market is manipulated. You loose %AMOUNT%",
+            "amount": 100,
+            "impl": "pay_amount"
+        },
+        {
+            "text": "Forgot the Seed Phrase of your wallet. You loose %AMOUNT%",
+            "amount": 200,
+            "impl": "pay_amount"
+        },
+        {
+            "text": "Go back %NB% Spaces",
+            "nb": -3,
+            "impl": "move_n_spaces"
+        },
+        {
+            "text": "COVID-19 Immunity Passport. You're not be going to quarantine anymore",
+            "impl": "covid_immunity"
+        }
+    ]
+}

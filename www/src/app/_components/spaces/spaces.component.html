@@ -1,0 +1,20 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Visitors</th>
+            <th>Owner</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let space of spaces" (click)="getDetails(space)" [ngClass]="{ 'row-selected': selectedSpace === space }">
+            <td>{{space.spaceId}}</td>
+            <td>{{space.title}}</td>
+            <td>{{space.type}}</td>
+            <td>{{getPlayersOnSpace(space.spaceId)}}</td>
+            <td>??</td>
+        </tr>
+    </tbody>
+</table>

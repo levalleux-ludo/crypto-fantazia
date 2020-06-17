@@ -1,0 +1,9 @@
+<p>players-list works!</p>
+<clr-tree>
+    <app-player-treenode [expanded]="true" [name]="'Me'" [assets]="['company1', 'company2']" [balance]="gameService.myBalance.toFixed(2)" [position]="gameService.getPlayerPosition(tezosService.account.account_id)"></app-player-treenode>
+    <clr-tree>
+        Other Players
+        <app-player-treenode *ngFor="let player of otherPlayers" [expanded]="false" [name]="player" [assets]="['company1', 'company2']" [balance]="gameService.balanceOf(player)" [position]="gameService.getPlayerPosition(player)"></app-player-treenode>
+    </clr-tree>
+
+</clr-tree>

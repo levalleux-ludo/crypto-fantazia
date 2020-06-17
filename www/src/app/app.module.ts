@@ -42,6 +42,13 @@ import { GameFailurePageComponent } from './_components/game-failure-page/game-f
 import { GameCreationPageComponent } from './_components/game-creation-page/game-creation-page.component';
 import { PlaygroundPageComponent } from './_components/playground-page/playground-page.component';
 import { GameOverPageComponent } from './_components/game-over-page/game-over-page.component';
+import { PlayersListComponent } from './_components/players-list/players-list.component';
+import { PlayerTreenodeComponent } from './_components/player-treenode/player-treenode.component';
+import { HistoryComponent } from './_components/history/history.component';
+import { SpacesComponent } from './_components/spaces/spaces.component';
+import { SpaceDetailsComponent } from './_components/space-details/space-details.component';
+import { SpaceDetailsModalComponent } from './_components/space-details-modal/space-details-modal.component';
+import { TurnService } from './_services/turn.service';
 
 @NgModule({
   declarations: [
@@ -67,7 +74,13 @@ import { GameOverPageComponent } from './_components/game-over-page/game-over-pa
     GameFailurePageComponent,
     GameCreationPageComponent,
     PlaygroundPageComponent,
-    GameOverPageComponent
+    GameOverPageComponent,
+    PlayersListComponent,
+    PlayerTreenodeComponent,
+    HistoryComponent,
+    SpacesComponent,
+    SpaceDetailsComponent,
+    SpaceDetailsModalComponent
   ],
   imports: [
     BrowserModule,
@@ -95,7 +108,13 @@ import { GameOverPageComponent } from './_components/game-over-page/game-over-pa
   bootstrap: [AppComponent],
   entryComponents: [
     ModalExampleComponent,
-    ChooseSessionDialogComponent
+    ChooseSessionDialogComponent,
+    SpaceDetailsModalComponent
   ]
 })
-export class AppModule { }
+export class AppModule {
+
+  constructor(
+    private turnService: TurnService // to be sure the service is instantiated
+    ) {}
+ }

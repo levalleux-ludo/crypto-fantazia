@@ -8,7 +8,9 @@ export interface IGame extends Document {
         game: string;
         token: string;
     },
-    players: string[]
+    players: string[];
+    turns: string[];
+    positions: Map<string, number>;
 }
 
 const GameSchema: Schema = new Schema({
@@ -19,7 +21,9 @@ const GameSchema: Schema = new Schema({
         game: { type: String, required: false },
         token: { type: String, required: false }
     },
-    players: {type: [String], required: false, default: []}
+    players: {type: [String], required: false, default: [] },
+    turns: { type: [Schema.Types.ObjectId], required: false, default: [] },
+    positions: { type: Map, of: Number , required: false, default: {} },
 });
 
 export default mongoose.model<IGame>('Game', GameSchema);

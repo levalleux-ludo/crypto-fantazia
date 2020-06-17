@@ -20,6 +20,31 @@
                 "TEZOS_ACCOUNTS_DIR":"${workspaceFolder}\\..\\tezos\\accounts",
                 "TEZOS_CONTRACTS_DIR":"${workspaceFolder}\\..\\tezos\\contracts"
             }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Test",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "args": [
+                "--timeout",
+                "10000",
+                "--colors",
+                "tests/**/*.test.ts",
+                "--require",
+                "ts-node/register"
+            ],
+            "preLaunchTask": "tsc: build - tsconfig.json",
+            "console": "integratedTerminal",
+            "sourceMaps": true,
+            "internalConsoleOptions": "neverOpen",
+            "env": {
+                "TEZOS_ACCOUNTS_DIR":"${workspaceFolder}\\..\\tezos\\accounts",
+                "TEZOS_CONTRACTS_DIR":"${workspaceFolder}\\..\\tezos\\contracts"
+            }
         }
     ]
 }

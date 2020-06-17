@@ -1,0 +1,13 @@
+<clr-modal [(clrModalOpen)]="modalService.opened" [clrModalClosable]="false">
+    <h3 class="modal-title">Space Details</h3>
+    <div class="modal-body">
+        <app-space-details [space]="space"></app-space-details>
+    </div>
+    <div class="modal-footer">
+        <div class="btn-group btn-primary">
+            <button type="button" class="btn btn-primary" (click)="modalService.hideModal()">
+        Close
+      </button>
+        </div>
+    </div>
+</clr-modal>

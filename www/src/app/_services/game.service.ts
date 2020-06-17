@@ -44,6 +44,10 @@ export class GameService {
   alert: {alertId: number, onClose$: Subject<any>} | undefined;
   balances = new Map<string, number> ();
   waiterTask: string;
+  _turns = [];
+  currentPlayer: string | undefined;
+  currentTurn: number = -1;
+  playersPosition = new Map<string, number>();
 
   _game = undefined;
 
@@ -56,6 +60,8 @@ export class GameService {
   };
 
   onStatusChange: EventEmitter<string> = new EventEmitter();
+
+  onPlayerMove: EventEmitter<{player: string, newPosition: number}> = new EventEmitter();
 
   constructor(
     private apiService: ApiService,
@@ -116,7 +122,7 @@ export class GameService {
   //   this.contract.startWatching(2000);
   // }
 
-  async getContract<T>(contractType: eContractType): Promise<T> {
+  private async getContract<T>(contractType: eContractType): Promise<T> {
     return new Promise((resolve, reject) => {
       if (this._game && contractType === eContractType.GAME && this._game.contractAddresses.game) {
         GameContract.retrieve(this._game.contractAddresses.game).then((contract) => {
@@ -132,7 +138,7 @@ export class GameService {
     });
   }
 
-  async createSession(): Promise<any> {
+  public async createSession(): Promise<any> {
     this.disconnect();
     return new Promise((resolve, reject) => {
       const creator = this.tezosService.account.account_id;
@@ -146,10 +152,36 @@ export class GameService {
     });
   }
 
-  async connectSession(sessionId: string): Promise<any> {
+  public async connectSession(sessionId: string): Promise<any> {
     this.disconnect();
     return new Promise((resolve, reject) => {
       this.apiService.get<IGame>(`game/${sessionId}`).subscribe(async (game) => {
+        this.apiService.connectSSE(`events/${sessionId}`).subscribe((event) => {
+          console.log('on receive evnt from SSE channel:', event);
+          switch (event.type) {
+            case 'TURN_STARTED': {
+              this._turns.push({id: event.id, ...event.data});
+              this.currentTurn = Math.max(event.id, this.currentTurn);
+              if (this.currentTurn === event.id) {
+                this.currentPlayer = event.data.player;
+                this.playersPosition.set(event.data.player, event.data.newPosition);
+                this.onPlayerMove.emit({
+                  player: event.data.player,
+                  newPosition: event.data.newPosition
+                });
+              }
+              break;
+            }
+            case 'TURN_COMPLETED': {
+              if (this.currentPlayer === event.data.player) {
+                this.currentPlayer = undefined;
+              }
+              break;
+            }
+          }
+        }, err => {
+          this.alertService.error(JSON.stringify(err));
+        });
         await this.updateStatus(game);
         resolve(game);
       }, async (err) => {
@@ -159,7 +191,7 @@ export class GameService {
     });
   }
 
-  registerWhenPossible() {
+  private registerWhenPossible() {
     // if game contract is created, then register current player
     if (this.contracts.game) {
       this.isRegistering = true;
@@ -180,44 +212,7 @@ export class GameService {
     }
   }
 
-  async checkPlayingStatus() {
-    if (this.contracts.game) {
-      await this.contracts.game.getStatus().then((status) => {
-        switch (status) {
-          case 'created': {
-            this.creationStatus = eGameCreationStatus.READY;
-            break;
-          }
-          case 'started': {
-            this.creationStatus = eGameCreationStatus.PLAYING;
-            break;
-          }
-          case 'frozen': {
-            this.creationStatus = eGameCreationStatus.PLAYING;
-            break;
-          }
-          case 'ended': {
-            this.creationStatus = eGameCreationStatus.ENDED;
-            break;
-          }
-        }
-
-      }).catch(err => this.alertService.error(JSON.stringify(err)));
-    }
-  }
-
-  async updatePlayers() {
-    if (this.contracts.game) {
-      await this.contracts.game.getPlayers().then((players) => {
-        this._players = players;
-        if (this.players.includes(this.tezosService.account.account_id)) {
-          this.isRegistered = true;
-        }
-      }).catch(err => this.alertService.error(JSON.stringify(err)));
-    }
-  }
-
-  async updateStatus(game: IGame) {
+  private async updateStatus(game: IGame) {
     if (game) {
       this._game = game;
       this.isConnected = true;
@@ -238,7 +233,7 @@ export class GameService {
     }
   }
 
-  async updateFromTokenContract() {
+  private async updateFromTokenContract() {
     if (this.contracts.token) {
       await this.contracts.token.update();
       await this.contracts.token.getBalances(this.players).then(balances => {
@@ -247,13 +242,19 @@ export class GameService {
     }
   }
 
-  async updateFromGameContract() {
+  public async updateFromGameContract() {
     if (this.contracts.game) {
       await this.contracts.game.update();
       const storage = this.contracts.game._storage;
       this._players = storage.playersSet;
       if (this._players.includes(this.tezosService.account.account_id)) {
         this.isRegistered = true;
+      }
+      // set the player initial position if needed
+      for (const player of this._players) {
+        if (!this.playersPosition.has(player)) {
+          this.playersPosition.set(player, 0);
+        }
       }
       this.playingStatus = storage.status;
       switch (storage.status) {
@@ -287,7 +288,7 @@ export class GameService {
     }
   }
 
-  async checkContracts() {
+  private async checkContracts() {
     const promises = [];
     if (!this.contracts.game) {
       const p = await this.getContract<GameContract>(eContractType.GAME).then((gameContract) => {
@@ -310,107 +311,7 @@ export class GameService {
     }
   }
 
-  async callContract(
-    method: (keyStore: KeyStore) => Promise<{txHash: string, onConfirmed: Promise<number>}>,
-    onSent: (txHash: string) => void,
-    onSuccess: (txHash: string, blockId: number) => void
-  ) {
-    this.waiterTask = this.waiterService.addTask();
-    method(this.tezosService.keyStore).then((resultOperation) => {
-      resultOperation.onConfirmed.then(
-        (blockId) => {
-          onSuccess(resultOperation.txHash, blockId);
-        }
-      ).catch(
-        err => this.alertService.error(err)
-      ).finally(
-        () => {
-          this.waiterService.removeTask(this.waiterTask);
-          this.waiterTask = undefined;
-        }
-      );
-      onSent(resultOperation.txHash);
-    }).catch(
-      err => {
-        this.alertService.error(err);
-        this.waiterService.removeTask(this.waiterTask);
-        this.waiterTask = undefined;
-      }
-    );
-  }
-
-  async start() {
-    const sessionId = this.game.sessionId;
-    this.waiterTask = this.waiterService.addTask();
-    this.apiService.post<{txHash: string}>(`game/${sessionId}/start`, {}).subscribe(async ({txHash}) => {
-      this.showAlert(`Game starting request in progress ... (txHash:${txHash})`);
-      // DO no remove the this.waiterTask now, because the tx is not confirmed at the moment.
-      // When confirmed, the GAME changes state, then the waiterTask will be removed
-    }, err => {
-      this.alertError(err);
-      this.waiterService.removeTask(this.waiterTask);
-      this.waiterTask = undefined;
-    });
-  }
-
-  async reset() {
-    const sessionId = this.game.sessionId;
-    this.waiterTask = this.waiterService.addTask();
-    this.apiService.post<{txHash: string}>(`game/${sessionId}/reset`, {}).subscribe(async ({txHash}) => {
-      this.showAlert(`Game reset request in progress ... (txHash:${txHash})`);
-      // DO no remove the this.waiterTask now, because the tx is not confirmed at the moment.
-      // When confirmed, the GAME changes state, then the waiterTask will be removed
-    }, err => {
-      this.alertError(err);
-    });
-  }
-
-  async freeze() {
-    if (this.contracts.game) {
-      this.callContract(
-        (ks) => this.contracts.game.freeze(ks),
-        (txHash) => {
-          this.showAlert(`game freeze requested (txHash:${txHash}) ...`);
-        },
-        (txHash, blockId) => {
-          this.showAlert(`game successfully frozen (txHash:${txHash}, blockId:${blockId})`);
-          this.updateFromGameContract();
-        }
-      );
-    }
-  }
-
-  async resume() {
-    if (this.contracts.game) {
-      this.callContract(
-        (ks) => this.contracts.game.resume(ks),
-        (txHash) => {
-          this.showAlert(`game resuming requested (txHash:${txHash}) ...`);
-        },
-        (txHash, blockId) => {
-          this.showAlert(`game successfully resumed (txHash:${txHash}, blockId:${blockId})`);
-          this.updateFromGameContract();
-        }
-      );
-    }
-  }
-
-  async end() {
-    if (this.contracts.game) {
-      this.callContract(
-        (ks) => this.contracts.game.end(ks),
-        (txHash) => {
-          this.showAlert(`game ending requested (txHash:${txHash}) ...`);
-        },
-        (txHash, blockId) => {
-          this.showAlert(`game successfully ended (txHash:${txHash}, blockId:${blockId})`);
-          this.updateFromGameContract();
-        }
-      );
-    }
-  }
-
-  showAlert(message: string) {
+  public showAlert(message: string) {
     if (this.alert) {
       this.alertService.onClose(this.alert.alertId);
       this.alert = undefined;
@@ -418,7 +319,7 @@ export class GameService {
     this.alert = this.alertService.show({message});
   }
 
-  alertError(err: any) {
+  public alertError(err: any) {
     if (this.alert) {
       this.alertService.onClose(this.alert.alertId);
       this.alert = undefined;
@@ -427,10 +328,11 @@ export class GameService {
     this.alertService.error(JSON.stringify(err));
   }
 
-  disconnect() {
+  public disconnect() {
     if (this.contracts.game) {
       this.contracts.game.stopWatching();
     }
+    this.apiService.disconnectSSE();
     this.isConnected = false;
     this.isRegistered = false;
     this.isRegistering = false;
@@ -442,14 +344,32 @@ export class GameService {
       token: undefined
     };
     this.balances = new Map();
+    this._turns = [];
+    this._players = [];
+    this.playersPosition = new Map<string, number>();
   }
 
-  getAllSessions(): Observable<any[]> {
+  public getAllSessions(): Observable<any[]> {
     return this.apiService.get<any[]>(`game`);
   }
 
-  iAmNextPlayer() {
+  public iAmNextPlayer() {
     return this.nextPlayer && this.nextPlayer === this.tezosService.account.account_id;
+  }
+
+  public iAmPlaying() {
+    return this.currentPlayer && this.currentPlayer === this.tezosService.account.account_id;
+  }
+
+  public getPlayerPosition(player: string): number {
+    if (this.playersPosition.has(player)) {
+      return this.playersPosition.get(player);
+    }
+    return -1;
+  }
+
+  public get turns() {
+    return this._turns;
   }
 
 }

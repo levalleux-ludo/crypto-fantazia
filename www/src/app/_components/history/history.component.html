@@ -1,0 +1,18 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th>Player</th>
+            <th>TurnID</th>
+            <th>Dices</th>
+            <th>newPosition</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let turn of gameService.turns">
+            <td>{{turn.player}}</td>
+            <td>{{turn.id}}</td>
+            <td>{{turn.dices[0]}},{{turn.dices[1]}}</td>
+            <td>{{turn.newPosition}}</td>
+        </tr>
+    </tbody>
+</table>

@@ -18,13 +18,20 @@ export class ModalComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.modalService.onShow.subscribe((componentClass) => {
+    this.modalService.onShow.subscribe(({componentClass, argsMap}) => {
       const viewContainerRef = this.modalContent.viewContainerRef;
       viewContainerRef.clear();
       if (componentClass !== undefined) {
         const componentFactory = this.componentFactoryResolver.resolveComponentFactory(componentClass);
         const componentRef = viewContainerRef.createComponent(componentFactory);
         console.log('component created', componentRef);
+        if (argsMap) {
+          try {
+            Object.assign(componentRef.instance as any, argsMap);
+          } catch (err) {
+            console.error(`Unable to assign argsMap to modal component instance: ${err}`);
+          }
+        }
       }
     });
   }

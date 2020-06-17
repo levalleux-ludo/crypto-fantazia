@@ -1,0 +1,9 @@
+<clr-tree-node [clrExpanded]="expanded">
+    {{name}}
+    <clr-tree-node>Balance: F{{balance}}</clr-tree-node>
+    <clr-tree-node>Position: {{position}}</clr-tree-node>
+    <clr-tree-node>
+        Assets
+        <clr-tree-node *ngFor="let asset of assets">{{asset}}</clr-tree-node>
+    </clr-tree-node>
+</clr-tree-node>

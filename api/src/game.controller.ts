@@ -9,6 +9,7 @@ router.get('/', getAll);
 router.get('/:sessionId', getBySessionId);
 router.post('/:sessionId/start', startSession);
 router.post('/:sessionId/reset', resetSession);
+router.get('/:sessionId/rollDices/:player', rollDices);
 
 function create(req: express.Request, res: express.Response, next: express.NextFunction) {
     if (!req.body) {
@@ -42,6 +43,12 @@ function startSession(req: express.Request, res: express.Response, next: express
 
 function resetSession(req: express.Request, res: express.Response, next: express.NextFunction) {
     gameService.resetSession(req.params.sessionId).then((result) => {
+        res.json( result );
+    }).catch(err => next(err));
+}
+
+function rollDices(req: express.Request, res: express.Response, next: express.NextFunction) {
+    gameService.rollDices(req.params.sessionId, req.params.player).then((result) => {
         res.json( result );
     }).catch(err => next(err));
 }
