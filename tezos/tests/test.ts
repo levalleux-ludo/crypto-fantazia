@@ -95,7 +95,7 @@ tezosService.getAccount(originator).then((keyStore) => {
             }).catch(err => console.error('Error during update:' + err));
 
             await new Promise((resolve, reject) => {
-                contract.start(keyStore, token, 1500).then((txOper) => {
+                contract.start(keyStore, token, '', '', '', 1500).then((txOper) => {
                     console.log('returns from start call:' + txOper.txHash);
                     txOper.onConfirmed.then((blockId) => {
                         console.log('Tx confirmed', txOper.txHash, blockId);

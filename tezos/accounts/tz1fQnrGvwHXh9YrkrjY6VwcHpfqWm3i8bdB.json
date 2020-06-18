@@ -1,0 +1,24 @@
+{
+  "mnemonic": [
+    "trophy",
+    "trust",
+    "agent",
+    "huge",
+    "bunker",
+    "wish",
+    "census",
+    "hunt",
+    "asthma",
+    "trim",
+    "first",
+    "radio",
+    "donor",
+    "girl",
+    "rabbit"
+  ],
+  "secret": "248f0d32b1670e37e18539cb243920ccd76061f5",
+  "amount": "10598296847",
+  "pkh": "tz1fQnrGvwHXh9YrkrjY6VwcHpfqWm3i8bdB",
+  "password": "BKbaJSoo4i",
+  "email": "ubqyvqvi.sgbtmsxj@tezos.example.org"
+}

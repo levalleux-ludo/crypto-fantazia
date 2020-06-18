@@ -9,9 +9,10 @@ import { sign } from "crypto";
 import { TransactionOperation } from "@taquito/taquito/dist/types/operations/transaction-operation";
 
 export interface GameContractStorage {
-    originator_address: string;
+    admin: string;
     originator_pubKey: string;
-    creator: string
+    creator: string,
+    authorized_contracts: string[]
     players: MichelsonMap<number, string>;
     playersSet: any[];
     status: string;
@@ -20,6 +21,19 @@ export interface GameContractStorage {
     nextDices: number;
     debug: number;
     alreadyRegistered: boolean;
+    lastTurnOption: string;
+    immunized: string[];
+    nbSpaces: number
+    playerPositions: MichelsonMap<string, number>;
+    quarantineSpaceId: number;
+    callToken: boolean;
+    lapIncome: number;
+    nbLaps: number;
+    quarantinePlayers: MichelsonMap<string, number>;
+    token: string;
+    chance: string;
+    community: string;
+    assets: string;
     counter: number;
 }
 
@@ -46,86 +60,90 @@ export class GameContract extends AbstractContract<GameContractStorage> {
     }
     protected static getInitialStorage(originator: KeyStore, creator: string) {
         return {
-            "prim": "Pair",
-            "args": [
-              {
-                "prim": "Pair",
-                "args": [
-                  { "prim": "Pair", "args": [ { "prim": "False" }, { "prim": "Pair", "args": [ { "int": "0" }, { "string": creator } ] } ] },
-                  { "prim": "Pair", "args": [ { "int": "0" }, { "prim": "Pair", "args": [ { "int": "-1" }, { "string": originator.publicKeyHash } ] } ] }
-                ]
-              },
-              {
-                "prim": "Pair",
-                "args": [
-                  {
-                    "prim": "Pair",
-                    "args": [
-                      { "int": "-1" },
-                      { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "string": originator.publicKey } ] }
-                    ]
-                  },
-                  { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ [], { "string": "created" } ] } ] }
-                ]
-              }
-            ]
+          "prim": "Pair",
+          "args": [
+            {
+              "prim": "Pair",
+              "args": [
+                {
+                  "prim": "Pair",
+                  "args": [
+                    {
+                      "prim": "Pair",
+                      "args": [
+                        { "string": originator.publicKeyHash },
+                        { "prim": "Pair", "args": [ { "prim": "False" }, { "string": originator.publicKeyHash } ] }
+                      ]
+                    },
+                    { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ { "prim": "False" }, { "string": originator.publicKeyHash } ] } ] }
+                  ]
+                },
+                {
+                  "prim": "Pair",
+                  "args": [
+                    {
+                      "prim": "Pair",
+                      "args": [
+                        { "string": originator.publicKeyHash },
+                        { "prim": "Pair", "args": [ { "int": "0" }, { "string": creator } ] }
+                      ]
+                    },
+                    { "prim": "Pair", "args": [ { "prim": "Pair", "args": [ { "int": "0" }, [] ] }, { "prim": "Pair", "args": [ { "int": "200" }, { "string": "" } ] } ] }
+                  ]
+                }
+              ]
+            },
+            {
+              "prim": "Pair",
+              "args": [
+                {
+                  "prim": "Pair",
+                  "args": [
+                    { "prim": "Pair", "args": [ { "int": "0" }, { "prim": "Pair", "args": [ { "int": "24" }, { "int": "-1" } ] } ] },
+                    {
+                      "prim": "Pair",
+                      "args": [
+                        { "string": originator.publicKeyHash },
+                        { "prim": "Pair", "args": [ { "int": "-1" }, { "string": originator.publicKey } ] }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "prim": "Pair",
+                  "args": [
+                    { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ [], [] ] } ] },
+                    {
+                      "prim": "Pair",
+                      "args": [
+                        { "prim": "Pair", "args": [ [], { "int": "12" } ] },
+                        { "prim": "Pair", "args": [ { "string": "created" }, { "string": originator.publicKeyHash } ] }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
-    };
+    }
     
-    async register(keyStore: KeyStore, random: number, signature: string): Promise<{txHash: string, onConfirmed: Promise<number>}> {
-        const fake_signature = await tezosService.make_signature(Buffer.from(signature), keyStore.privateKey);
+    async register(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'register';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.register;
         const callParams = { fee: 400000, gasLimit: 400000, storageLimit: 100 };
-        return this.callMethodTaquito(keyStore, operationName, callParams, operation, random, fake_signature);
+        return this.callMethodTaquito(keyStore, operationName, callParams, operation);
     }
 
-    async callMethodTaquito(
-        keyStore: KeyStore,
-        operationName: string,
-        callParams: any | undefined,
-        operation: (ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>),
-        ...args: any[]
-    ): Promise<{txHash: string, onConfirmed: Promise<number>}> {
-        Tezos.setProvider({ signer: new InMemorySigner(keyStore.privateKey) });
-        return new Promise((resolve, reject) => {
-            Tezos.contract.at(this._address).then((ci) => {
-                try {
-                    let method = args.length === 0 ? operation(ci)(null)
-                     : args.length === 1 ? operation(ci)(args[0])
-                     : args.length === 2 ? operation(ci)(args[0], args[1])
-                     : args.length === 3 ? operation(ci)(args[0], args[1], args[2])
-                     : undefined;
-                     if (!method) {
-                         throw new Error('Too many parameters: ' + args);
-                     }
 
-                    method.send(callParams).then((txOperation: TransactionOperation) => {
-                        console.log(`returns from ${operationName} call: ${txOperation}`);
-                        resolve({
-                            txHash: txOperation.hash,
-                            onConfirmed: txOperation.confirmation(1, 10, 180)
-                        });
-                    }).catch(err => {
-                        console.error(`Error during ${operationName} call: ${err.id}, ${err.message}`);
-                        reject(err);
-                    });
-                } catch (err) {
-                    console.error(`Error during ${operationName} call: ${err.id}, ${err.message}`);
-                    reject(err);
-                }
-            });
-        });
-    }
-
-    async start(keyStore: KeyStore, tokenAddress: string, initialBalance: number): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+    async start(keyStore: KeyStore, tokenAddress: string, chanceAddress: string, communityAddress: string, assetsAddress: string, initialBalance: number): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'start';
         Tezos.setProvider({ signer: new InMemorySigner(keyStore.privateKey) });
         return new Promise((resolve, reject) => {
             Tezos.contract.at(this._address).then((ci) => {
                 try {
-                    ci.methods.start(initialBalance, tokenAddress).send({ fee: 400000, gasLimit: 800000, storageLimit: 200 }).then((txOperation: TransactionOperation) => {
+                    ci.methods.start(assetsAddress, chanceAddress, communityAddress, initialBalance, tokenAddress).send({ fee: 400000, gasLimit: 800000, storageLimit: 20000 }).then((txOperation: TransactionOperation) => {
                         console.log(`returns from ${operationName} call: ${txOperation}`);
                         resolve({
                             txHash: txOperation.hash,
@@ -182,11 +200,11 @@ export class GameContract extends AbstractContract<GameContractStorage> {
          return this.callMethodTaquito(keyStore, operationName, undefined, operation);
     }
 
-    async reset(keyStore: KeyStore, tokenAddress: string): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+    async reset(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'reset';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.reset;
-         return this.callMethodTaquito(keyStore, operationName, { fee: 400000, gasLimit: 800000, storageLimit: 200 }, operation, tokenAddress);
+         return this.callMethodTaquito(keyStore, operationName, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation);
     }
 
     async play(keyStore: KeyStore) {

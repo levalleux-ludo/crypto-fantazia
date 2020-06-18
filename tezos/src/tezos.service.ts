@@ -126,17 +126,41 @@ class TezosService {
         storage: any,
         keystore: KeyStore): Promise<string> {
         const result = await TezosNodeWriter.sendContractOriginationOperation(
-            tezosNode,
+            'https://carthagenet.SmartPy.io',
             keystore,
             0, // amount
             undefined, // delegate
             100000, // fee,
             '', // derivationPath
-            5000, // storage_limit
-            200000, // gas_limit
+            20000, // storage_limit
+            500000, // gas_limit
             contract,
             storage,
             TezosParameterFormat.Micheline
+        );
+        const groupId = TezosService.clearRPCOperationGroupHash(result.operationGroupID);
+        console.log(`Injected operation group id ${groupId}`);
+        const conseilResult = await TezosConseilClient.awaitOperationConfirmation(conseilServer, conseilServer.network, groupId, 5, networkBlockTime);
+        console.log(`Originated contract at ${conseilResult.originated_contracts}`);
+        return conseilResult.originated_contracts;
+    }
+
+    async deployContract2(
+        contract: any,
+        storage: any,
+        keystore: KeyStore): Promise<string> {
+        const result = await TezosNodeWriter.sendContractOriginationOperation(
+            'https://carthagenet.SmartPy.io',
+            keystore,
+            0, // amount
+            undefined, // delegate
+            100000, // fee,
+            '', // derivationPath
+            20000, // storage_limit
+            500000, // gas_limit
+            contract,
+            storage,
+            TezosParameterFormat.Michelson
         );
         const groupId = TezosService.clearRPCOperationGroupHash(result.operationGroupID);
         console.log(`Injected operation group id ${groupId}`);

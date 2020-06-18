@@ -20,8 +20,8 @@ export enum ePlayOption {
     NOTHING, // do nothing
     GENESIS, // receive income
     COVID, // go to quarantine
-    ASSET_BUY, // buy asset
-    ASSET_PAY_RENT, // pay rent for asset
+    STARTUP_FOUND, // found startup
+    BUY_PRODUCT, // but product from startup
     CHANCE, // get a chance card
     COMMUNITY_CHEST // get a community_chest card
 }
@@ -230,8 +230,8 @@ class GameService {
             dice2: dice2,
             newPosition: newPosition,
             cardId: cardId,
-            options: options // The smart contract will verify that the chose option is in the list
-            // TODO: add assetId ?, it can still be retrieved from newPosition. 
+            options: options, // The smart contract will verify that the chose option is in the list
+            assetId: newPosition // by simplicity, we use the spaceId as assetId
         }
         const keyStore = await tezosService.getAccount(originator);
         const signature = await tezosService.make_signature(Buffer.from(JSON.stringify(payload)), keyStore.privateKey);
@@ -302,9 +302,9 @@ class GameService {
             default: { // Assets
                 // TODO: check if the asset already owns to a player and if a different player
                 // already owned and same player -> options.push(ePlayOption.NOTHING);
-                // already owned and different player -> options.push(ePlayOption.ASSET_PAY_RENT);
+                // already owned and different player -> options.push(ePlayOption.BUY_PRODUCT);
                 // not already owned
-                options.push(ePlayOption.ASSET_BUY);
+                options.push(ePlayOption.STARTUP_FOUND);
                 options.push(ePlayOption.NOTHING);
                 break;
             }
