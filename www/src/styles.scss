@@ -258,7 +258,19 @@ body {
     position: absolute;
 }
 
+h1 {
+    font-family: "Lucida Console", Monaco, monospace;
+}
+
+h2 {
+    font-family: "Lucida Console", Monaco, monospace;
+}
+
 h3 {
+    font-family: "Lucida Console", Monaco, monospace;
+}
+
+h4 {
     font-family: "Lucida Console", Monaco, monospace;
 }
 
@@ -267,4 +279,8 @@ h3 {
 // }
 .clr-accordion-content-no-padding .clr-accordion-inner-content {
     padding: 0.1rem !important;
+}
+
+.alert-items {
+    max-width: 90% !important;
 }

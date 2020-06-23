@@ -1,0 +1,239 @@
+<ng-template #overview>
+    <!-- <h1>h1 Title</h1>
+    <h2>h2 Title</h2>
+    <h3>h3 Title</h3>
+    <h4>h4 Title</h4>
+    <ul>
+        <li>item 1</li>
+        <li>item2</li>
+    </ul>
+    <ol>
+        <li>item 1</li>
+        <li>item2</li>
+    </ol>
+    <p>Paragraph</p>
+    <p>Paragraph</p>
+    <span>span text</span> -->
+    <div fxLayout="column" fxLayoutAlign="start center" fxLayoutGap="24px">
+        <div class="bloc">
+            <h1>Why This Game ?</h1>
+
+            <p>I've developed this game with the idea that the new economical mechanisms brought by the blockchain ecosystem (namely DeFi) provide a fresh new and exciting playground, and quite funny as well (think about the DeFi lego).
+            </p>
+            <p>So, could a 'mainstream' game allow others (non-technical people) to discover, explore, understand, and play with these new tools and paradigms, to better assess what's going on ?</p>
+            <p>And it became obvious that, while the so famous Monopoly game has learnt all of us about traditional capitalist economics (mortgages, investments, good/bad fortune, wealth management, etc), a similar approach could be used to educate everyone,
+                in a playful way, with this new world of crypto-economics.</p>
+            <p>Probably the best of all: this game is implementing using smart contracts, meaning that all player actions, like payments, assets ownership management, even chances and community chest cards, are performed through the blockchain itself, leading
+                to an (almost*) complete decentralized and trustless application, without the need for a third party (or a banker). <br><i>(*) Note: the current version still uses a centralized backend to create the game contracts for the session and to generate random numbers for dices and chance cards.</i></p>
+            <p>I've seen this game like a laboratory to check if every action in a Monopoly-like game could be decentralized through blockchain.<br> And the answer is: 'YES' !!!</p>
+            <p>Can't wait to try it ? Just look at the description below and click 'Get Started' at the bottom to go playing.</p>
+        </div>
+        <img src="assets/flyer1.png" style=" width: 80%; max-width: 350px;">
+        <div class="bloc">
+            <h1>Description</h1>
+            <p>&#8847;rypto&nbsp;&#8497;anta&#7545;ia is an online board game for two to four players.</p>
+            <p>The object of the game is to become the wealthiest player through founding and developing businesses in the crypto-space / blockchain ecosystem</p>
+            <p>To achieve this goal, every player, playing the role of an entrepreneur, will get some opportunities to found startups and develop their products by adding new features.</p>
+            <p>Of course, all startups are related to blockchain applications in law tech, fin tech, bio tech, social medias, gaming, and more.</p>
+            <p>In addition, some specific businesses take a special role in the game, as in the real blockchain ecosystem:</p>
+            <ul>
+                <li>marketplace for digital assets</li>
+                <li>exchange platform for security token</li>
+                <li>mining farms, validating 'Proof of Work' (PoW) consensus blockchain</li>
+                <li>bakeries, validating 'Proof of Stake' (PoS) consensus blockchain</li>
+            </ul>
+        </div>
+        <div class="bloc">
+            <h2>Preparation</h2>
+            <p>On the game connection page:</p>
+            <ul>
+                <li>Choose a username to identify yourself towards the other players</li>
+                <li>Choose an avatar to identify yourself on the playground:
+                    <ul>
+                        <li>Camel<img class="img-avatar" src="assets/avatars/camel.png"></li>
+                        <li>Diamond<img class="img-avatar" src="assets/avatars/diamond.png"></li>
+                        <li>Rocket<img class="img-avatar" src="assets/avatars/rocket.png"></li>
+                        <li>Cryptochip<img class="img-avatar" src="assets/avatars/crypto-chip.png"></li>
+                    </ul>
+                </li>
+                <li>Select your <img src="assets/tezos-logo-small.png " height="30
+                  " style="margin: 6px; ">Tezos (&reg;) wallet file (JSON format).
+                    <br>You need a small balance of XTZ to pay the transaction fees during the game.
+                    <br>If you don't have any wallet yet, or your balance is empty, you can get free XTZ for testnet here: <a href="https://faucet.tzalpha.net" target="_blank">Testnet Faucet</a> (know more <a href="https://tezos.gitlab.io/introduction/howtouse.html#faucet"
+                        target="_blank">here</a>)
+                </li>
+                <li>Choose if you want to
+                    <ul>
+                        <li>join an existing session (you can only join a session that is not started yet)</li>
+                        <li>or create your own session and wait for other players to join it before you can start</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="bloc">
+            <h2>GameBoard</h2>
+            <p>The board is composed of 24 chained blocks:</p>
+            <ul>
+                <li>1 block 'Genesis'</li>
+                <li>2 blocks 'Chance'</li>
+                <li>2 blocks 'Community'</li>
+                <li>1 block 'Covid-19'</li>
+                <li>1 block 'Quarantine'</li>
+                <li>and 17 blocks representing the startups to be founded and developed, including&#x1F9EE;
+                    <ul>
+                        <li>1 marketplace</li>
+                        <li>1 exchange platform</li>
+                        <li>2 mining farms</li>
+                        <li>2 bakeries</li>
+                    </ul>
+                </li>
+            </ul>
+            <h4>Discover all blocks:</h4>
+            <div style="width: 100%;" fxLayout="row" fxLayout.sm="column" fxLayout.xs="column">
+                <div fxFlex style="max-width: 90%;">
+                    <app-carousel #carousel [showControls]="true" [itemWidth]="150-18" [containerWidth]="300" [containerHeight]="150" (step)="refreshBlockDetail($event)">
+                        <ng-container *ngFor="let slide of slidesStore">
+                            <ng-container *appCarouselItem>
+                                <div style="margin-left: -18px;">
+                                    <img [src]="slide.src" [alt]="slide.alt" width="150px">
+                                </div>
+                            </ng-container>
+                        </ng-container>
+                    </app-carousel>
+                </div>
+                <div fxFlex>
+                    <app-space-details [space]="space"></app-space-details>
+                </div>
+            </div>
+        </div>
+        <div class="bloc">
+            <h2>Game Play</h2>
+            <p>At the beginning, each player is given 1500 &#8497;antas (the crypto-currency of the game) and start from the Genesis block</p>
+            <p>To play, each player takes turn one at a time.<br>The application tells who's going to play alternatively, as it is managed by the game's smart contract</p>
+            <p>At his turn, the player rolls the dices, then his avatar is moved forward on the board, by the number of blocks corresponding to the sum of the 2 dices </p>
+            <p>Depending on the block he reaches, he may have some options.<br> He then selects an option (if any), and submit his play to the smart contract</p>
+            <div fxLayout="row">
+                <p>
+                    <clr-icon shape="warning-standard" class="is-solid" style="width: 36px; height: 36px; margin-right: 24px;"></clr-icon>
+                </p>
+                <p>Because the play submission is realized through a transaction to the Game's smart contract, the application is waiting for the transaction to be validated, before the next player can do his turn.</p>
+            </div>
+            <h3>Genesis Block</h3>
+            <p>The starting point<br>However, because the board is circular, players will pass this block at each lap and get a reward</p>
+            <h3>Founding A Startup</h3>
+            <p>When landing on a block representing a Startup that is not yet founded, the player can choose to found it, paying the specified price, or to do nothing.</p>
+            <p>If he chooses to found the startup, he will get benefits every time another player will come on this block.</p>
+            <p>He can also develop new features to increase the product prices and get more benefits.</p>
+            <h3>Founding The Marketplace</h3>
+            <p>When landing on a block representing the Marketplace and if it is not yet founded, the player can choose to found it, paying the specified price, or to do nothing.</p>
+            <p>If he chooses to found the Marketplace, he will get benefits from fees every time another player will use the Marketplace to buy and sell assets.</p>
+            <h3>Founding The Exchange</h3>
+            <p>When landing on a block representing the Exchange and if it is not yet founded, the player can choose to found it, paying the specified price, or to do nothing.</p>
+            <p>If he chooses to found the Exchange, he will get benefits from fees every time another player will use the Exchange to launch an ICO (primary market) and trade security tokens (secondary market).</p>
+            <h3>Founding A Mining Farm</h3>
+            <p>When landing on a block representing a Mining Farm and if it is not yet founded, the player can choose to found it, paying the specified price, or to do nothing.</p>
+            <p>If he chooses to found a Mining farm, he will get mining rewards each time a player roll the dices.</p>
+            <p>The mining reward value is computed regarding the value of the first dice (called PoW dice) and taking into account the hashrate power of the Mining Farm compared to the other Mining Farms.</p>
+            <p>The owner of a Mining Farm can choose to invest to increase his hashrate to maximize his rewards compared to the other miners.</p>
+            <div fxLayout="row">
+                <p>
+                    <clr-icon shape="warning-standard" class="is-solid" style="width: 36px; height: 36px; margin-right: 24px;"></clr-icon>
+                </p>
+                <p>When a lap is completed (all players have passed through the genesis block again, the Pow rewards is divided by 2. This is called the 'Halving'.</p>
+            </div>
+            <h3>Founding A Bakery</h3>
+            <p>When landing on a block representing a Bakery and if it is not yet founded, the player can choose to found it, paying the specified price, or to do nothing.</p>
+            <p>If he chooses to found a Bakery, he will get staking rewards each time a player roll the dices.</p>
+            <p>The staking reward value is computed regarding the value of the second dice (called PoS dice) and taking into account the amount staked of the Bakery compared to the other Bakery.</p>
+            <p>The owner of a Bakery can choose to stake his money to maximize his rewards compared to the other bakeries.</p>
+            <h3>Buying Startup Products</h3>
+            <p>When landing on a block representing a Startup that has been founded by another player, the current player shall purchase the Startup's product for the specified price.</p>
+            <p>Note: the product price depends on the features that have been developed by the Startup owner</p>
+            <h3>Chance And Community Chest</h3>
+            <p>When landing on a block representing a Chance or Community Chest, the player will randomly get a 'magic card' and performs the instruction given.</p>
+            <h4>List of Chances cards</h4>
+            <!-- <ul>
+                <li *ngFor="let chance of chances">{{chance}}</li>
+            </ul> -->
+            <table class="table">
+                <tr *ngFor="let card of chances">
+                    <td style="text-align: start;">{{card}}</td>
+                </tr>
+            </table>
+            <h4>List of Community Chest cards</h4>
+            <!-- <ul>
+                <li *ngFor="let community_chest of community_chests">{{community_chest}}</li>
+            </ul> -->
+            <table class="table">
+                <tr *ngFor="let card of community_chests">
+                    <td style="text-align: start;">{{card}}</td>
+                </tr>
+            </table>
+            <h3>Visit Quarantine</h3>
+            <p>When landing on the Quarantine block, the player is "Just Visiting". No penalty applies</p>
+            <h3>Catch COVID-19</h3>
+            <p>When landing on the COVID-19 block, the player is moved to Quarantine block, and will miss the next lap, except if he or she has got a Immunity card from Chance or Community Chest previously.</p>
+            <h3>Develop New Features</h3>
+            <p>At any time during the game, a player that owns a Startup can invest in its product.</p>
+            <p>To do that, he must pay the feature cost specified by the Startup description.<br> The request is realized thanks to a transaction to the Game's smart contract<br> However only one feature can be bough per transaction and the total number
+                of features can not exceed 4.</p>
+            <p>Once a product has been featured, the price is increase as specified in the Startup description, so is the revenue for the owner when another player is visiting the startup.</p>
+            <h3>Increase Mining Farm HashRate</h3>
+            <p>At any time during the game, a player that owns a Mining Farm can pay to get more hashrate in order to increase his revenue from the mining rewards.</p>
+            <h3>Increase Bakery Stake</h3>
+            <p>At any time during the game, a player that owns a Bakery can stake his own money in order to increase his revenue from the mining rewards.</p>
+            <p>When money is staked, it is not directly available to the player for paying purchases.</p>
+            <p>However the player can unstake some amounts from the bakery if he/she runs out of cash. In that case the bakery rewards would decrease accordingly</p>
+            <h3>Launch An ICO</h3>
+            <p>At any time, the owner of a Startup can launch an ICO (Initial Coin Offering) by using the Exchange Platform.</p>
+            <p>Launching an ICO for a Startup means issuing 10 security tokens representing each 5% of the company.<br> However, only 1 ICO can be launched per company.</p>
+            <p>The price of a token can be freely set by the issuer.</p>
+            <p>The other players can buy these tokens if they are interested, using the Exchange Platform.<br> Owning security tokens of a Startup gets shares in the revenue of this company (5% per token)
+            </p>
+            <p>When all the tokens have been sold, the players can still trade these tokens between them through the Exchange Platform</p>
+            <p>The owner of the Exchange is getting rewarded by 10% of the value of the transactions realized through the Exchange</p>
+            <h3>Resell A Company</h3>
+            <p>At any time, the owner of a Startup can sale this company through the Marketplace</p>
+            <p>The other players can buy it if they are interested, or make offer for smaller price, using the Marketplace Platform.</p>
+            <p>The owner of the Marketplace is getting rewarded by 10% of the value of the transactions realized through the Marketplace</p>
+        </div>
+        <div class="bloc">
+            <h2>Ready to play ?</h2>
+            <div fxLayout="column" fxLayoutAlign="center center">
+                <button *showItBootstrap="['md','lg', 'xl']" class="btn-large btn-play btn btn-success " (click)="router.navigate(['game'])">Get Started</button>
+                <button *showItBootstrap="['sm','xs']" class="btn-play btn btn-success " (click)="router.navigate(['game'])">Get Started</button>
+            </div>
+        </div>
+    </div>
+</ng-template>
+<div class="overview" style="background-image: url('assets/background.png'); " fxLayout="column" fxLayoutAlign="start center" fxLayoutGap="24px">
+    <div *showItBootstrap="['md','lg', 'xl']" class=" subtitle-large ">
+        <h1 class="welcome">Welcome to</h1>
+    </div>
+    <div *showItBootstrap="['sm','xs']" class=" subtitle ">
+        <h3 class="welcome">Welcome to</h3>
+    </div>
+    <img src="assets/banner.png" style="width: 30%; min-width: 200px;">
+    <div *showItBootstrap="['md','lg', 'xl']" class=" subtitle-large ">
+        Play and Educate Yourself about Blockchain & Cypto-Economics
+    </div>
+    <div *showItBootstrap="['sm','xs']" class=" subtitle ">
+        Play and Educate Yourself about Blockchain & Cypto-Economics
+    </div>
+    <div *showItBootstrap="['sm','xs']" class="catchphrase ">
+        A Decentralized Board Game about economics (inspired by Monopoly&reg;), but crypto-oriented, where crypto-economics mechanisms are entirely implemented powered by smart contracts on the <img src="assets/tezos-logo-small.png " height="30
+  " style="margin: 6px; ">Tezos (&reg;) blockchain.
+    </div>
+    <div *showItBootstrap="['md','lg', 'xl']" class="catchphrase-large ">
+        A Decentralized Board Game about economics (inspired by Monopoly&reg;), but crypto-oriented, where crypto-economics mechanisms are entirely implemented powered by smart contracts on the <img src="assets/tezos-logo-small.png " height="30
+" style="margin: 6px; ">Tezos (&reg;) blockchain.
+    </div>
+    <div style="width: 60%; min-width: 340px;">
+        <div *showItBootstrap="['sm','xs']" class="normal ">
+            <ng-container *ngTemplateOutlet="overview"></ng-container>
+        </div>
+        <div *showItBootstrap="['md','lg', 'xl']" class="large ">
+            <ng-container *ngTemplateOutlet="overview"></ng-container>
+        </div>
+    </div>
+</div>

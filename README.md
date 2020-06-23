@@ -23,7 +23,7 @@ Mostly decentralized, all economics mechanisms of the game are implemented by sm
 ## Why this game ?
 
 I've developed this game with the idea that the new economical mechanisms brought by the blockchain ecosystem (namely DeFi) provide us (software developers) with a fresh new and exciting playground, and quite funny as well (think about the DeFi lego).
-So could a 'mainstream' game allow others (non-technical people) to discover, explore, understand, and play with these new tools and paradigms, to better assess what's going on ?
+So, could a 'mainstream' game allow others (non-technical people) to discover, explore, understand, and play with these new tools and paradigms, to better assess what's going on ?
 And it became obvious that, while the so famous Monopoly game has learnt all of us about traditional capitalist economics (mortgages, investments, good/bad fortune, wealth management, etc), a similar approach could be used to educate everyone, in a playful way, with this new world of crypto-economics.
 
 ## Demo

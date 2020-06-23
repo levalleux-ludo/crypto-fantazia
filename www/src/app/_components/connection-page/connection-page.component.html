@@ -1,12 +1,13 @@
 <div style="text-align: center; height: -webkit-fill-available; min-height: 100%;">
     <!-- <form class="login" [formGroup]="form"> -->
+
     <form [formGroup]="form">
-        <div style="height: 160px; overflow: auto;">
+        <!-- <div style="height: 160px; overflow: auto;">
             <section class="title">
                 <h3 class="welcome">Welcome to</h3>
                 <img src="assets/banner.png" height="100px">
-            </section>
-            <!-- <section class="title">
+            </section> -->
+        <!-- <section class="title">
                 <h3 class="welcome">Welcome to</h3>
                 {{"\u228F"}}rypto {{"\u2AED"}}antasia
             </section>
@@ -22,7 +23,7 @@
                 <h3 class="welcome">Welcome to</h3>
                 {{"\u2282"}}rypto {{"\u222E"}}antasia
             </section> -->
-            <!-- <div>you've earn
+        <!-- <div>you've earn
                 <app-fanta-symbol [htmlString]="'\u2131'"></app-fanta-symbol> 100</div>
             <span>{{"\u2131"}} 1050</span>
             <span>{{"\u2AED"}} 1050</span>
@@ -35,8 +36,21 @@
             <span>{{"\u23C1"}} 1050</span>
             <span>{{"\u222E"}} 1050</span>
             <span>{{"\u23C1"}} 1050</span> -->
-        </div>
+        <!-- </div> -->
         <div fxLayout="column" fxLayoutAlign="center center">
+            <div *showItBootstrap="['md','lg', 'xl']" class=" subtitle-large ">
+                <h1 class="welcome">Welcome to</h1>
+            </div>
+            <div *showItBootstrap="['sm','xs']" class=" subtitle ">
+                <h3 class="welcome">Welcome to</h3>
+            </div>
+            <img src="assets/banner.png" style="width: 50%; min-width: 250px;">
+            <div *showItBootstrap="['md','lg', 'xl']" class=" subtitle-large ">
+                Play and Educate Yourself about Blockchain & Cypto-Economics
+            </div>
+            <div *showItBootstrap="['sm','xs']" class=" subtitle ">
+                Play and Educate Yourself about Blockchain & Cypto-Economics
+            </div>
             <h5 class="hint">Your Name</h5>
             <clr-input-container>
                 <label class="clr-sr-only">your name</label>

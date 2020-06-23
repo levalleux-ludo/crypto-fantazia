@@ -1,0 +1,26 @@
+<div class="welcome" style="background-image: url('assets/background.png'); " fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="24px">
+    <img src="assets/banner.png" style="width: 50%; min-width: 250px;">
+    <div *showItBootstrap="['md','lg', 'xl']" class=" subtitle-large ">
+        Play and Educate Yourself about Blockchain & Cypto-Economics
+    </div>
+    <div *showItBootstrap="['sm','xs']" class=" subtitle ">
+        Play and Educate Yourself about Blockchain & Cypto-Economics
+    </div>
+    <div style="width: 100%; ">
+        <img src="assets/flyers.gif " style="width: 50%; min-width: 250px; ">
+    </div>
+    <div *showItBootstrap="['sm','xs']" class="catchphrase ">
+        A Decentralized Board Game About Economics (Inspired By Monopoly&reg;) But Crypto-Oriented, where crypto-economics mechanisms are entirely implemented powered by smart contracts on the <img src="assets/tezos-logo-small.png " height="30
+    " style="margin: 6px; ">Tezos (&reg;) blockchain.
+    </div>
+    <div *showItBootstrap="['md','lg', 'xl']" class="catchphrase-large ">
+        A Decentralized Board Game About Economics (Inspired By Monopoly&reg;) But Crypto-Oriented, where crypto-economics mechanisms are entirely implemented powered by smart contracts on the <img src="assets/tezos-logo-small.png " height="30
+  " style="margin: 6px; ">Tezos (&reg;) blockchain.
+    </div>
+    <div fxLayout="row" fxLayout.xs="column" fxLayoutGap="12px">
+        <button *showItBootstrap="['md','lg', 'xl']" class="btn-large btn-learn btn btn-primary " (click)="router.navigate(['overview'])">Learn More</button>
+        <button *showItBootstrap="['sm','xs']" class="btn-learn btn btn-primary " (click)="router.navigate(['overview'])">Learn More</button>
+        <button *showItBootstrap="['md','lg', 'xl']" class="btn-large btn-play btn btn-success " (click)="router.navigate(['game'])">Get Started</button>
+        <button *showItBootstrap="['sm','xs']" class="btn-play btn btn-success " (click)="router.navigate(['game'])">Get Started</button>
+    </div>
+</div>

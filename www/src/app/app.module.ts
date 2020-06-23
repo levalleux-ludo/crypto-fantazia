@@ -15,6 +15,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MaterialFileInputModule } from 'ngx-material-file-input';
+import { ResponsiveModule } from 'ngx-responsive';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -59,6 +60,9 @@ import { CarouselItemDirective } from './_components/carousel/carousel-item.dire
 import { CarouselItemElementDirective } from './_components/carousel/carousel-item-element.directive';
 import { BoardComponent } from './_components/board/board.component';
 import { GameControlsComponent } from './_components/game-controls/game-controls.component';
+import { WelcomeComponent } from './_components/welcome/welcome.component';
+import { GameComponent } from './_components/game/game.component';
+import { OverviewComponent } from './_components/overview/overview.component';
 
 @NgModule({
   declarations: [
@@ -99,7 +103,10 @@ import { GameControlsComponent } from './_components/game-controls/game-controls
     CarouselItemDirective,
     CarouselItemElementDirective,
     BoardComponent,
-    GameControlsComponent
+    GameControlsComponent,
+    WelcomeComponent,
+    GameComponent,
+    OverviewComponent
   ],
   imports: [
     BrowserModule,
@@ -122,7 +129,8 @@ import { GameControlsComponent } from './_components/game-controls/game-controls
     MatSelectModule,
     MatProgressSpinnerModule,
     MaterialFileInputModule,
-    MatTooltipModule
+    MatTooltipModule,
+    ResponsiveModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent],

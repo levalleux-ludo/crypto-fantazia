@@ -1,4 +1,3 @@
-<p>Hello</p>
 <section class="carousel-wrapper" [ngStyle]="carouselWrapperStyle">
     <!-- <ul class="carousel-inner" #carousel>
         <li *ngFor="let item of items;" class="app-carousel-item">
@@ -24,7 +23,7 @@
     </div>
 </section>
 
-<div *ngIf="showControls" style="margin-top: 1em">
-    <button (click)="next()">Next</button>
-    <button (click)="prev()">Previous</button>
+<div *ngIf="showControls" style="margin-top: 1em" class="btn-group">
+    <button class="btn" (click)="prev()">Previous</button>
+    <button class="btn" (click)="next()">Next</button>
 </div>

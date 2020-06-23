@@ -7,38 +7,7 @@ import { CarouselItemElementDirective } from './carousel-item-element.directive'
   selector: 'app-carousel',
   exportAs: 'app-carousel',
   templateUrl: './carousel.component.html',
-//   template: `
-//   <p>Hello</p>
-// <section class="carousel-wrapper" [ngStyle]="carouselWrapperStyle">
-//     <ul class="carousel-inner" #carousel>
-//         <li *ngFor="let item of items;" class="app-carousel-item">
-//             <ng-container [ngTemplateOutlet]="item.tpl"></ng-container>
-//         </li>
-//     </ul>
-// </section>
-
-// <div *ngIf="showControls" style="margin-top: 1em">
-//     <button (click)="next()">Next</button>
-//     <button (click)="prev()">Previous</button>
-// </div>`,
   styleUrls: ['./carousel.component.scss']
-//   styles: [`
-//   ul {
-//     list-style: none;
-//     margin: 0;
-//     padding: 0;
-//     width: 6000px;
-//   }
-
-//   .carousel-wrapper {
-//     overflow: hidden;
-//   }
-
-//   .carousel-inner {
-//     display: flex;
-//   }
-
-// `]
 })
 export class CarouselComponent implements AfterViewInit, OnInit, AfterContentInit {
 
@@ -58,10 +27,10 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
   @Input() offsetBefore = 0;
   private player: AnimationPlayer;
   @Input() itemWidth: number = 200;
+  targetSlide;
 
   @Output() step = new EventEmitter<number>();
   private currentSlide = 0;
-  // private initialOffsetX = 0;
   private nbVisibleBlocksBefore;
   private nbVisibleBlocksAfter;
   constructor(
@@ -69,11 +38,6 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
     private elementRef: ElementRef
   ) { }
   ngAfterContentInit(): void {
-    // console.log('ngAfterContentInit this.items.length', this.items?.length);
-    // // For some reason only here I need to add setTimeout, in my local env it's working without this.
-    // setTimeout(() => {
-      // this.itemWidth = this.itemsElements.first.nativeElement.getBoundingClientRect().width;
-      // this.initialOffsetX = this.itemWidth / 2;
       this.nbVisibleBlocksBefore = Math.floor(1 + (this.offsetBefore) / (this.itemWidth));
       console.log('nbVisibleBlocksBefore', this.nbVisibleBlocksBefore);
       this.nbVisibleBlocksAfter = Math.floor(
@@ -82,9 +46,8 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
       console.log('nbVisibleBlocksAfter', this.nbVisibleBlocksAfter);
       this.carouselWrapperStyle = {
         width: `${this.containerWidth}px`,
-        // height: `${this.containerHeight}px`
+        height: `${this.containerHeight}px`
       };
-    // });
   }
   ngOnInit(): void {
     console.log('OnInit this.items.length', this.items?.length);
@@ -113,7 +76,6 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
 
   updateSizes(overflow = false) {
     console.log(`updateSizes(${overflow})`);
-    // const currentItemElement = this.itemsElements.toArray()[this.currentSlide];
     console.log(`current slide ${this.currentSlide} block : (${this.itemsDirectives.toArray()[this.currentSlide].itemId})`);
     for (let i = 0; i < this.itemsElements.length; i++) {
       console.log(`element ${i}, item:${this.itemsDirectives.toArray()[i].itemId}`);
@@ -144,39 +106,8 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
       const player = animation.create(this.itemsElements.toArray()[i].nativeElement.firstChild);
       player.play();
 
-      // if (bigs.includes(i)) {
-      //   // itemElement.nativeElement.firstChild.style.width = `${this.itemWidth}px`;
-      //   // itemElement.nativeElement.firstChild.style.height = `${this.itemWidth}px`;
-      //   animation = this.builder.build([
-      //     animate(this.timing, style({ transform: `scale(1.5)` }))]);
-      // } else {
-      //   // itemElement.nativeElement.firstChild.style.width = `${this.itemWidth * 0.75}px`;
-      //   // itemElement.nativeElement.firstChild.style.height = `${this.itemWidth * 0.75}px`;
-      //   // const translateX = (this.itemWidth / 2) * ((this.currentSlide + this.items.length) - i) - (this.itemWidth / 4);
-      //   const translateX =  ? this.itemWidth / 4 : -this.itemWidth / 4;
-      //   animation = this.builder.build([
-      //     // animate(this.timing, style({ transform: `scale(0.5) translateX(${translateX}px)` }))]);
-      //     animate(this.timing, style({ transform: `translateX(${translateX}px)` }))]);
-      // }
-      // const player = animation.create(this.itemsElements.toArray()[i].nativeElement.firstChild);
-      // player.play();
     }
-    // for (let itemElement of this.itemsElements) {
-    //   let animation: AnimationFactory;
-    //   if (itemElement === currentItemElement) {
-    //     // itemElement.nativeElement.firstChild.style.width = `${this.itemWidth}px`;
-    //     // itemElement.nativeElement.firstChild.style.height = `${this.itemWidth}px`;
-    //     animation = this.builder.build([
-    //       animate(this.timing, style({ transform: `unset` }))]);
-    //   } else {
-    //     // itemElement.nativeElement.firstChild.style.width = `${this.itemWidth * 0.75}px`;
-    //     // itemElement.nativeElement.firstChild.style.height = `${this.itemWidth * 0.75}px`;
-    //     animation = this.builder.build([
-    //       animate(this.timing, style({ transform: `scale(0.5)` }))]);
-    //   }
-    //   const player = animation.create(itemElement.nativeElement.firstChild);
-    //   player.play();
-    // }
+
   }
 
   next(onDone?: () => void) {
@@ -184,27 +115,6 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
     if ( this.currentSlide === this.items.length ) {
       backToBeginning = true;
 
-
-      // this.currentSlide = this.items.length + (this.currentSlide + 1) % this.items.length;
-      // this.updateSizes([this.currentSlide, this.currentSlide + this.items.length]);
-      // // this.carousel.nativeElement.style.transform = `unset`;
-      // const offset = (this.items.length + this.currentSlide) * this.itemWidth - this.initialOffsetX;
-      // const animation = this.builder.build([
-      //   animate(this.timing, style({ transform: `translateX(-${offset}px)` }))
-      // ]);
-      // this.player = animation.create(this.carousel.nativeElement);
-      // this.player.onDone(() => {
-      //   // reset
-      //   const offset = this.currentSlide * this.itemWidth - this.initialOffsetX;
-      //   this.carousel.nativeElement.style.transform = `translateX(-${offset}px)`;
-      //   const animation = this.builder.build([
-      //     animate(0, style({ transform: `translateX(-${offset}px)` }))
-      //   ]);
-      //   this.player = animation.create(this.carousel.nativeElement);
-      //   this.player.play();
-      // });
-      // this.player.play();
-      // return;
     }
 
     console.log(`next currentslide:${this.currentSlide}`);
@@ -230,9 +140,6 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
       );
     }
     this.step.emit(this.itemsDirectives.toArray()[this.currentSlide].itemId);
-    // this.carousel.nativeElement.style.transform = `translateX(-${offset}px)`;
-    // const myAnimation: AnimationFactory = this.buildAnimation(offset);
-
   }
 
   computeOffset() {
@@ -251,19 +158,19 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
   }
 
   prev() {
-    if ( this.currentSlide === 0 ) { return; }
-
-    this.currentSlide = ((this.currentSlide - 1) + this.items.length) % this.items.length;
+    if ( this.currentSlide === this.nbVisibleBlocksBefore ) {
+      this.currentSlide += this.items.length - 1;
+    } else {
+      this.currentSlide = this.currentSlide - 1;
+    }
     const offset = this.currentSlide * this.itemWidth;
     this.updateSizes();
-
     const myAnimation: AnimationFactory = this.buildAnimation(offset);
-
     this.player = myAnimation.create(this.carousel.nativeElement);
     this.player.play();
+    this.step.emit(this.itemsDirectives.toArray()[this.currentSlide].itemId);
   }
 
-  targetSlide;
   onNextDone = (onDone?: (position: number) => void) => {
     if (this.targetSlide !== this.currentSlide) {
       this.next(() => this.onNextDone(onDone));
@@ -278,26 +185,7 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
     this.targetSlide = this.nbVisibleBlocksBefore + position;
     console.log(`goto(${position}) current slide:${this.currentSlide} --> target slide:${this.targetSlide}`);
     this.onNextDone(onDone);
-    // while (newSlide !== this.currentSlide) {
-    // }
-    // this.updateSizes([this.currentSlide]);
 
-    // const offset = this.currentSlide * this.itemWidth - this.initialOffsetX;
-    // // this.carousel.nativeElement.style.transform = `translateX(-${offset}px)`;
-    // const myAnimation: AnimationFactory = this.buildAnimation(offset);
-
-    // this.player = myAnimation.create(this.carousel.nativeElement);
-    // if (this.currentSlide === 2 * this.itemWidth) {
-    //   this.player.onDone(() => {
-    //     // reset
-    //     const animation = this.builder.build([
-    //       animate(0, style({ transform: `translateX(-${this.currentSlide * this.itemWidth - this.initialOffsetX}px)` }))
-    //     ]);
-    //     this.player = animation.create(this.carousel.nativeElement);
-    //     this.player.play();
-    //   });
-    // }
-    // this.player.play();
   }
 
   getBlockIdBefore(idx) {

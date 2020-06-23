@@ -43,7 +43,7 @@ class SpaceService {
                     switch (spaceParams.type) {
                         case eSpaceType.GENESIS: {
                             spaceParams.title = 'Genesis Block';
-                            spaceParams.detail = 'Each time you land or pass this block, you earn \U+8497 200';
+                            spaceParams.detail = 'Each time you land or pass this block, you earn &#8497; 200';
                             spaceParams.image = images.get(spaceParams.type);
                             break;
                         }
