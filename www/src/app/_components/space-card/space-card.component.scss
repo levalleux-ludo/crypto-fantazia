@@ -1,0 +1,49 @@
+/* Minimal imports to expose clarity variables */
+
+@import "../../../../node_modules/@clr/ui/src/utils/theme.dark.clarity";
+// @import "../../../../node_modules/@clr/ui/src/color/utils/colors.clarity";
+// @import "../node_modules/@clr/ui/src/color/variables.color";
+// @import "../node_modules/@clr/ui/src/utils/variables.global";
+// @import "../node_modules/@clr/ui/src/typography/variables.typography";
+.item {
+    padding: 0;
+    // width: 100px;
+    // height: 100px;
+    // background-color: crimson;
+    color: #fff;
+    // font-size: 50px;
+    // line-height: 300px;
+    text-align: center;
+}
+
+.players {
+    position: absolute;
+    top: -24px;
+    text-align: center;
+    width: 100%;
+}
+
+.overlap-img {
+    position: absolute;
+    left: 80px;
+    top: 87px;
+    width: 160px;
+}
+
+.card-background {
+    // background-color: --clr-card-bg-color;
+    background-color: $clr-card-bg-color;
+    // background-color: yellow;
+}
+
+.card-header {
+    background: #324f62;
+}
+
+.card {
+    padding: 12px;
+}
+
+.card-img {
+    padding: 12px;
+}

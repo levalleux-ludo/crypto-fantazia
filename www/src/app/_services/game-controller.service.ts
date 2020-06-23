@@ -94,20 +94,24 @@ export class GameControllerService {
     }
   }
 
-  public async rollTheDices() {
-    const sessionId = this.gameService.game.sessionId;
-    const player = this.tezosService.account.account_id;
-    this.waiterTask = this.waiterService.addTask();
-    this.apiService.get<any>(`game/${sessionId}/rollDices/${player}`).subscribe(async (rollResult) => {
-      console.log(`Roll Results: payload:${JSON.stringify(rollResult.payload)}, signature:${rollResult.signature}`)
-      // TODO: store rollResult.payload and rollResult.signature for later use when sending play request to game contract
-      this.rollDicesResult = rollResult;
-      this.waiterService.removeTask(this.waiterTask);
-      this.waiterTask = undefined;
-    }, err => {
-      this.gameService.alertError(err);
-      this.waiterService.removeTask(this.waiterTask);
-      this.waiterTask = undefined;
+  public async rollTheDices(): Promise<any> {
+    return new Promise<any>((resolve, reject) => {
+      const sessionId = this.gameService.game.sessionId;
+      const player = this.tezosService.account.account_id;
+      this.waiterTask = this.waiterService.addTask();
+      this.apiService.get<any>(`game/${sessionId}/rollDices/${player}`).subscribe(async (rollResult) => {
+        console.log(`Roll Results: payload:${JSON.stringify(rollResult.payload)}, signature:${rollResult.signature}`)
+        // TODO: store rollResult.payload and rollResult.signature for later use when sending play request to game contract
+        this.rollDicesResult = rollResult;
+        this.waiterService.removeTask(this.waiterTask);
+        this.waiterTask = undefined;
+        resolve(rollResult);
+      }, err => {
+        this.gameService.alertError(err);
+        this.waiterService.removeTask(this.waiterTask);
+        this.waiterTask = undefined;
+        reject();
+      });
     });
   }
 

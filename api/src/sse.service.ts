@@ -1,10 +1,13 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { EventEmitter } from 'events';
+import { EEXIST } from 'constants';
 
 export enum eEventType {
     DEBUG = 'DEBUG',
     TURN_STARTED = 'TURN_STARTED',
-    TURN_COMPLETED = 'TURN_COMPLETED'
+    TURN_COMPLETED = 'TURN_COMPLETED',
+    GAME_CREATION = 'GAME_CREATION',
+    FATAL_ERROR = 'FATAL_ERROR'
 }
 
 class SessionEvent extends EventEmitter {
@@ -53,7 +56,7 @@ class SSEService {
             const sessionId = req.params.sessionId;
             let messageId = parseInt(req.header('Last-Event-ID') as string, 10) || 0;
             const sessionEvent = this.getSessionEvent(sessionId);
-            for (let eventType of [eEventType.DEBUG, eEventType.TURN_STARTED, eEventType.TURN_COMPLETED]) {
+            for (let eventType of [eEventType.DEBUG, eEventType.TURN_STARTED, eEventType.TURN_COMPLETED, eEventType.GAME_CREATION, eEventType.FATAL_ERROR]) {
                 sessionEvent.on(eventType, (event) => {
                     console.log(`broadcast ${eventType} event ${JSON.stringify(event)} to clients`);
                     res.sseSend(event);
@@ -63,7 +66,9 @@ class SSEService {
             console.log('New client connected to session event');
             console.log(`send history to new client: ${history.length} events`)
             for (let event of history) {
-                res.sseSend(event);
+                if ([eEventType.TURN_STARTED, eEventType.TURN_COMPLETED].includes(event.type)) {
+                    res.sseSend(event);
+                }
             }
         });
     }

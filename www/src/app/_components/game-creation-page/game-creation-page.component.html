@@ -1,2 +1,26 @@
-<p>game-creation-page works!</p>
+<div style="height: 80px;">
+    <div *ngIf="gameService.creationStatus == 'IN_CREATION'">
+        <p>Your game session is being created. Please wait.</p>
+        <mat-spinner *ngIf="gameService.creationStatus === 'IN_CREATION'"></mat-spinner>
+    </div>
+    <div *ngIf="gameService.creationStatus == 'READY'">
+        <p>Your game session is now ready to start.</p>
+        <p *ngIf="!gameService.isGameMaster">The game master will start the game when all expected players have registered.</p>
+    </div>
+</div>
+
+<div *ngIf="gameService.isGameMaster">
+    <p>Please check all expected players have registered to this session before getting started.</p>
+</div>
+<div class="btn-group btn-primary">
+    <div class="btn-group btn-primary" *ngIf="gameService.isGameMaster && gameService.isRegistered">
+        <button [disabled]="gameService.playingStatus !== 'created'" class="btn btn-primary" (click)="gameController.start()">Start</button>
+        <!-- <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameController.reset()">Reset</button>
+        <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameController.freeze()">Freeze</button>
+        <button [disabled]="gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameController.resume()">Resume</button>
+        <button [disabled]="gameService.playingStatus !== 'started' && gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameController.end()">End</button> -->
+    </div>
+    <button class="btn btn-primary" (click)="gameService.disconnect()">Exit Game</button>
+</div>
+
 <app-game-status></app-game-status>

@@ -8,7 +8,7 @@ def call(c, x):
 
 class FakeTokenContract(sp.Contract):
     def __init__(self, admin):
-        self.init(paused = False, balances = sp.big_map(tvalue = sp.TRecord(approvals = sp.TMap(sp.TAddress, sp.TNat), balance = sp.TNat)), admin = admin, totalSupply = 0, lastCaller = sp.address('tz1MTzrRsQLdUxLYZz6WnAnMBEx9B8v8rurG'))
+        self.init(paused = False, balances = sp.map(tvalue = sp.TRecord(approvals = sp.TMap(sp.TAddress, sp.TNat), balance = sp.TNat)), admin = admin, totalSupply = 0, lastCaller = sp.address('tz1MTzrRsQLdUxLYZz6WnAnMBEx9B8v8rurG'))
 
     @sp.entry_point
     def setAdministrator(self, params):
@@ -101,7 +101,6 @@ class ChanceContract(sp.Contract):
         chance = self.data.chances[params.chanceId]
         #   receive_amount (N)  -> token.mint(N, player)
         #   pay_amount (N) -> token.burn(N, player)
-        # TODO:  pay_amount_per_company (N) -> asset.getAssets(owner).count -> token.burn(N*count, player)
         # TODO:  pay_amount_per_mining_farm (N) -> asset.getAssets(owner, type=MINING_FARM).count -> token.burn(N*count, player)
         # TODO:  pay_amount_per_bakery (N) -> asset.getAssets(owner, type=BAKERY).count -> token.burn(N*count, player)
         #   go_to_quarantine: same COVID
@@ -178,12 +177,12 @@ class AssetsContract(sp.Contract):
     def setAdministrator(self, params):
         # params: (admin)
         sp.set_type(params.admin, sp.TAddress)
-        sp.verify(sp.sender == self.data.admin)
+        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract))
         self.data.admin = params.admin
     
     @sp.entry_point
     def setGameContract(self, params):
-        sp.verify(sp.sender == self.data.admin)
+        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract))
         self.data.gameContract = params.address
     
     @sp.entry_point
@@ -191,7 +190,7 @@ class AssetsContract(sp.Contract):
         # params: (assetId, buyer)
         sp.set_type(params.assetId, sp.TNat)
         sp.set_type(params.buyer, sp.TAddress)
-        sp.verify(sp.sender == self.data.admin)
+        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract))
         sp.verify(self.data.assets.contains(params.assetId))
         self.data.debug = 0
         price =  sp.local("price", self.data.assets[params.assetId].price)
@@ -218,7 +217,7 @@ class AssetsContract(sp.Contract):
         # params: (assetId, seller)
         sp.set_type(params.assetId, sp.TNat)
         sp.set_type(params.player, sp.TAddress)
-        sp.verify((sp.sender == self.data.admin) | (sp.sender == params.player))
+        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
         sp.verify(self.data.assets.contains(params.assetId))
         sp.verify(self.data.ownership[params.assetId] == params.player)
         resell_price = sp.local("resell_price", self.data.assets[params.assetId].price * 3 / 4)
@@ -234,10 +233,16 @@ class AssetsContract(sp.Contract):
 
     @sp.entry_point
     def reset(self):
-        sp.verify(sp.sender == self.data.admin)
-        self.data.ownership = sp.map(tkey = sp.TNat, tvalue = sp.TAddress)
-        self.data.portfolio = sp.map(tkey = sp.TAddress, tvalue = sp.TSet(t = sp.TNat))
-        self.data.features = sp.map(tkey = sp.TNat, tvalue = sp.TNat)
+        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract))
+        # self.data.ownership = sp.map(tkey = sp.TNat, tvalue = sp.TAddress)
+        sp.for key in self.data.ownership.keys():
+            del self.data.ownership[key]
+        # self.data.portfolio = sp.map(tkey = sp.TAddress, tvalue = sp.TSet(t = sp.TNat))
+        sp.for key in self.data.portfolio.keys():
+            del self.data.portfolio[key]
+        # self.data.features = sp.map(tkey = sp.TNat, tvalue = sp.TNat)
+        sp.for key in self.data.features.keys():
+            del self.data.features[key]
         self.data.debug = 16
         
     @sp.entry_point
@@ -245,7 +250,7 @@ class AssetsContract(sp.Contract):
         # params: (assetId, player)
         sp.set_type(params.assetId, sp.TNat)
         sp.set_type(params.player, sp.TAddress)
-        sp.verify((sp.sender == self.data.admin) | (sp.sender == params.player))
+        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
         sp.verify(self.data.assets.contains(params.assetId))
         sp.if self.data.ownership.contains(params.assetId):
             # the asset is owned by someone
@@ -268,7 +273,7 @@ class AssetsContract(sp.Contract):
         # params: (assetId, player)
         sp.set_type(params.assetId, sp.TNat)
         sp.set_type(params.player, sp.TAddress)
-        sp.verify((sp.sender == self.data.admin) | (sp.sender == params.player))
+        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
         sp.verify(self.data.assets.contains(params.assetId))
         sp.verify(self.data.ownership[params.assetId] == params.player)
         sp.if ~self.data.features.contains(params.assetId) | (self.data.features[params.assetId] < 4):
@@ -283,7 +288,7 @@ class AssetsContract(sp.Contract):
         # params: (assetId, player)
         sp.set_type(params.assetId, sp.TNat)
         sp.set_type(params.player, sp.TAddress)
-        sp.verify((sp.sender == self.data.admin) | (sp.sender == params.player))
+        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
         sp.verify(self.data.assets.contains(params.assetId))
         sp.verify(self.data.ownership[params.assetId] == params.player)
         sp.if self.data.features.contains(params.assetId) & (self.data.features[params.assetId] > 0):
@@ -298,7 +303,7 @@ class AssetsContract(sp.Contract):
         sp.set_type(params.player, sp.TAddress)
         sp.set_type(params.amount, sp.TNat)
         sp.set_type(params.per, sp.TString)
-        sp.verify((sp.sender == self.data.admin) | (sp.sender == params.player))
+        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
         nbCompanies = sp.local("nbCompanies", 0)
         sp.if self.data.portfolio.contains(params.player):
             sp.for assetId in self.data.portfolio[params.player].elements():
@@ -420,22 +425,31 @@ class GameContract(sp.Contract):
         
         
     @sp.entry_point
-    def reset(self, params):
+    def reset_start(self, params):
         sp.verify(sp.sender == self.data.admin, 'Only originator is allowed to reset game')
+        self.data.status = 'resetting'
         self.resetInitialBalance()
-        self.resetAssets()
-        self.data.authorized_contracts = sp.set(t = sp.TAddress)
+        #self.resetAssets()
+
+    @sp.entry_point
+    def reset_complete(self, params):
+        sp.verify(sp.sender == self.data.admin, 'Only originator is allowed to reset game')
+        sp.verify(self.data.status == 'resetting', 'Reset_complete only allowed when game is in resetting state')
+        sp.for element in self.data.authorized_contracts.elements():
+            self.data.authorized_contracts.remove(element)
         self.data.token = self.data.admin
         self.data.chance = self.data.admin
         self.data.status = 'created'
         self.data.nextPlayerIdx = -1
         self.data.nextPlayer = self.data.admin
         self.data.nbLaps = 0
-        self.data.immunized = sp.set(t = sp.TAddress)
-        self.data.quarantinePlayers = sp.map(tkey = sp.TAddress, tvalue = sp.TInt)
+        sp.for element in self.data.immunized.elements():
+            self.data.immunized.remove(element)
+        sp.for key in self.data.quarantinePlayers.keys():
+            del self.data.quarantinePlayers[key]
         sp.for player in self.data.playersSet.elements():
             self.data.playerPositions[player] = 0
-    
+
     @sp.entry_point
     def end(self, params):
         sp.verify((self.data.status == 'started') | (self.data.status == 'frozen'), 'End only allowed when game is in started or frozen state')
@@ -1058,11 +1072,10 @@ def test():
     scenario.verify(~assetsContract.data.portfolio.contains(bob.address))
 
     scenario.h2("Reset game")
-    # be sure the admin of assets contract is set to game contract before
-    scenario += assetsContract.setAdministrator(admin = contract.address).run(sender = originator)
-    scenario += contract.reset().run(sender = originator)
+    scenario += contract.reset_start().run(sender = originator)
+    scenario += assetsContract.reset().run(sender = originator)
     # Verify expected results
-    scenario.verify(contract.data.status == 'created')
+    scenario.verify(contract.data.status == 'resetting')
     scenario.verify(~token.data.balances.contains(alice.address))
     scenario.verify(~token.data.balances.contains(bob.address))
     scenario.verify(token.data.totalSupply == 0)
@@ -1070,6 +1083,10 @@ def test():
     scenario.verify(~assetsContract.data.ownership.contains(1))
     scenario.verify(~assetsContract.data.portfolio.contains(alice.address))
     scenario.verify(~assetsContract.data.portfolio.contains(bob.address))
+
+    scenario += contract.reset_complete().run(sender = originator)
+    # Verify expected results
+    scenario.verify(contract.data.status == 'created')
     
     scenario.h2("Test Chance Contract")
 
@@ -1154,9 +1171,10 @@ def test():
     
     
     scenario.h3("Reset game")
-    scenario += contract.reset().run(sender = originator)
+    scenario += contract.reset_start().run(sender = originator)
+    scenario += assetsContract.reset().run(sender = originator)
     # Verify expected results
-    scenario.verify(contract.data.status == 'created')
+    scenario.verify(contract.data.status == 'resetting')
     scenario.verify(~token.data.balances.contains(alice.address))
     scenario.verify(~token.data.balances.contains(bob.address))
     scenario.verify(token.data.totalSupply == 0)
@@ -1164,6 +1182,10 @@ def test():
     scenario.verify(~assetsContract.data.ownership.contains(1))
     scenario.verify(~assetsContract.data.portfolio.contains(alice.address))
     scenario.verify(~assetsContract.data.portfolio.contains(bob.address))
+
+    scenario += contract.reset_complete().run(sender = originator)
+    # Verify expected results
+    scenario.verify(contract.data.status == 'created')
     scenario.verify(sp.len(contract.data.immunized) == 0)
     scenario.verify(contract.data.playerPositions.get(alice.address) == 0)
     scenario.verify(contract.data.playerPositions.get(bob.address) == 0)

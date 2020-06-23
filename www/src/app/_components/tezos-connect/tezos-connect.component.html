@@ -1,10 +1,7 @@
 <div fxLayout="row" fxLayoutWrap fxLayoutAlign="center start" class="tezos-connect">
     <div fxFlex fxLayout="column" fxLayoutWrap fxLayoutAlign="start center" class="inner-content">
-        <div>
-            <img src="../../../assets/Forecast-Tezos-Price-Prediction-2020-XTZ-1280x720.png" height="100px;">
-        </div>
-        <div fxFlex *ngIf="!tezosService.isConnected && !tezosService.isConnecting" [formGroup]="formDoc" style="width:500px;">
-            <mat-form-field class="clr-form-control" style="width:500px; border: none; color: white;">
+        <div fxFlex *ngIf="!tezosService.isConnected && !tezosService.isConnecting" [formGroup]="formDoc" style="width:350px;">
+            <mat-form-field class="clr-form-control" style="width:350px; border: none; color: white;">
                 <ngx-mat-file-input formControlName="walletFile" accept=".json" placeholder="Select your wallet file"></ngx-mat-file-input>
                 <mat-icon matSuffix>vpn_key</mat-icon>
             </mat-form-field>
@@ -20,20 +17,20 @@
                 <input matInput readonly value="{{tezosService.account.account_id}}">
             </clr-input-container>
 
-            <mat-form-field appearance="fill" style="width:500px;">
+            <mat-form-field appearance="fill" style="width:350px;">
                 <mat-label>Your Address</mat-label>
                 <input matInput readonly value="{{tezosService.account.account_id}}">
             </mat-form-field>
         </div>
-        <div fxFlex fxLayout="row">
+        <div fxFlex fxLayout="row" fxLayoutGap="24px">
             <div fxFlex *ngIf=" tezosService.network != undefined ">
-                <mat-form-field appearance="fill" style="width:200px;">
+                <mat-form-field appearance="fill" style="width:163px;">
                     <mat-label>Network</mat-label>
                     <input matInput readonly value="{{tezosService.network}}">
                 </mat-form-field>
             </div>
             <div fxFlex *ngIf="tezosService.isConnected">
-                <mat-form-field appearance="fill" style="width:200px;">
+                <mat-form-field appearance="fill" style="width:163px;">
                     <mat-label>Your Balance</mat-label>
                     <input matInput readonly value="{{tezosService.account.balance}} XTZ">
                 </mat-form-field>

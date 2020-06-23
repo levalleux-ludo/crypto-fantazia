@@ -1,0 +1,30 @@
+<p>Hello</p>
+<section class="carousel-wrapper" [ngStyle]="carouselWrapperStyle">
+    <!-- <ul class="carousel-inner" #carousel>
+        <li *ngFor="let item of items;" class="app-carousel-item">
+            <ng-container [ngTemplateOutlet]="item.tpl"></ng-container>
+        </li>
+        <li *ngFor="let item of items;" class="app-carousel-item">
+            <ng-container [ngTemplateOutlet]="item.tpl"></ng-container>
+        </li>
+        <li *ngFor="let item of items;" class="app-carousel-item">
+            <ng-container [ngTemplateOutlet]="item.tpl"></ng-container>
+        </li>
+    </ul> -->
+    <div class="carousel-inner" #carousel>
+        <div *ngFor="let item of itemsBefore; let idx = index;" class="app-carousel-item" [itemId]="getBlockIdBefore(idx)">
+            <ng-container [ngTemplateOutlet]="item.tpl"></ng-container>
+        </div>
+        <div *ngFor="let item of items; let idx = index;" class="app-carousel-item" [itemId]="idx">
+            <ng-container [ngTemplateOutlet]="item.tpl"></ng-container>
+        </div>
+        <div *ngFor="let item of itemsAfter; let idx = index;" class="app-carousel-item" [itemId]="getBlockIdAfter(idx)">
+            <ng-container [ngTemplateOutlet]="item.tpl"></ng-container>
+        </div>
+    </div>
+</section>
+
+<div *ngIf="showControls" style="margin-top: 1em">
+    <button (click)="next()">Next</button>
+    <button (click)="prev()">Previous</button>
+</div>

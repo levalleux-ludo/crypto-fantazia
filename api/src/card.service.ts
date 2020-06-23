@@ -44,13 +44,13 @@ class CardService {
 
     buildCardDetailsProperties(card: any): Map<string, string> {
         const properties = new Map;
-        if (card.amount) {
+        if (card.amount !== undefined) {
             properties.set('amount', card.amount.toFixed(0));
         }
-        if (card.nb) {
+        if (card.nb !== undefined) {
             properties.set('nb', card.nb.toFixed(0));
         }
-        if (card.space) {
+        if (card.space !== undefined) {
             properties.set('space', card.space.toFixed(0));
         }
         return properties;

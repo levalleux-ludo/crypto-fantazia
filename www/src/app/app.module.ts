@@ -49,6 +49,16 @@ import { SpacesComponent } from './_components/spaces/spaces.component';
 import { SpaceDetailsComponent } from './_components/space-details/space-details.component';
 import { SpaceDetailsModalComponent } from './_components/space-details-modal/space-details-modal.component';
 import { TurnService } from './_services/turn.service';
+import { DiceComponent } from './_components/dice/dice.component';
+import { CarouselComponent } from './_components/carousel/carousel.component';
+import { PlayerPortfolioComponent } from './_components/player-portfolio/player-portfolio.component';
+import { SpaceCardComponent } from './_components/space-card/space-card.component';
+import { WealthIndicatorComponent } from './_components/wealth-indicator/wealth-indicator.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { CarouselItemDirective } from './_components/carousel/carousel-item.directive';
+import { CarouselItemElementDirective } from './_components/carousel/carousel-item-element.directive';
+import { BoardComponent } from './_components/board/board.component';
+import { GameControlsComponent } from './_components/game-controls/game-controls.component';
 
 @NgModule({
   declarations: [
@@ -80,7 +90,16 @@ import { TurnService } from './_services/turn.service';
     HistoryComponent,
     SpacesComponent,
     SpaceDetailsComponent,
-    SpaceDetailsModalComponent
+    SpaceDetailsModalComponent,
+    DiceComponent,
+    CarouselComponent,
+    PlayerPortfolioComponent,
+    SpaceCardComponent,
+    WealthIndicatorComponent,
+    CarouselItemDirective,
+    CarouselItemElementDirective,
+    BoardComponent,
+    GameControlsComponent
   ],
   imports: [
     BrowserModule,
@@ -102,7 +121,8 @@ import { TurnService } from './_services/turn.service';
     MatSlideToggleModule,
     MatSelectModule,
     MatProgressSpinnerModule,
-    MaterialFileInputModule
+    MaterialFileInputModule,
+    MatTooltipModule
   ],
   providers: [],
   bootstrap: [AppComponent],

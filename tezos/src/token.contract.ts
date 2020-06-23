@@ -11,7 +11,7 @@ const initialStorage = {}
 
 export interface TokenContractStorage {
     admin: string;
-    balances: BigMapAbstraction;
+    balances: MichelsonMap<string, {approvals: any, balance: number}>;
     paused: boolean,
     totalSupply: number,
     lastCaller: string
@@ -60,16 +60,12 @@ export class TokenContract extends AbstractContract<TokenContractStorage> {
             const promises = [];
             for (let address of players) {
                 promises.push(new Promise((resolve2, reject2) => {
-                    this._storage?.balances.get(address).then((account) => {
-                        if (account) {
-                            const value = ((account as any).balance as BigNumber).toNumber();
-                            balances.set(address, value);
-                        }
-                        resolve2();
-                    }).catch(err => {
-                        console.error(err);
-                        resolve2(); // trace but never fail
-                    })
+                    const account = this._storage?.balances.get(address);
+                    if (account) {
+                        const value = ((account as any).balance as BigNumber).toNumber();
+                        balances.set(address, value);
+                    }
+                    resolve2();
                 }));
             }
             Promise.all(promises).then(() => {

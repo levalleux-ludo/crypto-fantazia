@@ -1,14 +1,56 @@
-<p>game-status works!</p>
-<div>
+<div style="width: 350px; overflow-x: auto;">
+    <table class="table">
+        <tbody>
+            <tr>
+
+                <td>
+                    <p>Game Session Id:</p>
+                    {{gameService.game.sessionId}}</td>
+            </tr>
+            <tr>
+
+                <td>
+                    <p>Created by:</p>
+                    {{gameService.getUsername(gameService.game.creator)}}</td>
+            </tr>
+            <tr>
+
+                <td>
+                    <p>Date:</p>{{gameService.game.creationDate.toLocaleString()}}</td>
+            </tr>
+            <tr style='height: 100px;'>
+
+                <td>
+                    <p>Players:</p>
+                    <div *ngFor="let player of gameService.players">
+                        <div>{{gameService.getUsername(player)}} (Tezos Account Id: <a href="https://carthagenet.tzstats.com/{{player}}" target="_blank">{{player}}</a>)</div>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 100px;">
+                <td>
+                    <p>Smart Contracts:</p>
+                    <p><a href="https://carthagenet.tzstats.com/{{gameService.game?.contractAddresses.game}}" target="_blank">Main: {{gameService.game?.contractAddresses.game}}</a></p>
+                    <p><a href="https://carthagenet.tzstats.com/{{gameService.game?.contractAddresses.token}}" target="_blank">Token: {{gameService.game?.contractAddresses.token}}</a></p>
+                    <p><a href="https://carthagenet.tzstats.com/{{gameService.game?.contractAddresses.token}}" target="_blank">Assets: {{gameService.game?.contractAddresses.assets}}</a></p>
+                    <p><a href="https://carthagenet.tzstats.com/{{gameService.game?.contractAddresses.token}}" target="_blank">Chance: {{gameService.game?.contractAddresses.chance}}</a></p>
+                    <p><a href="https://carthagenet.tzstats.com/{{gameService.game?.contractAddresses.token}}" target="_blank">Community: {{gameService.game?.contractAddresses.community}}</a></p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<!-- <div>
     <label>Current status:</label>
     <div>{{gameService.creationStatus}}:{{gameService.playingStatus}}</div>
 </div>
 <div>
-    <mat-spinner *ngIf="gameService.creationStatus === 'IN_CREATION'"></mat-spinner>
 </div>
 <div>
     <label>Game contract:</label>
-    <div><a href="https://carthagenet.tzstats.com/{{gameService.game?.contractAddresses.game}}" target="_blank">{{gameService.game?.contractAddresses.game}}</a></div>
+
 </div>
 <div>
     <label>Players</label>
@@ -18,13 +60,13 @@
 </div>
 <div>
     <label>Token contract:</label>
-    <div><a href="https://carthagenet.tzstats.com/{{gameService.game?.contractAddresses.token}}" target="_blank">{{gameService.game?.contractAddresses.token}}</a></div>
+
 </div>
 <div>
     <label>Game Creator:</label>
     <div><a href="https://carthagenet.tzstats.com/{{gameService.gameCreator}}" target="_blank">{{gameService.gameCreator}}</a></div>
-</div>
-<div>
+</div> -->
+<!-- <div>
     <label>Next Player:</label>
     <div>{{gameService.nextPlayer}}</div>
 </div>
@@ -32,15 +74,4 @@
 <div>
     <label>My balance in game:</label>
     <div>{{gameService.myBalance}}</div>
-</div>
-
-<div class="btn-group btn-primary">
-    <div class="btn-group btn-primary" *ngIf="gameService.isGameMaster && gameService.isRegistered">
-        <button [disabled]="gameService.playingStatus !== 'created'" class="btn btn-primary" (click)="gameController.start()">Start</button>
-        <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameController.reset()">Reset</button>
-        <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameController.freeze()">Freeze</button>
-        <button [disabled]="gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameController.resume()">Resume</button>
-        <button [disabled]="gameService.playingStatus !== 'started' && gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameController.end()">End</button>
-    </div>
-    <button class="btn btn-primary" (click)="gameService.disconnect()">Exit Game</button>
-</div>
+</div> -->

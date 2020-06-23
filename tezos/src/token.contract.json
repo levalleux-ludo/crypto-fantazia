@@ -7,7 +7,7 @@
                     "args": [
                         { "prim": "address", "annots": ["%admin"] },
                         {
-                            "prim": "big_map",
+                            "prim": "map",
                             "args": [
                                 { "prim": "address" },
                                 {

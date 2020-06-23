@@ -1,0 +1,63 @@
+<!-- <clr-tree>
+    <clr-tree-node [clrExpanded]="true" [clrExpandable]="true">
+        <div class="tree-node, assets">Assets</div>
+        <clr-tree-node *ngFor="let asset of portfolio">
+            {{asset.name}}
+        </clr-tree-node>
+    </clr-tree-node>
+</clr-tree>
+
+<div *ngFor="let asset of portfolio">
+    {{asset.name}}
+</div>
+<div class="tree-node, assets">Assets:</div> -->
+<table class="table">
+    <thead>
+        <tr>
+            <th class="left" style="width: 150px;">Asset</th>
+            <th>Features</th>
+            <th class="left">Category</th>
+            <th class="left">Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let asset of portfolio">
+            <td class="left">
+                {{asset.name}}
+            </td>
+            <td>
+                <div fxLayout="row">
+                    <div *ngFor="let i of [].constructor(asset.nbFeatures)">
+                        <clr-icon shape="block" class="is-solid"></clr-icon>
+                    </div>
+                </div>
+            </td>
+            <td class="left">
+                <div mat-raised-button [matTooltip]="asset.category">
+                    <clr-icon *ngIf="asset.category == 'MINING_FARM'" shape="cluster" class="is-solid"></clr-icon>
+                    <clr-icon *ngIf="asset.category == 'BAKERY'" shape="factory" class="is-solid"></clr-icon>
+                    <clr-icon *ngIf="asset.category == 'BIO_TECH'" shape="tree" class="is-solid"></clr-icon>
+                    <clr-icon *ngIf="asset.category == 'FIN_TECH'" shape="bank" class="is-solid"></clr-icon>
+                    <clr-icon *ngIf="asset.category == 'LAW_TECH'" shape="balance" class="is-solid"></clr-icon>
+                    <clr-icon *ngIf="asset.category == 'EDUCATION'" shape="library" class="is-solid"></clr-icon>
+                    <clr-icon *ngIf="asset.category == 'HW_WALLET'" shape="key" class="is-solid"></clr-icon>
+                    <clr-icon *ngIf="asset.category == 'GAME'" shape="wand" class="is-solid"></clr-icon>
+                    <clr-icon *ngIf="asset.category == 'SOCIAL'" shape="share" class="is-solid"></clr-icon>
+                    <clr-icon *ngIf="asset.category == 'MARKETPLACE'" shape="shopping-cart" class="is-solid"></clr-icon>
+                    <clr-icon *ngIf="asset.category == 'EXCHANGE'" shape="piggy-bank" class="is-solid"></clr-icon>
+                </div>
+            </td>
+            <td class="left">
+                <div class="fantas">{{asset.value}}</div>
+            </td>
+        </tr>
+        <tr>
+            <th></th>
+            <th></th>
+            <th style="text-align: right;">Total:</th>
+            <th class="left">
+                <div class="fantas">900</div>
+            </th>
+        </tr>
+    </tbody>
+</table>

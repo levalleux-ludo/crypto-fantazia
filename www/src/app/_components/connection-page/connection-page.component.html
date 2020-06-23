@@ -1,11 +1,12 @@
-<div class="login-wrapper">
-    <form class="login" [formGroup]="form">
-        <div style="height: 250px; overflow: auto;">
+<div style="text-align: center; height: -webkit-fill-available; min-height: 100%;">
+    <!-- <form class="login" [formGroup]="form"> -->
+    <form [formGroup]="form">
+        <div style="height: 160px; overflow: auto;">
             <section class="title">
                 <h3 class="welcome">Welcome to</h3>
-                {{"\u212d"}}rypto {{"\u2131"}}antasia
+                <img src="assets/banner.png" height="100px">
             </section>
-            <section class="title">
+            <!-- <section class="title">
                 <h3 class="welcome">Welcome to</h3>
                 {{"\u228F"}}rypto {{"\u2AED"}}antasia
             </section>
@@ -20,8 +21,8 @@
             <section class="title">
                 <h3 class="welcome">Welcome to</h3>
                 {{"\u2282"}}rypto {{"\u222E"}}antasia
-            </section>
-            <div>you've earn
+            </section> -->
+            <!-- <div>you've earn
                 <app-fanta-symbol [htmlString]="'\u2131'"></app-fanta-symbol> 100</div>
             <span>{{"\u2131"}} 1050</span>
             <span>{{"\u2AED"}} 1050</span>
@@ -33,9 +34,9 @@
             <span>{{"\u2554"}} 1050</span>
             <span>{{"\u23C1"}} 1050</span>
             <span>{{"\u222E"}} 1050</span>
-            <span>{{"\u23C1"}} 1050</span>
+            <span>{{"\u23C1"}} 1050</span> -->
         </div>
-        <div class="login-group">
+        <div fxLayout="column" fxLayoutAlign="center center">
             <h5 class="hint">Your Name</h5>
             <clr-input-container>
                 <label class="clr-sr-only">your name</label>
@@ -45,10 +46,10 @@
                 <label>Remember me</label>
                 <input type="checkbox" name="rememberMe" clrCheckbox formControlName="rememberMe" />
             </clr-checkbox-wrapper>
-            <h5 class="hint">Your Tezos Wallet</h5>
+            <h5 class="hint">Your <img src="assets/tezos-logo-small.png" height="30" style="margin: 6px;">Tezos (&reg;) Wallet</h5>
             <app-tezos-connect></app-tezos-connect>
         </div>
-        <div class="btn-group btn-primary">
+        <div class="btn-group btn-primary" fxLayout="row" fxLayout.sm="column" fxLayout.xs="column" fxLayoutAlign="center center">
             <mat-card>
                 <mat-card-content>
                     <button [disabled]="!isValid() || isConnecting" class="btn btn-primary" (click)="submit(true)">Create A New Session</button>
@@ -60,7 +61,7 @@
                 </mat-card-content>
             </mat-card>
         </div>
-
+        <div style="font-size: xx-large;">&#9856;&#9857;&#9858;&#9859;&#9860;&#9861;</div>
     </form>
 
 </div>

@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import { router as gameController } from './game.controller';
 import { router as cardController } from './card.controller';
 import { router as spaceController } from './space.controller';
+import { router as userController } from './user.controller';
 import { connect } from './db/db';
 import { sseService } from './sse.service';
 
@@ -24,6 +25,7 @@ app.use('/game', gameController);
 app.use('/events', sseService.router);
 app.use('/card', cardController);
 app.use('/space', spaceController);
+app.use('/user', userController);
 
 console.log('Hello World 2!');
 console.log("TEZOS_ACCOUNTS_DIR", process.env.TEZOS_ACCOUNTS_DIR);

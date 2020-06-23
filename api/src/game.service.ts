@@ -3,6 +3,8 @@ import { tezosService } from '../../tezos/src/tezos.service'
 import { originator } from '../../tezos/src/token.service'
 import { GameContract } from '../../tezos/src/game.contract';
 import { TokenContract } from '../../tezos/src/token.contract';
+import { ChanceContract } from '../../tezos/src/chance.contract';
+import { AssetsContract } from '../../tezos/src/assets.contract';
 import Game, { IGame } from './db/game.model';
 import { resolve } from 'dns';
 import { KeyStore } from '../../tezos/node_modules/conseiljs/dist';
@@ -10,6 +12,8 @@ import { turnService } from './turn.service';
 import { sseService, eEventType } from './sse.service';
 import { spaceService } from './space.service';
 import { eSpaceType } from './db/space.model';
+import { cardService, eCardType } from './card.service';
+import { isString } from 'util';
 
 export const GameConfig = {
     nbSpaces: 24,
@@ -51,8 +55,12 @@ class GameService {
                     this.createContracts(keyStore, sessionId, creator).then(async (contracts) => {
                         game.status = 'created';
                         await game.save();
-                    });
+                    }).catch(err => {
+                        sseService.notify(sessionId, eEventType.FATAL_ERROR, (typeof err === 'string') ? err : (err.message) ? err.message : JSON.stringify(err));
+                        reject(err);
+                    })
                 }
+                sseService.notify(sessionId, eEventType.GAME_CREATION, `Game session successfully created.`);
                 resolve(game);
             } catch (err) {
                 reject(err)
@@ -62,7 +70,39 @@ class GameService {
 
     async createContracts(keyStore: KeyStore, sessionId: string, creator: string): Promise<{game: GameContract, token: TokenContract} | undefined> {
         try {
+
+            const chances = (await cardService.getAll(eCardType.CHANCE)).map(
+                cardDetail => {
+                    let param;
+                    switch(cardDetail.impl) {
+                        case 'move_n_spaces': {
+                            param = parseInt(cardDetail.properties.get('nb') as string);
+                            break;
+                        }
+                        case 'go_to_space': {
+                            param = parseInt(cardDetail.properties.get('space') as string);
+                            break;
+                        }
+                        case 'receive_amount':
+                        case 'pay_amount':
+                        case 'pay_amount_per_company':
+                        case 'pay_amount_per_mining_farm':
+                        case 'pay_amount_per_bakery': {
+                            param = parseInt(cardDetail.properties.get('amount') as string);
+                            break;
+                        }
+                        default: {
+                            param = 0;
+                            break;
+                        }
+                    }
+                    return {id: cardDetail.cardId, type: cardDetail.impl, param: param};
+                }
+            );
+
             const game = await Game.findOne({sessionId: sessionId});
+            let numContract = 0;
+            const nbContracts = 5;
             if (!game) throw new Error('Unable to find the game with sessionId ' + sessionId);
 
             const gameContract = await GameContract.deploy(keyStore, creator);
@@ -70,12 +110,87 @@ class GameService {
             console.log(`Game Contract created at ${gameContract.address} for sessionId ${sessionId}`);
             game.contractAddresses.game = gameContract.address;
             await game.save();
+            sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${gameContract.address}. Creating still in progress...`);
 
             const tokenContract = await TokenContract.deploy(keyStore, gameContract.address);
             // store tokenContract.address for session
             console.log(`Token Contract created at ${tokenContract.address} for sessionId ${sessionId}`);
             game.contractAddresses.token = tokenContract.address;
             await game.save();
+            sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${tokenContract.address}. Creating still in progress...`);
+
+            const chanceContract = await ChanceContract.deploy(
+                keyStore,
+                gameContract.address,
+                gameContract.address,
+                chances
+            );
+            // store chanceContract.address for session
+            console.log(`Chance Contract created at ${chanceContract.address} for sessionId ${sessionId}`);
+            game.contractAddresses.chance = chanceContract.address;
+            await game.save();
+            sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${chanceContract.address}. Creating still in progress...`);
+
+            const communityChests = (await cardService.getAll(eCardType.COMMUNITY_CHEST)).map(
+                cardDetail => {
+                    let param;
+                    switch(cardDetail.impl) {
+                        case 'move_n_spaces': {
+                            param = parseInt(cardDetail.properties.get('nb') as string);
+                            break;
+                        }
+                        case 'go_to_space': {
+                            param = parseInt(cardDetail.properties.get('space') as string);
+                            break;
+                        }
+                        case 'receive_amount':
+                        case 'pay_amount':
+                        case 'pay_amount_per_company':
+                        case 'pay_amount_per_mining_farm':
+                        case 'pay_amount_per_bakery': {
+                            param = parseInt(cardDetail.properties.get('amount') as string);
+                            break;
+                        }
+                        default: {
+                            param = 0;
+                            break;
+                        }
+                    }
+                    return {id: cardDetail.cardId, type: cardDetail.impl, param: param};
+                }
+            );
+            const communityContract = await ChanceContract.deploy(
+                keyStore,
+                gameContract.address,
+                gameContract.address,
+                communityChests
+            );
+            // store communityContract.address for session
+            console.log(`Community Contract created at ${communityContract.address} for sessionId ${sessionId}`);
+            game.contractAddresses.community = communityContract.address;
+            await game.save();
+            sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${communityContract.address}. Creating still in progress...`);
+
+            const assets = (await spaceService.getAll()).filter(
+                space => (space.type == eSpaceType.BAKERY) || (space.type == eSpaceType.MINING_FARM)
+                || (space.type == eSpaceType.MARKETPLACE) || (space.type == eSpaceType.EXCHANGE)
+                || (space.type == eSpaceType.STARTUP)
+            ).map(space => {
+                return {assetId: space.spaceId, type: space.type, price: space.price, featurePrice: space.featureCost, rentRates: space.rentRates};
+            });
+            const assetsContract = await AssetsContract.deploy(
+                keyStore,
+                keyStore.publicKeyHash, // dont set game contract as admin because we need originator being able to call 'reset' entry-point 
+                gameContract.address,
+                assets
+            );
+            // store assetsContract.address for session
+            console.log(`Assets Contract created at ${assetsContract.address} for sessionId ${sessionId}`);
+            game.contractAddresses.assets = assetsContract.address;
+            await game.save();
+            sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${assetsContract.address}. Creating still in progress...`);
+
+
 
             return {
                 game: gameContract,
@@ -83,8 +198,9 @@ class GameService {
             };
 
         } catch(err) {
-            console.error(err);
+            // console.error(err);
             this.deleteGame(sessionId);
+            throw err;
         }
         return undefined;
     }
@@ -136,7 +252,13 @@ class GameService {
         // const opResult = await gameContract.start(keyStore, game.contractAddresses.token, 1500);
         // console.log(`START GAME requested: txHash:${opResult.txHash} ...`);
         // opResult.onConfirmed.then((blockId) => {
-        const txOper = await gameContract.start(keyStore, game.contractAddresses.token, 1500).catch(err => {
+        const txOper = await gameContract.start(
+            keyStore,
+            game.contractAddresses.token,
+            game.contractAddresses.chance,
+            game.contractAddresses.community,
+            game.contractAddresses.assets,
+            1500).catch(err => {
             console.error(`Error during start call: ${err.id}, ${err.message}`);
             throw new Error(`[ERROR] START GAME request failed with error: ${err}`);
         });
@@ -169,7 +291,7 @@ class GameService {
         // const opResult = await gameContract.start(keyStore, game.contractAddresses.token, 1500);
         // console.log(`START GAME requested: txHash:${opResult.txHash} ...`);
         // opResult.onConfirmed.then((blockId) => {
-        const txOper = await gameContract.reset(keyStore, game.contractAddresses.token).catch(err => {
+        const txOper = await gameContract.reset(keyStore).catch(err => {
             console.error(`Error during reset call: ${err.id}, ${err.message}`);
             throw new Error(`[ERROR] RESET GAME request failed with error: ${err}`);
         });
@@ -309,7 +431,7 @@ class GameService {
                 break;
             }
         }
-
+        return options;
     }
 }
 

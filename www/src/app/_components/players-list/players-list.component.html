@@ -1,9 +1,32 @@
-<p>players-list works!</p>
-<clr-tree>
-    <app-player-treenode [expanded]="true" [name]="'Me'" [assets]="['company1', 'company2']" [balance]="gameService.myBalance.toFixed(2)" [position]="gameService.getPlayerPosition(tezosService.account.account_id)"></app-player-treenode>
-    <clr-tree>
-        Other Players
-        <app-player-treenode *ngFor="let player of otherPlayers" [expanded]="false" [name]="player" [assets]="['company1', 'company2']" [balance]="gameService.balanceOf(player)" [position]="gameService.getPlayerPosition(player)"></app-player-treenode>
-    </clr-tree>
+<ng-template #panelTitle let-person="person" let-bars="bars">
+    <div style="width: 100px;">{{person.name}}</div>
+    <app-wealth-indicator style="width: calc(100% - 100px); margin-top: 6px; margin-left: 24px;" [bars]="bars"></app-wealth-indicator>
+</ng-template>
 
-</clr-tree>
+<ng-template #panelContent let-person="person" let-getPortfolio="getPortfolio">
+    <div fxLayout="row">
+        <div style="width: 100px;">Current block:</div>
+        <div>#3 ('XXXXXX XXX XX')</div>
+    </div>
+    <app-player-portfolio [portfolio]="getPortfolio(person)"></app-player-portfolio>
+</ng-template>
+
+
+<clr-accordion #accordion>
+    <clr-accordion-panel #myPanel class="clr-accordion-content-no-padding">
+        <clr-accordion-title style="width: calc(100% - 0.96rem); height: 48px;" fxLayout="row">
+            <ng-container *ngTemplateOutlet="panelTitle;context:{person: me, bars: bars.get(me.address), getPortfolio: getPortfolio}"></ng-container>
+        </clr-accordion-title>
+        <clr-accordion-content>
+            <ng-container *ngTemplateOutlet="panelContent;context:{person: me, bars: bars.get(me.address), getPortfolio: getPortfolio}"></ng-container>
+        </clr-accordion-content>
+    </clr-accordion-panel>
+    <clr-accordion-panel *ngFor="let person of otherPlayers | keyvalue" class="clr-accordion-content-no-padding">
+        <clr-accordion-title style="width: calc(100% - 0.96rem); height: 48px;" fxLayout="row">
+            <ng-container *ngTemplateOutlet="panelTitle;context:{person: person.value, bars: bars.get(person.value.address), getPortfolio: getPortfolio}"></ng-container>
+        </clr-accordion-title>
+        <clr-accordion-content>
+            <ng-container *ngTemplateOutlet="panelContent;context:{person: person.value, bars: bars.get(person.value.address), getPortfolio: getPortfolio}"></ng-container>
+        </clr-accordion-content>
+    </clr-accordion-panel>
+</clr-accordion>

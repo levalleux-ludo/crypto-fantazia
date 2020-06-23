@@ -14,7 +14,7 @@ import { GameService } from './_services/game.service';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'crypto-fantasia';
+  title = 'Crypto &Fscr;antazia';
 
   constructor(
     public connectionService: ConnectionService,

@@ -1,0 +1,25 @@
+.item {
+    padding: 0;
+    // width: 100px;
+    // height: 100px;
+    // background-color: crimson;
+    color: #fff;
+    // font-size: 50px;
+    // line-height: 300px;
+    text-align: center;
+}
+
+.players {
+    position: absolute;
+    top: -24px;
+    text-align: center;
+    width: 100%;
+}
+
+.dices-total {
+    font-size: xxx-large;
+    line-height: 80px;
+    text-align: center;
+    font-weight: bold;
+    width: 60px;
+}

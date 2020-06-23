@@ -1,13 +1,50 @@
-<div style="width: 100%;  height: 100%;" fxLayout="row">
+<!-- <div style="width: 100%;  height: 100%;" fxLayout="row">
     <app-vertical-left-bar></app-vertical-left-bar>
     <div fxLayout="column" style="width: 100%;">
         <div class="content-area" style="height: calc(100% - 480px);">
-            <app-game-status></app-game-status>
             <div *ngIf="gameService.iAmNextPlayer() && !gameService.iAmPlaying()">
                 It's your turn !
                 <button class="btn btn-primary" (click)="gameController.rollTheDices()">Roll the Dices</button>
             </div>
         </div>
         <app-dock-container [height]="480"></app-dock-container>
+    </div>
+</div> -->
+<div class="content-container" fxLayout="row" fxLayout.xs="column" fxLayoutGap="5px" fxLayoutAlign="center start" fxLayoutAlign.xs="start center">
+    <nav style="width:30%; min-width: 340px;">
+        <section class="sidenav-content">
+            <div style="text-align: center;">
+                <h3 style="margin-bottom: 24px;">Game Session</h3>
+                <p>id #</p>
+                <p>created by {{gameService.getUsername(gameService.game.creator)}}</p>
+            </div>
+        </section>
+        <section class="sidenav-content">
+            <div style="text-align: center;">
+                <h3 style="margin-bottom: 24px;">Game Controls</h3>
+                <app-game-controls></app-game-controls>
+            </div>
+        </section>
+        <section class="sidenav-content">
+            <div style="text-align: center;">
+                <h3 style="margin-bottom: 24px;">Players</h3>
+                <app-players-list></app-players-list>
+            </div>
+        </section>
+    </nav>
+    <div class="content-area" style="width: auto; min-height: 720px;">
+        <!-- <app-flex-test-one></app-flex-test-one> -->
+        <!-- <p>Hello</p>
+        <div class="content-area" style="height: calc(100% - 480px);">
+            <div *ngIf="gameService.iAmNextPlayer() && !gameService.iAmPlaying()">
+                It's your turn !
+                <button class="btn btn-primary" (click)="gameController.rollTheDices()">Roll the Dices</button>
+            </div>
+        </div>
+        <app-dock-container [height]="480"></app-dock-container> -->
+        <app-board></app-board>
+    </div>
+    <div>
+        <app-game-status></app-game-status>
     </div>
 </div>

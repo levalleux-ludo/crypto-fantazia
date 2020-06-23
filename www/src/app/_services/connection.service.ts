@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { GameService } from './game.service';
 import { eLocalStorageDataKey } from 'src/constants';
+import { ApiService } from './api.service';
+import { TezosService } from './tezos.service';
 
 export interface ConnectionData {
   username: string;
@@ -19,7 +21,8 @@ export class ConnectionService {
   rememberMe = false;
   connected = new Subject<ConnectionData>();
   constructor(
-    // private gameService: GameService
+    private apiService: ApiService,
+    private tezosService: TezosService
   ) {
     const stored = localStorage.getItem(eLocalStorageDataKey.USERNAME);
     if (stored) {
@@ -40,8 +43,14 @@ export class ConnectionService {
         }
         this.isConnected = true;
         this.isConnecting = false;
-        this.connected.next(data);
-        resolve(data);
+        // call apiService
+        this.apiService.post<any>(
+          'user',
+          {userName: data.username, tezosAccountId: this.tezosService.account.account_id}
+        ).subscribe(() => {
+          this.connected.next(data);
+          resolve(data);
+        }, err => reject(err));
     });
   }
 

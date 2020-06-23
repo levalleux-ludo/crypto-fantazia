@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ModalService } from 'src/app/_services/modal.service';
 import { GameService } from 'src/app/_services/game.service';
 import { TezosService } from 'src/app/_services/tezos.service';
+import { UserService } from 'src/app/_services/user.service';
 
 @Component({
   selector: 'app-choose-session-dialog',
@@ -17,12 +18,15 @@ export class ChooseSessionDialogComponent implements OnInit {
   ];
   selectedSession = undefined;
 
+  users = new Map();
+
   my_var = "toto";
 
   constructor(
     public modalService: ModalService,
     private gameService: GameService,
-    private tezosService: TezosService
+    private tezosService: TezosService,
+    public userService: UserService
   ) { }
 
   ngOnInit(): void {
@@ -32,11 +36,15 @@ export class ChooseSessionDialogComponent implements OnInit {
           || (game.status === 'created')
           || ((game.status === 'started') && game.players.includes(this.tezosService.account.account_id))
           ) {
+          this.userService.getUser(game.creator).then((user) => {
+            this.users.set(game.creator, user);
+          });
           return {
             sessionId: game.sessionId,
             name: game.sessionId,
             status: game.status,
-            creator: game.creator
+            creator: game.creator,
+            creationDate: game.creationDate ? new Date(game.creationDate) : new Date(0)
           };
         }
       }).filter(item => item !== undefined);

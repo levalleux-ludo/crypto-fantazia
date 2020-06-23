@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, AfterViewInit } from '@angular/core';
 import { ConnectionService } from 'src/app/_services/connection.service';
 import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 import { WaiterService } from 'src/app/_services/waiter.service';
@@ -16,7 +16,7 @@ import { exec } from 'child_process';
   templateUrl: './connection-page.component.html',
   styleUrls: ['./connection-page.component.scss']
 })
-export class ConnectionPageComponent implements OnInit, OnDestroy {
+export class ConnectionPageComponent implements OnInit, OnDestroy, AfterViewInit {
 
   form: FormGroup;
   isConnecting = false;
@@ -29,8 +29,12 @@ export class ConnectionPageComponent implements OnInit, OnDestroy {
     private gameService: GameService,
     private alertService: AlertService,
     private tezosService: TezosService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private elementRef: ElementRef
   ) { }
+  ngAfterViewInit(): void {
+    // this.elementRef.nativeElement.style.setProperty('--background-image', '../../../assets/crypto-fantasia.png');
+ }
 
   ngOnDestroy(): void {
     if (this.waiterTask) {
@@ -59,7 +63,7 @@ export class ConnectionPageComponent implements OnInit, OnDestroy {
     this.connectionService.connect(this.form.value).then((connectionData) => {
       if (newSession) {
         this.gameService.createSession().then((game) => {
-          this.alertService.show({message: 'game session created with Id:' + game.sessionId});
+          this.alertService.show({message: `game session with Id ${game.sessionId} is being created. This may take several minutes.`});
           this.isConnecting = false;
         }).catch(err => {
           this.alertService.error(JSON.stringify(err));

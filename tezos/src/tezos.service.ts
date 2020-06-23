@@ -9,7 +9,8 @@ import { Tezos } from '@taquito/taquito';
 import {InMemorySigner} from '@taquito/signer';
 
 const platform = 'tezos';
-const tezosNode = 'https://tezos-dev.cryptonomic-infra.tech:443';
+// const tezosNode = 'https://tezos-dev.cryptonomic-infra.tech:443';
+const tezosNode = 'https://carthagenet.SmartPy.io';
 const conseilServer = {
     url: 'https://conseil-dev.cryptonomic-infra.tech:443', // !!!! IMPORTANT : do NOT add an ending '/' to this URL
     apiKey: '79e54a13-0b95-4e4d-a509-c38cb0158361',
@@ -126,23 +127,35 @@ class TezosService {
         storage: any,
         keystore: KeyStore): Promise<string> {
         const result = await TezosNodeWriter.sendContractOriginationOperation(
-            'https://carthagenet.SmartPy.io',
+            tezosNode,
             keystore,
             0, // amount
             undefined, // delegate
-            100000, // fee,
+            800000, // fee,
             '', // derivationPath
             20000, // storage_limit
-            500000, // gas_limit
+            900000, // gas_limit
             contract,
             storage,
             TezosParameterFormat.Micheline
-        );
+        ).catch(err => {
+            throw new Error(`Exception when deploying contract: ${err}`);
+        })
         const groupId = TezosService.clearRPCOperationGroupHash(result.operationGroupID);
         console.log(`Injected operation group id ${groupId}`);
-        const conseilResult = await TezosConseilClient.awaitOperationConfirmation(conseilServer, conseilServer.network, groupId, 5, networkBlockTime);
-        console.log(`Originated contract at ${conseilResult.originated_contracts}`);
-        return conseilResult.originated_contracts;
+        let nbTries = 3;
+        while(true) {
+            try {
+                const conseilResult = await TezosConseilClient.awaitOperationConfirmation(conseilServer, conseilServer.network, groupId, 5, networkBlockTime);
+                console.log(`Originated contract at ${conseilResult.originated_contracts}`);
+                return conseilResult.originated_contracts;
+            } catch(err) {
+                // just retry nbTries times at worst
+                if (nbTries-- <= 0) {
+                    throw err;
+                }
+            }
+        }
     }
 
     async deployContract2(

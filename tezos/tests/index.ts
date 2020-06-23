@@ -10,6 +10,7 @@ import { AssetsContract, IAssetParams } from "../src/assets.contract";
 import { TokenContract } from "../src/token.contract";
 import BigNumber from "bignumber.js";
 import { ChanceContract, IChanceParams } from "../src/chance.contract";
+import { Operation } from "@taquito/taquito/dist/types/operations/operations";
 
 console.log('Hello World!');
 
@@ -53,19 +54,20 @@ const sampleStorage =
 // };
 
 const redeploy = false;
-const redeploy_game = false;
-const redeploy_assets = false;
-const redeploy_token = false;
-const redeploy_chances = false;
-let gameContractAddress = 'KT1GHQ4Ch8GM6Kjy8ED1P39r31tGxvszXHax';
-let assetsContractAddress = 'KT18iWpe2AX63tCKbFoFyfFKGCrnY33wB57j';
-let tokenContractAddress = 'KT1M6twv4RWexpNfA3SWtq6xq58yQYHRztWS';
-let chanceContractAddress = 'KT1KqbGEU6ed4RRpEy37djhpNfEnFhPaoL7s';
+const redeploy_game = true;
+const redeploy_assets = true;
+const redeploy_token = true;
+const redeploy_chances = true;
+let gameContractAddress = '';
+let assetsContractAddress = '';
+let tokenContractAddress = '';
+let chanceContractAddress = '';
 
 const register_alice = false;
 const register_bob = true;
 const reset_game = true;
 const testGameContract = true;
+const testAssetContract = false;
 const testSampleContract = false;
 const sampleContractAddress = 'KT1BLuqcTJr2csiiZecpeEPmC9mHQh7hevN2';
 
@@ -144,6 +146,29 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
         console.error(`[ERROR] accountInfo failed with error:${err}`);
     }
     await tezosService.getNetworks();
+    if (testAssetContract) {
+        if (redeploy_assets) {
+            await AssetsContract.deploy(keyStore, originator, originator, allAssets)
+            .then(assetsContract => {
+                console.log('Assets contract deployed at ', assetsContract.address);
+                assetsContractAddress = assetsContract.address;
+            }).catch(err => {
+                throw new Error('Error when deploying Assets contract:' + err);
+            })
+        }
+        const assetsContract = await AssetsContract.retrieve(assetsContractAddress);
+        let resetPromise = undefined;
+        await assetsContract.reset(keyStore).then((txOper) => {
+            resetPromise = txOper.onConfirmed;
+        }).catch(err => {
+            throw new Error(`Error during reset call: ${err.id}, ${err.message}`);
+        });
+        await (resetPromise as any).then((blockId:  number) => {
+            console.log('Reset Tx confirmed', blockId);
+        }).catch((err: any) => {
+            throw new Error(`Error during reset call: ${err.id}, ${err.message}`);
+        });
+    }
     if (testGameContract) {
         if (redeploy_game) {
             await GameContract.deploy(keyStore, 'tz1fV4G1dwVXwXfrrBKvpWUg5B1HNUKYhcki')
@@ -155,7 +180,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
             });
         }
         if (redeploy_assets) {
-            await AssetsContract.deploy(keyStore, gameContractAddress, gameContractAddress, allAssets)
+            await AssetsContract.deploy(keyStore, originator, gameContractAddress, allAssets)
             .then(assetsContract => {
                 console.log('Assets contract deployed at ', assetsContract.address);
                 assetsContractAddress = assetsContract.address;
@@ -249,7 +274,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                 });
                 await gameContract.update().then((storage) => {
                     gameStorage = storage;
-                })
+                });
             }
             const assetsContract = await AssetsContract.retrieve(assetsContractAddress);
             const portfolioAlice = assetsContract.storage?.portfolio.get(keyStoreAlice.publicKeyHash);
@@ -281,6 +306,20 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                     //     console.log('Bob buy  assetId:' + assetId + 'Tx confirmed', blockId);
                     // }).catch((err: any) => console.error('Bob buy  assetId:' + assetId + 'tx failed:' + err))
                 }
+            }
+            if (reset_game) {
+                let resetPromise = undefined;
+                await gameContract.reset(keyStore).then((operation) => {
+                    console.log('returns from reset call:' + operation.txHash);
+                    resetPromise = operation.onConfirmed;
+                }).catch(err => {
+                    throw new Error(`Error during reset call: ${err.id}, ${err.message}`);
+                });
+                await (resetPromise as any).then((blockId:  number) => {
+                    console.log('Reset Tx confirmed', blockId);
+                }).catch((err: any) => {
+                    throw new Error(`Error during reset call: ${err.id}, ${err.message}`);
+                });
             }
         }).catch(err => {
             console.error(err)

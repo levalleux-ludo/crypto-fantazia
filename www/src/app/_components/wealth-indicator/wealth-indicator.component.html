@@ -1,0 +1,3 @@
+<div class="wrapper" style="grid-template-columns: {{templateColumns}};">
+    <div *ngFor="let bar of _bars; let idx = index;" style="{{bar.style}}" class="fantas" matTooltip="{{bar.label}}">{{bar.value}}</div>
+</div>

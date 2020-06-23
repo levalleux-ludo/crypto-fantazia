@@ -5,6 +5,7 @@ import assetsContract from './assets.contract.json';
 import { KeyStore } from "conseiljs";
 import { tezosService } from "./tezos.service";
 import BigNumber from "bignumber.js";
+import { assert } from "console";
 
 export interface AssetsContractStorage {
     admin: string;
@@ -17,7 +18,7 @@ export interface AssetsContractStorage {
 export interface IAssetParams {assetId: number, type: string, price: number, featurePrice: number, rentRates: number[]}
 
 export class AssetsContract extends AbstractContract<AssetsContractStorage> {
-    public static async deploy(keyStore: KeyStore, admin: string, gameContract: string, assets: any[]): Promise<AssetsContract> {
+    public static async deploy(keyStore: KeyStore, admin: string, gameContract: string, assets: IAssetParams[]): Promise<AssetsContract> {
         const address = await tezosService.deployContract(
             JSON.stringify(assetsContract),
             JSON.stringify(this.getInitialStorage(admin, gameContract, assets)),
@@ -61,7 +62,15 @@ export class AssetsContract extends AbstractContract<AssetsContractStorage> {
         }
         const allAssets = [];
         for (const asset of assets) {
-            if (asset.rentRates.length != 5) throw new Error('Was expecting 5 elements in rentRates set for asset with id ' + asset.assetId);
+            if (asset.rentRates.length === 0) {
+              if (asset.featurePrice !== 0) {
+                throw new Error('Was expecting some rentRates set for asset with id ' + asset.assetId);
+              }
+              asset.rentRates = [0, 0, 0, 0, 0];
+            }
+            if (asset.rentRates.length != 5) {
+              throw new Error('Was expecting 5 elements in rentRates set for asset with id ' + asset.assetId);
+            }
             allAssets.push(assetDescription(
                 asset.assetId,
                 asset.type,
@@ -98,6 +107,14 @@ export class AssetsContract extends AbstractContract<AssetsContractStorage> {
         const callParams = { fee: 800000, gasLimit: 1000000, storageLimit: 50000 };
         return this.callMethodTaquito(keyStore, operationName, callParams, operation, assetId, buyer);
     }
+
+    async reset(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+      const operationName = 'reset';
+      const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+       = (ci: any) => ci.methods.reset;
+      const callParams = { fee: 800000, gasLimit: 1000000, storageLimit: 50000 };
+      return this.callMethodTaquito(keyStore, operationName, callParams, operation);
+  }
 
 
 }

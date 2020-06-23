@@ -7,6 +7,7 @@ import { KeyStore } from "conseiljs";
 import { tezosService } from "./tezos.service";
 import { sign } from "crypto";
 import { TransactionOperation } from "@taquito/taquito/dist/types/operations/transaction-operation";
+import { AssetsContract } from "./assets.contract";
 
 export interface GameContractStorage {
     admin: string;
@@ -132,7 +133,7 @@ export class GameContract extends AbstractContract<GameContractStorage> {
         const operationName = 'register';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.register;
-        const callParams = { fee: 400000, gasLimit: 400000, storageLimit: 100 };
+        const callParams = { fee: 400000, gasLimit: 1000000, storageLimit: 20000 };
         return this.callMethodTaquito(keyStore, operationName, callParams, operation);
     }
 
@@ -201,10 +202,33 @@ export class GameContract extends AbstractContract<GameContractStorage> {
     }
 
     async reset(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
-        const operationName = 'reset';
+      return new Promise<{txHash: string, onConfirmed: Promise<number>}>((resolve, reject) => {
+        const operationName = 'reset_start';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
-         = (ci: any) => ci.methods.reset;
-         return this.callMethodTaquito(keyStore, operationName, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation);
+         = (ci: any) => ci.methods.reset_start;
+         this.callMethodTaquito(keyStore, operationName, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation)
+         .then(operationResult => {
+           operationResult.onConfirmed.then(() => {
+             AssetsContract.retrieve(this._storage?.assets as string).then((assetsContract) => {
+               assetsContract.reset(keyStore).then((resetResult) => {
+                resetResult.onConfirmed.then(() => {
+                  const operationName2 = 'reset_complete';
+                  const operation2:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+                   = (ci: any) => ci.methods.reset_start;
+                   resolve(this.callMethodTaquito(keyStore, operationName2, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation2));
+                }).catch(err => reject(err));
+              }).catch(err => reject(err));
+            }).catch(err => reject(err));
+           }).catch(err => reject(err));
+          }).catch(err => reject(err));
+      });
+    }
+
+    async reset_complete(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+      const operationName = 'reset_complete';
+      const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+       = (ci: any) => ci.methods.reset_complete;
+       return this.callMethodTaquito(keyStore, operationName, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation);
     }
 
     async play(keyStore: KeyStore) {

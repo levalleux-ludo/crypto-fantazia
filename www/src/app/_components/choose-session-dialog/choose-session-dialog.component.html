@@ -1,16 +1,32 @@
 <clr-modal [(clrModalOpen)]="modalService.opened" [clrModalClosable]="false">
-    <h3 class="modal-title">Select the session you want to connect</h3>
+    <h3 class="modal-title">Select the session you want to join:</h3>
     <div class="modal-body">
-        <p>Clicking on the backdrop doesn't do anything.???</p>
-        <div>a variable: {{my_var}}</div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Creator</th>
+                    <th>Creation Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let session of allSessions" (click)="selectedSession=session.sessionId" [ngClass]="{ 'row-selected': selectedSession === session.sessionId }">
+                    <td>{{session.sessionId}}</td>
+                    <td>{{users.get(session.creator)?.userName}}</td>
+                    <td>{{session.creationDate.toLocaleString()}}</td>
+                    <td>{{session.status}}</td>
+                </tr>
+            </tbody>
+        </table>
         <clr-radio-container>
-            <label>Full radio</label>
+            <!-- <label>Full radio</label> -->
 
             <clr-radio-wrapper *ngFor="let session of allSessions" style="height: 60px;">
                 <input type="radio" clrRadio value="{{session.sessionId}}" [(ngModel)]="selectedSession" />
                 <label>{{session.name}}{{' (status:' + session.status + ', created by:' + session.creator + ')'}}</label>
             </clr-radio-wrapper>
-            <clr-control-helper>Helper text</clr-control-helper>
+            <!-- <clr-control-helper>Helper text</clr-control-helper> -->
 
             <clr-control-error>This field is required!</clr-control-error>
         </clr-radio-container>

@@ -12,6 +12,7 @@ import { WaiterService } from './waiter.service';
 import { KeyStore } from '../../../../tezos/node_modules/conseiljs/dist';
 import { fadeSlide } from '@clr/angular';
 import { tokenService } from '../../../../tezos/src/token.service';
+import { UserService } from './user.service';
 
 export enum eGameCreationStatus {
   NONE = 'NONE',
@@ -48,6 +49,8 @@ export class GameService {
   currentPlayer: string | undefined;
   currentTurn: number = -1;
   playersPosition = new Map<string, number>();
+  usernames = new Map();
+  updated = false;
 
   _game = undefined;
 
@@ -59,7 +62,7 @@ export class GameService {
     token: undefined
   };
 
-  onStatusChange: EventEmitter<string> = new EventEmitter();
+  onChange: EventEmitter<string> = new EventEmitter();
 
   onPlayerMove: EventEmitter<{player: string, newPosition: number}> = new EventEmitter();
 
@@ -69,7 +72,8 @@ export class GameService {
     private alertService: AlertService,
     private tezosService: TezosService,
     private waiterService: WaiterService,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private userService: UserService
   ) {
     connectionService.waitConnected$().subscribe(() => {
       if (!connectionService.isConnected && this.isConnected) {
@@ -92,6 +96,10 @@ export class GameService {
 
   get players() {
     return this._players;
+  }
+
+  getUsername(player): string {
+    return this.usernames.get(player);
   }
 
   get game(): IGame {
@@ -143,6 +151,7 @@ export class GameService {
     return new Promise((resolve, reject) => {
       const creator = this.tezosService.account.account_id;
       this.apiService.post<IGame>('game/create', { creator }).subscribe(async (game) => {
+        this.connectGameEvents(game.sessionId);
         await this.updateStatus(game);
         resolve(game);
       }, async (err) => {
@@ -152,36 +161,48 @@ export class GameService {
     });
   }
 
+  private connectGameEvents(sessionId: string) {
+    this.apiService.connectSSE(`events/${sessionId}`).subscribe((event) => {
+      console.log('on receive evnt from SSE channel:', event);
+      switch (event.type) {
+        case 'TURN_STARTED': {
+          this._turns.push({id: event.id, ...event.data});
+          this.currentTurn = Math.max(event.id, this.currentTurn);
+          if (this.currentTurn === event.id) {
+            this.currentPlayer = event.data.player;
+            this.playersPosition.set(event.data.player, event.data.newPosition);
+            this.onPlayerMove.emit({
+              player: event.data.player,
+              newPosition: event.data.newPosition
+            });
+          }
+          break;
+        }
+        case 'TURN_COMPLETED': {
+          if (this.currentPlayer === event.data.player) {
+            this.currentPlayer = undefined;
+          }
+          break;
+        }
+        case 'GAME_CREATION': {
+          this.showAlert(event.data as string);
+          break;
+        }
+        case 'FATAL_ERROR': {
+          this.alertError(event.data as string);
+          break;
+        }
+      }
+    }, err => {
+      // this.alertService.error(JSON.stringify(err));
+    });
+  }
+
   public async connectSession(sessionId: string): Promise<any> {
     this.disconnect();
     return new Promise((resolve, reject) => {
       this.apiService.get<IGame>(`game/${sessionId}`).subscribe(async (game) => {
-        this.apiService.connectSSE(`events/${sessionId}`).subscribe((event) => {
-          console.log('on receive evnt from SSE channel:', event);
-          switch (event.type) {
-            case 'TURN_STARTED': {
-              this._turns.push({id: event.id, ...event.data});
-              this.currentTurn = Math.max(event.id, this.currentTurn);
-              if (this.currentTurn === event.id) {
-                this.currentPlayer = event.data.player;
-                this.playersPosition.set(event.data.player, event.data.newPosition);
-                this.onPlayerMove.emit({
-                  player: event.data.player,
-                  newPosition: event.data.newPosition
-                });
-              }
-              break;
-            }
-            case 'TURN_COMPLETED': {
-              if (this.currentPlayer === event.data.player) {
-                this.currentPlayer = undefined;
-              }
-              break;
-            }
-          }
-        }, err => {
-          this.alertService.error(JSON.stringify(err));
-        });
+        this.connectGameEvents(sessionId);
         await this.updateStatus(game);
         resolve(game);
       }, async (err) => {
@@ -201,7 +222,7 @@ export class GameService {
           this.isRegistered = true;
         } else {
           this.showAlert('Game Contract has been created. Now registering current player ...');
-          this.contracts.game.register(this.tezosService.keyStore, 123456789, 'xxxxxxxx').then((txOper) => {
+          this.contracts.game.register(this.tezosService.keyStore).then((txOper) => {
             this.showAlert('returns from register call:' + txOper.txHash);
             txOper.onConfirmed.then((blockId) => {
                 console.log('Tx confirmed', txOper.txHash, blockId);
@@ -214,6 +235,7 @@ export class GameService {
 
   private async updateStatus(game: IGame) {
     if (game) {
+      this.updated = (this._game === undefined);
       this._game = game;
       this.isConnected = true;
       if (this._game.status === 'in_creation') {
@@ -228,6 +250,9 @@ export class GameService {
       if (!this.isRegistering && !this.isRegistered) {
         this.registerWhenPossible();
       }
+      if (this.updated) {
+        this.onChange.emit();
+      }
     } else {
       this.disconnect();
     }
@@ -237,9 +262,27 @@ export class GameService {
     if (this.contracts.token) {
       await this.contracts.token.update();
       await this.contracts.token.getBalances(this.players).then(balances => {
-        this.balances = balances;
+        if (!this.compareMaps(balances, this.balances)) {
+          this.balances = balances;
+          this.updated = true;
+        }
       });
     }
+  }
+
+  private compareMaps<T, U>(maps1: Map<T, U>, maps2: Map<T, U>): boolean {
+    if (maps1.size !== maps2.size) {
+      return false;
+    }
+    for (const key of maps1.keys()) {
+      if (!maps2.has(key)) {
+        return false;
+      }
+      if (maps2.get(key) !== maps1.get(key)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   public async updateFromGameContract() {
@@ -253,7 +296,14 @@ export class GameService {
       // set the player initial position if needed
       for (const player of this._players) {
         if (!this.playersPosition.has(player)) {
+          this.updated = true;
           this.playersPosition.set(player, 0);
+        }
+        if (!this.usernames.has(player)) {
+          await this.userService.getUser(player).then((user) => {
+            this.updated = true;
+            this.usernames.set(player, user.userName);
+          });
         }
       }
       this.playingStatus = storage.status;
@@ -263,7 +313,10 @@ export class GameService {
             this.waiterService.removeTask(this.waiterTask);
             this.waiterTask = undefined;
           }
-          this.creationStatus = eGameCreationStatus.READY;
+          if (this.creationStatus !== eGameCreationStatus.READY) {
+            this.creationStatus = eGameCreationStatus.READY;
+            this.updated = true;
+          }
           break;
         }
         case 'started': {
@@ -271,20 +324,35 @@ export class GameService {
             this.waiterService.removeTask(this.waiterTask);
             this.waiterTask = undefined;
           }
-          this.creationStatus = eGameCreationStatus.PLAYING;
+          if (this.creationStatus !== eGameCreationStatus.PLAYING) {
+            this.creationStatus = eGameCreationStatus.PLAYING;
+            this.updated = true;
+          }
           break;
         }
         case 'frozen': {
-          this.creationStatus = eGameCreationStatus.PLAYING;
+          if (this.creationStatus !== eGameCreationStatus.PLAYING) {
+            this.creationStatus = eGameCreationStatus.PLAYING;
+            this.updated = true;
+          }
           break;
         }
         case 'ended': {
-          this.creationStatus = eGameCreationStatus.ENDED;
+          if (this.creationStatus !== eGameCreationStatus.ENDED) {
+            this.creationStatus = eGameCreationStatus.ENDED;
+            this.updated = true;
+          }
           break;
         }
       }
-      this.nextPlayer = storage.nextPlayer;
-      this.gameCreator = storage.creator;
+      if (this.nextPlayer !== storage.nextPlayer) {
+        this.nextPlayer = storage.nextPlayer;
+        this.updated = true;
+      }
+      if (this.gameCreator !== storage.creator) {
+        this.gameCreator = storage.creator;
+        this.updated = true;
+      }
     }
   }
 
@@ -292,6 +360,7 @@ export class GameService {
     const promises = [];
     if (!this.contracts.game) {
       const p = await this.getContract<GameContract>(eContractType.GAME).then((gameContract) => {
+        this.updated = true;
         this.contracts.game = gameContract;
         console.log('start watching game contract');
         // this.contracts.game.startWatching(5000, (storage) => {
@@ -302,6 +371,7 @@ export class GameService {
     }
     if (!this.contracts.token) {
       const p = await this.getContract<TokenContract>(eContractType.TOKEN).then((tokenContract) => {
+        this.updated = true;
         this.contracts.token = tokenContract;
       }).catch(err => { /* fail is acceptable meaning that contract is not created yet */ });
       promises.push(p);

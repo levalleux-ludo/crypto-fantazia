@@ -47,7 +47,7 @@
         },
         {
             "text": "Advance to %SPACE%. If you pass the ICO space, you receive %AMOUNT%",
-            "amount": 100,
+            "amount": 200,
             "space": 12,
             "impl": "go_to_space"
         },

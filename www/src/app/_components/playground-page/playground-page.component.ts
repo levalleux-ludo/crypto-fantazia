@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { GameService } from 'src/app/_services/game.service';
 import { GameControllerService } from 'src/app/_services/game-controller.service';
+import { ClrAccordion } from '@clr/angular';
 
 @Component({
   selector: 'app-playground-page',
@@ -16,5 +17,6 @@ export class PlaygroundPageComponent implements OnInit {
 
   ngOnInit(): void {
   }
+
 
 }
