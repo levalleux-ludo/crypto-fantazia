@@ -373,15 +373,10 @@ class GameContract(sp.Contract):
             status = 'created',
             nextPlayer = admin,
             nextPlayerIdx = -1,
-            nextDices = -1,
-            debug = 0,
-            alreadyRegistered = False,
-            lastTurnOption = '',
             immunized = sp.set(t = sp.TAddress),
             nbSpaces = sp.to_int(24),
             playerPositions = sp.map(tkey = sp.TAddress, tvalue = sp.TInt),
             quarantineSpaceId = 12,
-            callToken = False,
             lapIncome = 200,
             nbLaps = 0,
             quarantinePlayers = sp.map(tkey = sp.TAddress, tvalue = sp.TInt),
@@ -394,7 +389,6 @@ class GameContract(sp.Contract):
     @sp.entry_point
     def register(self, params):
         sp.verify(self.data.status == 'created', 'Registering only allowed when game is in created state')
-        self.data.alreadyRegistered = self.data.playersSet.contains(sp.sender)
         sp.verify(self.data.playersSet.contains(sp.sender) == False, 'User already registered')
         nbPlayers = sp.to_int(sp.len(self.data.players))
         self.data.players[nbPlayers] = sp.sender
@@ -488,7 +482,6 @@ class GameContract(sp.Contract):
         # call mining contract REWARD(dice1) -> compute reward % numLap -> compute reward[ownerX] = reward * hashrateX / totalHashrate -> token.mint(rewardX, ownerX)
         # TODO: distribute PoS rewards (dice2)  to BAKERY owners according to their stakes
         # call bakery contract REWARD(dice1) -> compute reward % numLap -> compute reward[ownerX] = reward * stakeX / totalStake -> token.mint(rewardX, ownerX)
-        self.data.lastTurnOption = params.option
         # apply OPTION:
         # if COVID: if player owns immunity passport, do nothing, else move player position to quarantine + set player in quarantine mode until lap = currentLap+1
         sp.if params.option == 'COVID':
@@ -559,11 +552,9 @@ class GameContract(sp.Contract):
         sp.verify((sp.sender == self.data.admin) | (self.data.authorized_contracts.contains(sp.sender)))
         newPosition = sp.local("newPosition", self.getPlayerPosition(params.player))
         newPosition.value += params.value
-        self.data.callToken = False
         sp.if newPosition.value >= self.data.nbSpaces :
             newPosition.value -= self.data.nbSpaces
             # call token contract to give player lap income
-            self.data.callToken = True
             self.givePlayerLapIncome(params.player)
         sp.if newPosition.value < 0 :
             newPosition.value += self.data.nbSpaces
@@ -578,12 +569,9 @@ class GameContract(sp.Contract):
         oldPosition = sp.local("oldPosition", self.getPlayerPosition(player))
         self.setPlayerPosition(player, value)
         newPosition = sp.local("newPosition", self.getPlayerPosition(player))
-        self.data.callToken = False
         sp.if newPosition.value < oldPosition.value :
             # call token contract to give player lap income
-            self.data.callToken = True
             self.givePlayerLapIncome(player)
-            #self.testCallToken(token = params.token)
 
     @sp.entry_point
     def pay_amount(self, params):
@@ -1107,17 +1095,14 @@ def test():
     scenario.h3("Test game option 'move_n_spaces'")
     scenario += contract.move_n_spaces(player = alice.address, value = -5).run(sender = originator)
     scenario.verify(contract.data.playerPositions.get(alice.address) == 19)
-    scenario.verify(contract.data.callToken == False)
 
     scenario += contract.move_n_spaces(player = alice.address, value = 6).run(sender = originator)
     scenario.verify(contract.data.playerPositions.get(alice.address) == 1)
-    scenario.verify(contract.data.callToken == True)
     aliceBalanceExpected += 200
     scenario.verify(token.data.balances.get(alice.address).balance == aliceBalanceExpected)
 
     scenario += contract.move_n_spaces(player = alice.address, value = 23).run(sender = originator)
     scenario.verify(contract.data.playerPositions.get(alice.address) == 0)
-    scenario.verify(contract.data.callToken == True)
     aliceBalanceExpected += 200
     scenario.verify(token.data.balances.get(alice.address).balance == aliceBalanceExpected)
     
@@ -1129,12 +1114,10 @@ def test():
     scenario.h3("test perform chance of type move_n_spaces")
     scenario += chance.perform(chanceId = 3, player = bob.address).run(sender = originator)
     scenario.verify(contract.data.playerPositions.get(bob.address) == 21)
-    scenario.verify(contract.data.callToken == False)
 
     scenario.h3("test perform chance of type move_n_spaces passing through Genesis Block")
     scenario += chance.perform(chanceId = 7, player = bob.address).run(sender = originator)
     scenario.verify(contract.data.playerPositions.get(bob.address) == 0)
-    scenario.verify(contract.data.callToken == True)
     bobBalanceExpected += 200
     scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
     
@@ -1150,12 +1133,10 @@ def test():
     scenario.h3("test perform chance of type go_to_space")
     scenario += chance.perform(chanceId = 2, player = alice.address).run(sender = originator)
     scenario.verify(contract.data.playerPositions.get(alice.address) == 15)
-    scenario.verify(contract.data.callToken == False)
 
     scenario.h3("test perform chance of type go_to_space passing through Genesis Block")
     scenario += chance.perform(chanceId = 6, player = alice.address).run(sender = originator)
     scenario.verify(contract.data.playerPositions.get(alice.address) == 14)
-    scenario.verify(contract.data.callToken == True)
     aliceBalanceExpected += 200
     scenario.verify(token.data.balances.get(alice.address).balance == aliceBalanceExpected)
 
