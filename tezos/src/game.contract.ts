@@ -20,15 +20,10 @@ export interface GameContractStorage {
     status: string;
     nextPlayer: string;
     nextPlayerIdx: number;
-    nextDices: number;
-    debug: number;
-    alreadyRegistered: boolean;
-    lastTurnOption: string;
     immunized: string[];
     nbSpaces: number
     playerPositions: MichelsonMap<string, number>;
     quarantineSpaceId: number;
-    callToken: boolean;
     lapIncome: number;
     nbLaps: number;
     quarantinePlayers: MichelsonMap<string, number>;
@@ -94,27 +89,18 @@ export class GameContract extends AbstractContract<GameContractStorage> {
                 {
                   "prim": "Pair",
                   "args": [
+                    { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "string": originator.publicKeyHash } ] },
                     {
                       "prim": "Pair",
-                      "args": [
-                        { "string": originator.publicKeyHash },
-                        { "prim": "Pair", "args": [ { "prim": "False" }, { "string": originator.publicKeyHash } ] }
-                      ]
-                    },
-                    { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ { "prim": "False" }, { "string": originator.publicKeyHash } ] } ] }
+                      "args": [ [], { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "string": originator.publicKeyHash } ] } ]
+                    }
                   ]
                 },
                 {
                   "prim": "Pair",
                   "args": [
-                    {
-                      "prim": "Pair",
-                      "args": [
-                        { "string": originator.publicKeyHash },
-                        { "prim": "Pair", "args": [ { "int": "0" }, { "string": creator } ] }
-                      ]
-                    },
-                    { "prim": "Pair", "args": [ { "prim": "Pair", "args": [ { "int": "0" }, [] ] }, { "prim": "Pair", "args": [ { "int": "200" }, { "string": "" } ] } ] }
+                    { "prim": "Pair", "args": [ { "int": "0" }, { "string": creator } ] },
+                    { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ { "int": "200" }, { "int": "0" } ] } ] }
                   ]
                 }
               ]
@@ -125,27 +111,15 @@ export class GameContract extends AbstractContract<GameContractStorage> {
                 {
                   "prim": "Pair",
                   "args": [
-                    { "prim": "Pair", "args": [ { "int": "0" }, { "prim": "Pair", "args": [ { "int": "24" }, { "int": "-1" } ] } ] },
-                    {
-                      "prim": "Pair",
-                      "args": [
-                        { "string": originator.publicKeyHash },
-                        { "prim": "Pair", "args": [ { "int": "-1" }, { "string": originator.publicKey } ] }
-                      ]
-                    }
+                    { "prim": "Pair", "args": [ { "int": "24" }, { "string": originator.publicKeyHash } ] },
+                    { "prim": "Pair", "args": [ { "int": "-1" }, { "prim": "Pair", "args": [ { "string": originator.publicKey }, [] ] } ] }
                   ]
                 },
                 {
                   "prim": "Pair",
                   "args": [
                     { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ [], [] ] } ] },
-                    {
-                      "prim": "Pair",
-                      "args": [
-                        { "prim": "Pair", "args": [ [], { "int": "12" } ] },
-                        { "prim": "Pair", "args": [ { "string": "created" }, { "string": originator.publicKeyHash } ] }
-                      ]
-                    }
+                    { "prim": "Pair", "args": [ { "int": "12" }, { "prim": "Pair", "args": [ { "string": "created" }, { "string": originator.publicKeyHash } ] } ] }
                   ]
                 }
               ]
