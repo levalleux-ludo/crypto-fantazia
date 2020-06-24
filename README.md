@@ -1,3 +1,6 @@
+![Image](www/src/assets/crypto-fantasia.png?raw=true)
+
+
 # Crypto Fantasia
 
 A decentralized board game about economics (think about Monopoly) but crypto-oriented, where crypto-economics mechanisms are entirely implemented by smart contract on the Tezos blockchain.
@@ -38,17 +41,15 @@ And it became obvious that, while the so famous Monopoly game has learnt all of 
 
 ### Architecture
 
-Frontend
-Backend (data store, random nb generation, game contract creation/deployment)
-Smart Contracts
+#### Frontend
+Angular cli + Material + Clarity
+ConseilJS + Taquito
 
-Tezos, ConseilJS
-Unity3D
-Angular cli
-Clarity
-Magic Link
+#### Backend
+Node + Express + Mongo_DB
+ConseilJS + Taquito
 
-
-
+#### Smart Contracts
+SmartPY.io
 
 
