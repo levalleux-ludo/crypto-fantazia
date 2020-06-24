@@ -1,13 +1,25 @@
 <header class="header header-6">
-    <img src="assets/banner.png" width="350px;">
+    <img class="logo" [class.logo-is-mobile]="mobileQuery.matches" src="assets/banner.png">
     <div class="header-actions">
         <clr-dropdown *ngIf="connectionService.isConnected" class="dropdown bottom-right">
             <button class="nav-icon" clrDropdownToggle style="text-align: right; width: auto;">
+          <img src="assets/tezos-logo-small.png" width="auto" height="80%">
+          <span *ngIf="!mobileQuery.matches" style="margin-right: 24px; margin-left: 6px;">{{tezosService.account.account_id}}</span>
+        <clr-icon shape="caret down"></clr-icon>
+      </button>
+            <div class="dropdown-menu">
+                <span *ngIf="mobileQuery.matches" style="text-align: center;">{{tezosService.account.account_id}}</span>
+                <a clrDropdownItem (click)="tezosService.logout()">Disconnect</a>
+            </div>
+        </clr-dropdown>
+        <clr-dropdown *ngIf="connectionService.isConnected" class="dropdown bottom-right">
+            <button class="nav-icon" clrDropdownToggle style="text-align: right; width: auto;">
             <clr-icon shape="user"></clr-icon>
-            <span style="margin-right: 60px; margin-left: 24px;">{{connectionService.username}}</span>
+            <span *ngIf="!mobileQuery.matches" style="margin-right: 60px; margin-left: 12px;">{{connectionService.username}}</span>
             <clr-icon shape="caret down"></clr-icon>
           </button>
             <div class="dropdown-menu">
+                <span *ngIf="mobileQuery.matches" style="text-align: center;">{{connectionService.username}}</span>
                 <a clrDropdownItem>Preferences</a>
                 <a clrDropdownItem (click)="connectionService.disconnect()">Log out</a>
             </div>

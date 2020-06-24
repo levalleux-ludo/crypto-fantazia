@@ -49,6 +49,7 @@ export class GameService {
   currentPlayer: string | undefined;
   currentTurn: number = -1;
   playersPosition = new Map<string, number>();
+  lastTurn = new Map<string, any>();
   usernames = new Map();
   updated = false;
 
@@ -64,7 +65,7 @@ export class GameService {
 
   onChange: EventEmitter<string> = new EventEmitter();
 
-  onPlayerMove: EventEmitter<{player: string, newPosition: number}> = new EventEmitter();
+  onPlayerMove: EventEmitter<{player: string, newPosition: number, oldPosition: number}> = new EventEmitter();
 
   constructor(
     private apiService: ApiService,
@@ -100,6 +101,10 @@ export class GameService {
 
   getUsername(player): string {
     return this.usernames.get(player);
+  }
+
+  getAvatar(player): string {
+    return `assets/avatar/camel.png`;
   }
 
   get game(): IGame {
@@ -170,10 +175,13 @@ export class GameService {
           this.currentTurn = Math.max(event.id, this.currentTurn);
           if (this.currentTurn === event.id) {
             this.currentPlayer = event.data.player;
+            const oldPosition = this.playersPosition.get(event.data.player);
             this.playersPosition.set(event.data.player, event.data.newPosition);
+            this.lastTurn.set(event.data.player, event.data);
             this.onPlayerMove.emit({
               player: event.data.player,
-              newPosition: event.data.newPosition
+              newPosition: event.data.newPosition,
+              oldPosition: oldPosition
             });
           }
           break;

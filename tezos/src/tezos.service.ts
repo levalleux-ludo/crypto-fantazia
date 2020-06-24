@@ -3,6 +3,8 @@ import * as util from 'util';
 import { TezosWalletUtil, KeyStore, ConseilOperator, TezosConseilClient, Tzip7ReferenceTokenHelper, TezosNodeWriter, OperationResult, ConseilQueryBuilder, ConseilDataClient, ConseilMetadataClient, TezosNodeReader, TezosParameterFormat, OperationKindType, TezosContractIntrospector, EntryPoint, CryptoUtils, TezosMessageUtils } from 'conseiljs';
 import * as path from 'path';
 import BigNumber from 'bignumber.js'
+import { RpcClient, MichelsonV1Expression } from '@taquito/rpc';
+import { ParameterSchema } from '@taquito/michelson-encoder';
 
 import { networkInterfaces } from 'os';
 import { Tezos } from '@taquito/taquito';
@@ -308,6 +310,38 @@ class TezosService {
 
         return this.getAccountFromFile(accountFile);
     }
+
+    async packData(format: MichelsonV1Expression, ...props: any[]): Promise<Buffer> {
+        return new Promise((resolve, reject) => {
+            const schema = new ParameterSchema( format );
+            const data = schema.Encode.apply(schema, props);
+            console.log('data', JSON.stringify(data));
+            const rpcClient = new RpcClient(tezosNode);
+           rpcClient.packData({
+               data: data,
+               type: format,
+           }).then((data) => {
+               resolve(Buffer.from(data.packed, 'hex'));
+            }).catch(err => reject(err));
+        });
+    }
+
+    async packData2(format: MichelsonV1Expression, obj: any): Promise<Buffer> {
+        return new Promise((resolve, reject) => {
+            const schema = new ParameterSchema( format );
+            const props = Object.keys(obj).sort().map(field => Object.getOwnPropertyDescriptor(obj, field)?.value)
+            const data = schema.Encode.apply(schema, props);
+            console.log('data', JSON.stringify(data));
+            const rpcClient = new RpcClient(tezosNode);
+           rpcClient.packData({
+               data: data,
+               type: format,
+           }).then((data) => {
+               resolve(Buffer.from(data.packed, 'hex'));
+            }).catch(err => reject(err));
+        });
+    }
+
 
     async make_signature(payload: Buffer, privateKey: string): Promise<string> {
         return new Promise((resolve, reject) => {

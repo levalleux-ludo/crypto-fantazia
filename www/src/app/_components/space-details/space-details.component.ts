@@ -9,7 +9,13 @@ import { ISpace } from 'src/app/_services/spaces.service';
 export class SpaceDetailsComponent implements OnInit {
 
   @Input()
-  space: ISpace;
+  set space(value: ISpace) {
+    this._space = value;
+  }
+  _space: ISpace;
+  get space(): ISpace {
+    return this._space;
+  }
 
   constructor() { }
 

@@ -19,17 +19,14 @@
                 </tr>
             </tbody>
         </table>
-        <clr-radio-container>
-            <!-- <label>Full radio</label> -->
-
+        <!-- <clr-radio-container>
             <clr-radio-wrapper *ngFor="let session of allSessions" style="height: 60px;">
                 <input type="radio" clrRadio value="{{session.sessionId}}" [(ngModel)]="selectedSession" />
                 <label>{{session.name}}{{' (status:' + session.status + ', created by:' + session.creator + ')'}}</label>
             </clr-radio-wrapper>
-            <!-- <clr-control-helper>Helper text</clr-control-helper> -->
 
             <clr-control-error>This field is required!</clr-control-error>
-        </clr-radio-container>
+        </clr-radio-container> -->
     </div>
     <div class="modal-footer">
         <div class="btn-group btn-primary">

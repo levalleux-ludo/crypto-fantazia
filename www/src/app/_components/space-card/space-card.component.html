@@ -1,9 +1,9 @@
 <div style="width: {{width}}px;" class="card card-background">
-    <div class="card-header">{{space.title}}</div>
+    <div class="card-header">{{space?.title}}</div>
     <div style="position: relative; height: 100%;">
-        <img [src]="space.src" [alt]="space.alt" [title]="space.title" width="{{width}}" class="card-img">
+        <img *ngIf="space != undefined" [src]="space.src" [alt]="space.alt" [title]="space.title" width="{{width}}" class="card-img">
     </div>
-    <div class="item">{{space.title}}</div>
+    <div class="item">{{space?.title}}</div>
     <h4>Details:</h4>
     <div>{{detail}}</div>
 </div>

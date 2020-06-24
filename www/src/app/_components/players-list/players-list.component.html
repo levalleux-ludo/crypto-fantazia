@@ -6,7 +6,7 @@
 <ng-template #panelContent let-person="person" let-getPortfolio="getPortfolio">
     <div fxLayout="row">
         <div style="width: 100px;">Current block:</div>
-        <div>#3 ('XXXXXX XXX XX')</div>
+        <div>{{person.position}}</div>
     </div>
     <app-player-portfolio [portfolio]="getPortfolio(person)"></app-player-portfolio>
 </ng-template>

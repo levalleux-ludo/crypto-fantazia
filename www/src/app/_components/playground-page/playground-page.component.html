@@ -15,16 +15,19 @@
         <section class="sidenav-content">
             <div style="text-align: center;">
                 <h3 style="margin-bottom: 24px;">Game Session</h3>
-                <p>id #</p>
+                <button class="btn" style="text-align: right; width: auto;" (click)="showGameStatus()">
+                  <img src="assets/logo-xs.png" width="auto" height="80%">
+                  <span style="margin-right: 24px; margin-left: 6px;">{{gameService.game?.sessionId}}</span>
+                  </button>
                 <p>created by {{gameService.getUsername(gameService.game.creator)}}</p>
             </div>
         </section>
-        <section class="sidenav-content">
+        <!-- <section class="sidenav-content">
             <div style="text-align: center;">
                 <h3 style="margin-bottom: 24px;">Game Controls</h3>
                 <app-game-controls></app-game-controls>
             </div>
-        </section>
+        </section> -->
         <section class="sidenav-content">
             <div style="text-align: center;">
                 <h3 style="margin-bottom: 24px;">Players</h3>
@@ -44,7 +47,18 @@
         <app-dock-container [height]="480"></app-dock-container> -->
         <app-board></app-board>
     </div>
-    <div>
-        <app-game-status></app-game-status>
+    <!-- <div class="game-status-drawer-btn">
+        <clr-dropdown *ngIf="connectionService.isConnected" class="dropdown bottom-right">
+            <button class="nav-icon" clrDropdownToggle style="text-align: right; width: auto;" (click)="showGameStatus()">
+<img src="assets/logo-xs.png" width="auto" height="80%">
+<span *ngIf="!mobileQuery.matches" style="margin-right: 24px; margin-left: 6px;">{{gameService.game?.sessionId}}</span>
+<clr-icon shape="caret down"></clr-icon>
+</button>
+        </clr-dropdown>
     </div>
+    <mat-drawer-container>
+        <mat-drawer #gameStatusDrawer [position]="'end'" [mode]="'over'" [opened]="gameStatusVisible">
+            <app-game-status></app-game-status>
+        </mat-drawer>
+    </mat-drawer-container> -->
 </div>

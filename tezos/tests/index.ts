@@ -11,8 +11,32 @@ import { TokenContract } from "../src/token.contract";
 import BigNumber from "bignumber.js";
 import { ChanceContract, IChanceParams } from "../src/chance.contract";
 import { Operation } from "@taquito/taquito/dist/types/operations/operations";
+import { RpcClient, MichelsonV1Expression } from '@taquito/rpc';
+import { ParameterSchema } from '@taquito/michelson-encoder';
 
 console.log('Hello World!');
+
+function a(...args: any[]) {
+    console.log(`a(${args})`);
+    console.log(`a -> arg1:${args[0]}`);
+}
+
+function b(...args: any[]) {
+    console.log(`b(${args})`);
+    console.log(`b -> arg1:${args[0]}`);
+    console.log('b calling a:');
+    a(args);
+    a.call(null, args);
+    a.apply(null, args);
+}
+
+a(1,2,3);
+b(4,5,6);
+
+const _payload = {dice1:6,dice2:6,newPosition:9,cardId:19,options:["GENESIS","STARTUP_FOUND","NOTHING"],assetId:9};
+console.log(_payload['dice2']);
+console.log('payload fields: ', Object.keys(_payload).sort().map(field => Object.getOwnPropertyDescriptor(_payload, field)?.value));
+
 
 const sampleStorage = 
 {
@@ -66,7 +90,7 @@ let chanceContractAddress = '';
 const register_alice = false;
 const register_bob = true;
 const reset_game = true;
-const testGameContract = true;
+const testGameContract = false;
 const testAssetContract = false;
 const testSampleContract = false;
 const sampleContractAddress = 'KT1BLuqcTJr2csiiZecpeEPmC9mHQh7hevN2';
@@ -146,6 +170,76 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
         console.error(`[ERROR] accountInfo failed with error:${err}`);
     }
     await tezosService.getNetworks();
+
+    const rpcClient = new RpcClient(tezosService.getNode());
+
+    const payload = {dice1:6,dice2:6,newPosition:9,cardId:19,options:["GENESIS","STARTUP_FOUND","NOTHING"],assetId:9};
+    await tezosService.make_signature(Buffer.from(JSON.stringify(payload)), keyStore.privateKey).then(signature => {
+        console.log('payload', JSON.stringify(payload));
+        console.log('signature', signature);
+    })
+    const payload2 = {assetId:9, cardId:19,dice1:6,dice2:6,newPosition:9,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
+    await tezosService.make_signature(Buffer.from(JSON.stringify(payload2)), keyStore.privateKey).then(signature => {
+        console.log('payload', JSON.stringify(payload2));
+        console.log('signature', signature);
+    })
+    const payload3 = {assetId:9, cardId:19,dice1:6,dice2:6,newPosition:9,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
+    tezosService.packData2(GameContract.payloadFormat, payload3)
+    .then((thingsToSign3) => {
+        tezosService.make_signature(thingsToSign3, keyStore.privateKey).then(signature => {
+            console.log('payload', JSON.stringify(payload3));
+            console.log('thingsToSign', JSON.stringify(thingsToSign3));
+            console.log('signature', signature);
+        }).catch(err => {
+            console.error(err);
+        });
+    }).catch(err => {
+        console.error(err);
+    });
+    // const thingsToSign3 = Buffer.from(JSON.stringify(payload3));
+    // TODO: also possible with TezosMessageUtils.writePackedData from conseil-js
+    // const schema = new ParameterSchema( GameContract.payloadFormat );
+    //  const data = schema.Encode(payload3.assetId, payload3.cardId, payload3.dice1, payload3.dice2, payload3.newPosition, payload3.options);
+    //  console.log('data', JSON.stringify(data));
+    // rpcClient.packData({
+    //     // data: {
+    //     //     "prim": "Pair",
+    //     //     "args": [
+    //     //       { "prim": "Pair", "args": [ { "int": "9" }, { "int": "5" } ] }, // assetId, cardId
+    //     //       { "prim": "Pair", "args": [ { "int": "2" }, { "prim": "Pair", "args": [ { "int": "3" }, { "int": "12" } ] } ] } // dice1, dice2, newPosition
+    //     //     ]
+    //     //   },
+    //     data: data,
+    //     type: GameContract.payloadFormat,
+    // }).then((data) => {
+    //     const thingsToSign3 = Buffer.from(data.packed, 'hex');
+    //     tezosService.make_signature(thingsToSign3, keyStore.privateKey).then(signature => {
+    //         console.log('payload', JSON.stringify(payload3));
+    //         console.log('thingsToSign', JSON.stringify(thingsToSign3));
+    //         console.log('signature', signature);
+    //     }).catch(err => {
+    //         console.error(err);
+    //     })
+    
+    // }).catch(err => {
+    //     console.error(err);
+    // })
+    // try {
+    //     const payload3 = (await rpcClient.packData({
+    //         data: { string: 'test' },
+    //         type: { prim: 'string' },
+    //     })).packed;
+    //     const thingsToSign3 = Buffer.from(payload3);
+    //     await tezosService.make_signature(thingsToSign3, keyStore.privateKey).then(signature => {
+    //         console.log('payload', JSON.stringify(payload3));
+    //         console.log('thingsToSign', JSON.stringify(thingsToSign3));
+    //         console.log('signature', signature);
+    //     })
+    // } catch(err) {
+    //     console.error(err);
+    // }
+    
+    
     if (testAssetContract) {
         if (redeploy_assets) {
             await AssetsContract.deploy(keyStore, originator, originator, allAssets)

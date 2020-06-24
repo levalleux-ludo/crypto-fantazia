@@ -1,8 +1,13 @@
-import { Component, OnInit, AfterViewInit, ViewChild, NgZone } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, NgZone, ChangeDetectorRef } from '@angular/core';
 import { GameService } from 'src/app/_services/game.service';
 import { GameControllerService } from 'src/app/_services/game-controller.service';
 import { CarouselComponent } from '../carousel/carousel.component';
 import { DiceComponent } from '../dice/dice.component';
+import { ConnectionService } from 'src/app/_services/connection.service';
+import { MediaMatcher } from '@angular/cdk/layout';
+import { SpacesService } from 'src/app/_services/spaces.service';
+import { CardService } from 'src/app/_services/card.service';
+import { TezosService } from 'src/app/_services/tezos.service';
 
 @Component({
   selector: 'app-board',
@@ -14,10 +19,12 @@ export class BoardComponent implements OnInit, AfterViewInit {
   @ViewChild('carousel', {static: false})
   carousel: CarouselComponent;
 
-  @ViewChild('dicePOW', {static: false})
-  dicePOW: DiceComponent;
-  @ViewChild('dicePOS', {static: false})
-  dicePOS: DiceComponent;
+  // @ViewChild('dicePOW', {static: false})
+  // dicePOW: DiceComponent;
+  // @ViewChild('dicePOS', {static: false})
+  // dicePOS: DiceComponent;
+  dicePOWValue;
+  dicePOSValue;
 
   items = [
     { title: 'Slide 1' },
@@ -29,29 +36,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
   targetPOS = 1;
   targetPOW = 1;
 
-  slidesStore = [
-    {id: 1, src: 'assets/blocks/block_genesis.png', alt: '1', title: 'block #1', players: [
-      {name: 'Alice', image: 'assets/avatars/camel.png'}
-    ]},
-    {id: 2, src: 'assets/blocks/block_remainersFromTheHashes.png', alt: '2', title: 'block #2', players: []},
-    {id: 3, src: 'assets/blocks/block_chance.png', alt: '3', title: 'block #3', players: []},
-    {id: 4, src: 'assets/blocks/block_CommunityChest.png', alt: '4', title: 'block #4', players: [
-      {name: 'Bob', image: 'assets/avatars/rocket.png'}
-    ]},
-    {id: 5, src: 'assets/blocks/block_Covid.png', alt: '5', title: 'block #5', players: [
-      {name: 'Charlie', image: 'assets/avatars/camel.png'},
-      {name: 'Denise', image: 'assets/avatars/rocket.png'},
-      {name: 'Edgar', image: 'assets/avatars/diamond.png'}
-    ]},
-    {id: 6, src: 'assets/blocks/block_Quarantine.png', alt: '6', title: 'block #6', players: []},
-    {id: 7, src: 'assets/blocks/block_AntForceOne.png', alt: '7', title: 'block #7', players: [
-      {name: 'Romeo', image: 'assets/avatars/camel.png'},
-      {name: 'Alpha', image: 'assets/avatars/rocket.png'},
-      {name: 'Bravo', image: 'assets/avatars/diamond.png'},
-      {name: 'Echo', image: 'assets/avatars/crypto-chip.png'}
-    ]},
-    {id: 8, src: 'assets/blocks/block_PuddingKing.png', alt: '8', title: 'block #8', players: []}
-  ];
+  slidesStore = [];
 
   imagesDicePOW = [
     'assets/dices/dice_1_1.png',
@@ -74,20 +59,120 @@ export class BoardComponent implements OnInit, AfterViewInit {
   progress = 0;
   showSpace = -1;
   currentAlicePosition = 0;
+  showOptions = [];
+  showCardId = -1;
+  selectedOption;
+
+  spacesMap = new Map();
+  chances = new Map();
+  community_chests = new Map();
+
+  mobileQuery: MediaQueryList;
+  private _mobileQueryListener: () => void;
+
+  diceAnimated = false;
+
+  public get carouselSizeParams() {
+    return {
+      containerWidth: 300,
+      containerHeight: 340,
+      itemWidth: 200-24,
+      imageWidth: '200px'
+    }
+  }
 
   constructor(
     public gameService: GameService,
     public gameController: GameControllerService,
-    private ngZone: NgZone
-  ) { }
+    private ngZone: NgZone,
+    private changeDetectorRef: ChangeDetectorRef,
+    public connectionService: ConnectionService,
+    private media: MediaMatcher,
+    public spacesService: SpacesService,
+    public cardService: CardService,
+    private tezosService: TezosService
+
+  ) {
+    this.mobileQuery = media.matchMedia('(max-width: 600px)');
+    this._mobileQueryListener = () => changeDetectorRef.detectChanges();
+    this.mobileQuery.addListener(this._mobileQueryListener);
+   }
 
   ngOnInit(): void {
+    this.cardService.getChances().then((cards) => {
+      this.chances = new Map();
+      for (const card of cards) {
+        this.chances.set(card.cardId, this.cardService.computeText(card));
+      }
+    });
+    this.cardService.getCommunityChests().then((cards) => {
+      this.community_chests = new Map();
+      for (const card of cards) {
+        this.community_chests.set(card.cardId, this.cardService.computeText(card));
+      }
+    });
+    this.spacesService.getSpaces().then((spaces) => {
+      this.spacesMap = new Map();
+      for (const space of spaces) {
+        this.spacesMap.set(space.spaceId, space);
+      }
+      this.slidesStore = spaces.map(space => {
+        return {
+          id: space.spaceId,
+          src: `assets/blocks/block_${space.image}`,
+          alt: space.title,
+          title: space.title,
+          players: []
+        };
+      });
+      const myPosition = this.gameService.playersPosition.get(this.tezosService.account.account_id);
+      this.showSpace = (myPosition !== undefined) ? myPosition : -1;
+      if (this.spacesMap.has(myPosition)) {
+        setTimeout(() => {
+          this.carousel.setCurrentPosition(myPosition);
+        }, 500);
+      }
+      this.changeDetectorRef.detectChanges();
+    });
   }
 
   ngAfterViewInit(): void {
-    this.dicePOW.set(Math.floor(1 + 6 * Math.random()));
-    this.dicePOS.set(Math.floor(1 + 6 * Math.random()));
-    this.showSpace = 0;
+    this.dicePOWValue = Math.floor(1 + 6 * Math.random());
+    this.dicePOSValue = Math.floor(1 + 6 * Math.random());
+    const myPosition = this.gameService.playersPosition.get(this.tezosService.account.account_id);
+    this.showSpace = (myPosition !== undefined) ? myPosition : -1;
+    if (this.spacesMap.has(myPosition)) {
+      setTimeout(() => {
+        this.carousel.setCurrentPosition(myPosition);
+      }, 500);
+    }
+    this.gameService.onPlayerMove.subscribe(({player, nemPosition, oldPosition}) => {
+      if ((player === this.tezosService.account.account_id) && !this.diceAnimated) {
+        this.showSpace = nemPosition;
+      }
+      if ((oldPosition !== undefined) && (oldPosition >= 0) && (oldPosition < this.slidesStore.length)) {
+        this.slidesStore[oldPosition].players = this.slidesStore[oldPosition].players.filter(
+          player => player.address !== player
+        );
+      }
+      if ((nemPosition !== undefined) && (nemPosition >= 0) && (nemPosition < this.slidesStore.length)) {
+        this.slidesStore[nemPosition].players.push(
+          {address: player, image: this.gameService.getAvatar(player), name: this.gameService.getUsername(player)}
+        );
+      }
+    });
+    if (this.gameService.iAmPlaying() && this.gameService.lastTurn.has(this.tezosService.account.account_id)) {
+      this.showOptions = this.gameService.lastTurn.get(this.tezosService.account.account_id).options;
+      if (this.showOptions.length === 1) {
+        this.selectedOption = this.showOptions[0];
+      } else {
+        this.selectedOption = undefined;
+      }
+      this.showCardId = this.gameService.lastTurn.get(this.tezosService.account.account_id).cardId;
+      this.dicePOWValue = this.gameService.lastTurn.get(this.tezosService.account.account_id).dices[0];
+      this.dicePOSValue = this.gameService.lastTurn.get(this.tezosService.account.account_id).dices[1];
+    }
+
   }
 
 
@@ -98,20 +183,24 @@ export class BoardComponent implements OnInit, AfterViewInit {
   onCarouselStep(event: any) {
     console.log(`onCarouselStep(${event})`);
     const prevBlock = (event > 0) ? event - 1 : this.slidesStore.length - 1;
-    this.slidesStore[prevBlock].players = this.slidesStore[prevBlock].players.filter(
-      player => player.name !== 'Alice'
-    );
-    this.slidesStore[event].players.push(
-      {name: 'Alice', image: 'assets/avatars/camel.png'}
-    );
+
   }
   rollDices() {
     this.gameController.rollTheDices().then((rollResult) => {
       const targetPOW = rollResult.payload.dice1;
       const targetPOS = rollResult.payload.dice2;
+      this.diceAnimated = true;
       this.animateDices(targetPOW, targetPOS).then(() => {
-        this.carousel.goto(rollResult.newPosition, (newPosition) => {
+        this.carousel.goto(rollResult.payload.newPosition, (newPosition) => {
           this.showSpace = newPosition;
+          this.diceAnimated = false;
+          this.showOptions = rollResult.payload.options;
+          if (this.showOptions.length === 1) {
+            this.selectedOption = this.showOptions[0];
+          } else {
+            this.selectedOption = undefined;
+          }
+          this.showCardId = rollResult.payload.cardId;
         });
       });
     });
@@ -138,20 +227,11 @@ export class BoardComponent implements OnInit, AfterViewInit {
         }
         this.ngZone.run(() => {
             this.progress = 10 - countdown;
-            this.dicePOW.set(dicePOW);
-            this.dicePOS.set(dicePOS);
+            this.dicePOWValue = dicePOW;
+            this.dicePOSValue = dicePOS;
         });
       }, 250);
     });
-  }
-
-  onRollEnd(totalDices: number) {
-    this.currentAlicePosition = (this.currentAlicePosition + totalDices) % this.slidesStore.length;
-    this.carousel.goto(this.currentAlicePosition, (newPosition) => {
-      this.showSpace = newPosition;
-    });
-    // this.carousel.goto(this.currentAlicePosition);
-
   }
 
 

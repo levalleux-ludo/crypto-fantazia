@@ -85,7 +85,8 @@ ngAfterViewChecked(): void {
       address: player,
       name: this.gameService.getUsername(player),
       cash: this.gameService.balanceOf(player),
-      assets: 0
+      assets: 0,
+      position: this.gameService.playersPosition.has(player) ? this.gameService.playersPosition.get(player) : -1
     };
   }
 
@@ -93,6 +94,7 @@ ngAfterViewChecked(): void {
     detail.name = this.gameService.getUsername(player);
     detail.cash = this.gameService.balanceOf(player);
     detail.assets = 0;
+    detail.position = this.gameService.playersPosition.has(player) ? this.gameService.playersPosition.get(player) : -1;
   }
   bars = new Map();
   computeBars() {

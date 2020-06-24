@@ -1,65 +1,147 @@
-<app-carousel #carousel [showControls]="false" [itemWidth]="200-24" (step)="onCarouselStep($event)">
-    <ng-container *ngFor="let slide of slidesStore">
-        <ng-container *appCarouselItem>
-            <div style="margin-left: -24px;">
-                <div class="players" fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="{{-6 * slide.players.length}}px">
-                    <img *ngFor="let player of slide.players" src="{{player.image}}" width="48px" matTooltip="{{player.name}}">
-                </div>
-                <!-- <app-space-card [space]="slide" [width]="200"></app-space-card> -->
-                <img [src]="slide.src" [alt]="slide.alt" [title]="slide.title" width="200px">
-                <div class="item">{{slide.title}}</div>
-            </div>
-        </ng-container>
-    </ng-container>
-</app-carousel>
+<div fxLayout="row" fxLayout.sm="column" fxLayout.xs="column" fxLayoutAlign="center center" fxLayoutGap="24px">
 
-<!--
-<input type="number" min="1" max="slidesStore.length" [(ngModel)]="playerBlock" />
-<button (click)="goto(playerBlock - 1)">Go to</button> -->
+    <div fxFlex *ngIf="(showSpace >= 0) && (showSpace < slidesStore.length)" class="bloc">
+        <h3 style="text-align: center;">You are now at:</h3>
+        <!-- <app-space-card [space]="slidesStore[showSpace]" [width]="350"></app-space-card> -->
+        <app-space-details [space]="spacesMap.get(showSpace)"></app-space-details>
+    </div>
 
-<div fxLayout="row" fxLayout.sm="column" fxLayout.xs="column">
-    <div fxLayout="column">
-        <div *ngIf="gameService.iAmNextPlayer() && !gameService.iAmPlaying()">
-            It's your turn !
-            <button class="btn btn-primary" (click)="rollDices()">Roll the Dices</button>
-            <div fxLayout="row" style="width: 250px;" fxLayoutGap="12px">
-                <app-dice fxFlex #dicePOW [name]="'PoW'" [imagesList]="imagesDicePOW"></app-dice>
-                <app-dice fxFlex #dicePOS [name]="'PoS'" [imagesList]="imagesDicePOS"></app-dice>
-                <div style="text-align: center;">
-                    <div class="story-message">
-                        Total
+    <div fxFlex fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="24px">
+        <div class="bloc">
+            <div style="height: auto; width: {{mobileQuery.matches ? '340px' : '800px'}};">
+                <div *ngIf="gameService.iAmNextPlayer()">
+                    <div *ngIf="!gameService.iAmPlaying()">
+                        <div fxLayout="column">
+                            <h3>
+                                It's your turn ! Please Roll the Dices
+                            </h3>
+                            <button class="btn btn-primary" (click)="rollDices()">Roll the Dices</button>
+                        </div>
                     </div>
-                    <div class="dices-total">{{dicePOW.value + dicePOS.value}}</div>
+                    <div fxLayout="row" style="width: 340px;" fxLayoutGap="12px">
+                        <app-dice fxFlex [name]="'PoW'" [imagesList]="imagesDicePOW" [value]="dicePOWValue"></app-dice>
+                        <app-dice fxFlex [name]="'PoS'" [imagesList]="imagesDicePOS" [value]="dicePOSValue"></app-dice>
+                        <div style="text-align: center;">
+                            <div class="story-message">
+                                Total
+                            </div>
+                            <div class="dices-total">{{dicePOWValue + dicePOSValue}}</div>
+                        </div>
+                    </div>
+                    <div style="height:24px; width: 340px;">
+                        <div class="progress flash progress-fade">
+                            <progress *ngIf='rolling' max="100" value="{{progress * 10}}" data-displayval=""></progress>
+                        </div>
+                    </div>
+                    <div *ngIf="gameService.iAmPlaying()">
+                        <!-- <h4>Here are your options:
+                            <ul>
+                                <li *ngFor="let option of showOptions">
+                                    {{option}}
+                                </li>
+                            </ul>
+                        </h4> -->
+                        <div *ngIf="showOptions.length > 0 && showOptions.includes('CHANCE') && showCardId !== -1">
+                            <button>Reveal</button>
+                            <h4>This is your Chance Card: {{chances.get(showCardId)}}</h4>
+                        </div>
+                        <div *ngIf="showOptions.length > 0 && showOptions.includes('COMMUNITY_CHEST') && showCardId !== -1">
+                            <button>Reveal</button>
+                            <h4>This is your Community Chest Card: {{community_chests.get(showCardId)}}</h4>
+                        </div>
+                        <div *ngIf="showOptions.length > 0 && showOptions.includes('GENESIS')">
+                            <h4>Congratulations, you'll receive &#8497; 200 passing through Genesis Block !</h4>
+                        </div>
+                        <div *ngIf="showOptions.length > 0 && showOptions.includes('COVID')">
+                            <!-- TODO: check if immunity -->
+                            <h4>Bad luck, you're going to Quarantine</h4>
+                        </div>
+                        <div *ngIf="showOptions.length > 0 && showOptions.includes('BUY_PRODUCT')">
+                            <h4> You've just purchase the amazing product of company '{{spacesMap.get(showSpace).title}}' </h4>
+                            <!-- TODO: get nbFeatures for company -->
+                            <h4> Please pay {{spacesMap.get(showSpace).rentRates[0]}}</h4>
+                        </div>
+                        <div *ngIf="showOptions.length > 0 && showOptions.includes('STARTUP_FOUND')">
+                            <h4> Take the opportunity to found the startup '{{spacesMap.get(showSpace).title}}' <br> Founding capital: {{spacesMap.get(showSpace).price}}</h4>
+                            <clr-radio-container style="margin-top: 0px; margin-bottom: 24px;">
+                                <!-- <label>Please Select Option</label> -->
+                                <clr-radio-wrapper style="height: 60px;">
+                                    <input type="radio" clrRadio value="{{'STARTUP_FOUND'}}" [(ngModel)]="selectedOption" />
+                                    <label>
+                                    <h4>Yes, great idea !</h4>
+                                  </label>
+                                </clr-radio-wrapper>
+                                <clr-radio-wrapper style="height: 60px;">
+                                    <input type="radio" clrRadio value="{{'NOTHING'}}" [(ngModel)]="selectedOption" />
+                                    <label>
+                                    <h4>Sorry, not interested</h4>
+                                  </label>
+                                </clr-radio-wrapper>
+                            </clr-radio-container>
+                        </div>
+                        <div *ngIf="showOptions.length === 1 && showOptions.includes('NOTHING')">
+                            <p> Nothing happens this turn. </p>
+                        </div>
+                        <div *ngIf="showOptions && showOptions.length > 0">
+                            <!-- <div *ngIf="showOptions && showOptions.length > 1">
+                                <clr-radio-container>
+                                    <label>Please Select Option</label>
+                                    <clr-radio-wrapper *ngFor="let option of showOptions" style="height: 60px;">
+                                        <input type="radio" clrRadio value="{{option}}" [(ngModel)]="selectedOption" />
+                                        <label>I want to do this: {{option}}</label>
+                                    </clr-radio-wrapper>
+                                </clr-radio-container>
+                            </div> -->
+                            <button class="btn btn-primary" [disabled]="!showOptions.includes(selectedOption)" (click)="gameController.play(selectedOption)">Submit</button>
+                        </div>
+                        <div>showOptions: {{showOptions}} length: {{showOptions.length}}</div>
+                        <div>selectedOption: {{selectedOption}}</div>
+                    </div>
+
                 </div>
             </div>
-            <div style="height:24px; width: 250px;">
-                <div class="progress flash progress-fade">
-                    <progress *ngIf='rolling' max="100" value="{{progress * 10}}" data-displayval=""></progress>
-                </div>
-                <!-- <clr-progress-bar *ngIf='rolling' clrValue="{{progress * 10}}" clrMax="100"></clr-progress-bar> -->
+
+            <div *ngIf="!gameService.iAmNextPlayer()">
+                <h3>{{gameService.getUsername(gameService.nextPlayer)}} is currently playing ...</h3>
+
             </div>
-            <div>progress={{progress}}</div>
         </div>
-        <!-- <div fxLayout="row" style="width: 250px;" fxLayoutGap="12px">
+    </div>
+    <div class="bloc">
+        <app-carousel *ngIf="mobileQuery.matches" #carousel [showControls]="false" [itemWidth]="200-24" [containerWidth]="340" [containerHeight]="300" (step)="onCarouselStep($event)">
+            <ng-container *ngFor="let slide of slidesStore">
+                <ng-container *appCarouselItem>
+                    <div style="margin-left: -24px;">
+                        <div class="players" fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="{{-6 * slide.players.length}}px">
+                            <img *ngFor="let player of slide.players" src="{{player.image}}" width="48px" matTooltip="{{player.name}}">
+                        </div>
+                        <img [src]="slide.src" [alt]="slide.alt" [title]="slide.title" width="200px">
+                    </div>
+                </ng-container>
+            </ng-container>
+        </app-carousel>
 
-            <input type="number" min="1" max="6" [(ngModel)]="targetPOW" />
-            <input type="number" min="1" max="6" [(ngModel)]="targetPOS" />
-            <button (click)="rollDices(targetPOW, targetPOS)">Roll Dices</button>
-        </div> -->
+        <app-carousel *ngIf="!mobileQuery.matches" #carousel [showControls]="false" [itemWidth]="300-36" [containerWidth]="800" [containerHeight]="300" (step)="onCarouselStep($event)">
+            <ng-container *ngFor="let slide of slidesStore">
+                <ng-container *appCarouselItem>
+                    <div style="margin-left: -36px;">
+                        <div class="players" fxLayout="row" fxLayoutAlign="center center" fxLayoutGap="{{-6 * slide.players.length}}px">
+                            <img *ngFor="let player of slide.players" src="{{player.image}}" width="48px" matTooltip="{{player.name}}">
+                        </div>
+                        <img [src]="slide.src" [alt]="slide.alt" [title]="slide.title" width="300px">
+                    </div>
+                </ng-container>
+            </ng-container>
+        </app-carousel>
     </div>
-    <div *ngIf="showSpace !== -1">
-        <h3 style="text-align: center;">Welcome to:</h3>
-        <app-space-card [space]="slidesStore[showSpace]" [width]="350"></app-space-card>
-    </div>
+    <!-- <app-carousel #carousel [showControls]="true" [itemWidth]="150-18" [containerWidth]="300" [containerHeight]="150" (step)="onCarouselStep($event)">
+        <ng-container *ngFor="let slide of slidesStore">
+            <ng-container *appCarouselItem>
+                <div style="margin-left: -18px;">
+                    <img [src]="slide.src" [alt]="slide.alt" width="150px">
+                </div>
+            </ng-container>
+        </ng-container>
+    </app-carousel> -->
+
 </div>
-<!-- <div>Some tags before</div>
-<owl-carousel-o [options]="customOptions">
-
-  <ng-container *ngFor="let slide of slidesStore">
-      <ng-template carouselSlide [id]="slide.id">
-          <img [src]="slide.src" [alt]="slide.alt" [title]="slide.title">
-      </ng-template>
-  </ng-container>
-
-</owl-carousel-o>
-<div>Some tags after</div> -->

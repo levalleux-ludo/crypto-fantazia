@@ -8,6 +8,7 @@ import { tezosService } from "./tezos.service";
 import { sign } from "crypto";
 import { TransactionOperation } from "@taquito/taquito/dist/types/operations/transaction-operation";
 import { AssetsContract } from "./assets.contract";
+import { MichelsonV1Expression } from '@taquito/rpc';
 
 export interface GameContractStorage {
     admin: string;
@@ -59,6 +60,30 @@ export class GameContract extends AbstractContract<GameContractStorage> {
     protected constructor(address: string) {
         super(address);
     }
+    public static payloadFormat: MichelsonV1Expression = {
+      "prim": "pair",
+      "args": [{
+              "prim": "pair",
+              "args": [
+                  { "prim": "nat", "annots": ["%assetId"] },
+                  { "prim": "pair", "args": [{ "prim": "nat", "annots": ["%cardId"] }, { "prim": "int", "annots": ["%dice1"] }] }
+              ]
+          },
+          {
+              "prim": "pair",
+              "args": [
+                  { "prim": "int", "annots": ["%dice2"] },
+                  {
+                      "prim": "pair",
+                      "args": [
+                          { "prim": "int", "annots": ["%newPosition"] },
+                          { "prim": "set", "args": [{ "prim": "string" }], "annots": ["%options"] }
+                      ]
+                  }
+              ]
+          }
+      ]
+    };
     protected static getInitialStorage(originator: KeyStore, creator: string) {
         return {
           "prim": "Pair",
@@ -231,8 +256,39 @@ export class GameContract extends AbstractContract<GameContractStorage> {
        return this.callMethodTaquito(keyStore, operationName, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation);
     }
 
-    async play(keyStore: KeyStore) {
-        return tezosService.invokeContract(keyStore, this._address, 'play', []);
+    // async play(keyStore: KeyStore, option: string, payload: any, signature: string): Promise<void> {
+    //     return tezosService.invokeContract(
+    //       keyStore,
+    //       this._address,
+    //       'play',
+    //       [
+    //         `"${option}"`,
+    //         payload.assetId,
+    //         payload.cardId,
+    //         payload.dice1,
+    //         payload.dice2,
+    //         payload.newPosition,
+    //         payload.options.map((an_option: string) => `"${an_option}"`),
+    //         signature
+    //       ]);
+    // }
+    async play(keyStore: KeyStore, option: string, payload: any, signature: string): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+        const operationName = 'play';
+        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+         = (ci: any) => ci.methods.play;
+         return this.callMethodTaquito(
+           keyStore,
+           operationName,
+           { fee: 800000, gasLimit: 400000, storageLimit: 50000 },
+           operation,
+           option,
+           payload.assetId,
+           payload.cardId,
+           payload.dice1,
+           payload.dice2,
+           payload.newPosition,
+           payload.options,
+           signature);    
     }
 
     async setInitialBalances(keyStore: KeyStore) {

@@ -76,9 +76,9 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
 
   updateSizes(overflow = false) {
     console.log(`updateSizes(${overflow})`);
-    console.log(`current slide ${this.currentSlide} block : (${this.itemsDirectives.toArray()[this.currentSlide].itemId})`);
+    console.log(`current slide ${this.currentSlide} block : (${this.itemsElements.length > 0 ? this.itemsDirectives.toArray()[this.currentSlide].itemId : '-'})`);
     for (let i = 0; i < this.itemsElements.length; i++) {
-      console.log(`element ${i}, item:${this.itemsDirectives.toArray()[i].itemId}`);
+      // console.log(`element ${i}, item:${this.itemsDirectives.toArray()[i].itemId}`);
       let animation: AnimationFactory;
       let translateX;
       let scale;
@@ -99,7 +99,7 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
         translateX = this.itemWidth;
         scale = 1.0;
       }
-      console.log(`i=${i}, translateX=${translateX}, scale=${scale}`);
+      // console.log(`i=${i}, translateX=${translateX}, scale=${scale}`);
 
       animation = this.builder.build([
         animate(this.timing, style({ transform: `scale(${scale}) translateX(${translateX}px)` }))]);
@@ -147,7 +147,7 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
   }
 
   translate(duration, offset, onDone?) {
-    console.log(`translate(${offset})`);
+    // console.log(`translate(${offset})`);
     const animation = this.builder.build([
       animate(duration, style({ transform: `translateX(-${offset}px)` }))]);
     const player = animation.create(this.carousel.nativeElement);
@@ -186,6 +186,13 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
     console.log(`goto(${position}) current slide:${this.currentSlide} --> target slide:${this.targetSlide}`);
     this.onNextDone(onDone);
 
+  }
+
+  setCurrentPosition(position: number) {
+    this.currentSlide = this.nbVisibleBlocksBefore + position;
+    this.updateSizes();
+    const offset = this.currentSlide * this.itemWidth;
+    this.translate(0, offset);
   }
 
   getBlockIdBefore(idx) {

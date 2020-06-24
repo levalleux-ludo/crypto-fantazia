@@ -17,17 +17,17 @@ import { isString } from 'util';
 
 export const GameConfig = {
     nbSpaces: 24,
-    nbChancesOrCC: 48
+    nbChancesOrCC: 15
 }
 
 export enum ePlayOption {
-    NOTHING, // do nothing
-    GENESIS, // receive income
-    COVID, // go to quarantine
-    STARTUP_FOUND, // found startup
-    BUY_PRODUCT, // but product from startup
-    CHANCE, // get a chance card
-    COMMUNITY_CHEST // get a community_chest card
+    NOTHING = 'NOTHING', // do nothing
+    GENESIS = 'GENESIS', // receive income
+    COVID = 'COVID', // go to quarantine
+    STARTUP_FOUND = 'STARTUP_FOUND', // found startup
+    BUY_PRODUCT = 'BUY_PRODUCT', // but product from startup
+    CHANCE = 'CHANCE', // get a chance card
+    COMMUNITY_CHEST = 'COMMUNITY_CHEST' // get a community_chest card
 }
 
 class GameService {
@@ -356,17 +356,18 @@ class GameService {
             assetId: newPosition // by simplicity, we use the spaceId as assetId
         }
         const keyStore = await tezosService.getAccount(originator);
-        const signature = await tezosService.make_signature(Buffer.from(JSON.stringify(payload)), keyStore.privateKey);
+        const thingsToSign = await tezosService.packData2(GameContract.payloadFormat, payload);
+        const signature = await tezosService.make_signature(thingsToSign, keyStore.privateKey);
         game.positions.set(player, newPosition);
-        const turn = await turnService.create(
-            sessionId,
-            player,
-            oldPosition,
-            newPosition,
-            [dice1, dice2],
-            cardId,
-            signature);
-        game.turns.push(turn.id);
+        // const turn = await turnService.create(
+        //     sessionId,
+        //     player,
+        //     oldPosition,
+        //     newPosition,
+        //     [dice1, dice2],
+        //     cardId,
+        //     signature);
+        // game.turns.push(turn.id);
         await game.save();
         // and update position in contract ?
 
@@ -375,7 +376,9 @@ class GameService {
             player,
             dices: [dice1, dice2],
             newPosition: newPosition,
+            oldPosition: oldPosition,
             cardId: cardId,
+            options: options,
             signature
         });
 

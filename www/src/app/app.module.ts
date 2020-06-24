@@ -16,6 +16,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MaterialFileInputModule } from 'ngx-material-file-input';
 import { ResponsiveModule } from 'ngx-responsive';
+import { MatSidenavModule } from '@angular/material/sidenav';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -63,6 +64,7 @@ import { GameControlsComponent } from './_components/game-controls/game-controls
 import { WelcomeComponent } from './_components/welcome/welcome.component';
 import { GameComponent } from './_components/game/game.component';
 import { OverviewComponent } from './_components/overview/overview.component';
+import { GameStatusModalComponent } from './_components/game-status-modal/game-status-modal.component';
 
 @NgModule({
   declarations: [
@@ -106,7 +108,8 @@ import { OverviewComponent } from './_components/overview/overview.component';
     GameControlsComponent,
     WelcomeComponent,
     GameComponent,
-    OverviewComponent
+    OverviewComponent,
+    GameStatusModalComponent
   ],
   imports: [
     BrowserModule,
@@ -130,14 +133,16 @@ import { OverviewComponent } from './_components/overview/overview.component';
     MatProgressSpinnerModule,
     MaterialFileInputModule,
     MatTooltipModule,
-    ResponsiveModule.forRoot()
+    ResponsiveModule.forRoot(),
+    MatSidenavModule
   ],
   providers: [],
   bootstrap: [AppComponent],
   entryComponents: [
     ModalExampleComponent,
     ChooseSessionDialogComponent,
-    SpaceDetailsModalComponent
+    SpaceDetailsModalComponent,
+    GameStatusComponent
   ]
 })
 export class AppModule {

@@ -36,7 +36,7 @@ export class TurnService {
       this.community_chests = cards.sort((a, b) => a.cardId - b.cardId);
     }, err => alertService.error(err));
 
-    this.gameService.onPlayerMove.subscribe(({player, newPosition}) => {
+    this.gameService.onPlayerMove.subscribe(({player, newPosition, oldPosition}) => {
       if (player === tezosService.account.account_id) {
         const space = this.spaces[newPosition];
         switch (space.type) {

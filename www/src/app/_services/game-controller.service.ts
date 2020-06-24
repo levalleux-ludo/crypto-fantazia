@@ -11,7 +11,13 @@ import { KeyStore } from '../../../../tezos/node_modules/conseiljs/dist';
 })
 export class GameControllerService {
 
-  waiterTask: string;
+  // Tip to share the same waiterTask between gameService and gameController
+  set waiterTask(value: string) {
+    this.gameService.waiterTask = value;
+  }
+  get waiterTask(): string{
+    return this.gameService.waiterTask;
+  }
   rollDicesResult;
 
   constructor(
@@ -115,11 +121,61 @@ export class GameControllerService {
     });
   }
 
-  public async play() {
+  public async play(selectedOption: string) {
     // call contract with rollDicesResult and option chosen by user
-    // TODO: the payload should include a contractCall structure to be realized by the smart contract,
-    // for instance: {options = ["BUY", "IGNORE"], assetId, dices, cardId, newPosition} --> signature
-    this.rollDicesResult = undefined;
+    if (this.rollDicesResult === undefined) {
+      // Try to get from lastTurns in gamesService
+      const lastTurn = this.gameService.lastTurn.get(this.tezosService.account.account_id);
+      if (lastTurn && this.gameService.iAmPlaying()) {
+        this.rollDicesResult = {
+          payload: {
+            dice1: lastTurn.dices[0],
+            dice2: lastTurn.dices[1],
+            newPosition: lastTurn.newPosition,
+            cardId: lastTurn.cardId,
+            options: lastTurn.options,
+            assetId: lastTurn.newPosition
+          },
+          signature: lastTurn.signature
+        };
+      } else {
+        this.gameService.alertError('Unable to invole Play method because there is no rollResult recorded');
+        return;
+      }
+    }
+    if (!this.gameService.contracts.game) {
+      this.gameService.alertError('Unable to invole Play method because the game contract is not set');
+      return;
+    }
+    // this.waiterTask = this.waiterService.addTask();
+    // this.gameService.contracts.game.play(
+    //   this.tezosService.keyStore,
+    //   selectedOption,
+    //   this.rollDicesResult.payload,
+    //   this.rollDicesResult.signature
+    // ).then(() => {
+    //     this.gameService.showAlert(`Play submitted successfully`);
+    //     this.gameService.updateFromGameContract();
+    //     this.rollDicesResult = undefined;
+    // }).catch(err => {
+    //   console.error(`Play transaction failed: ${err.message}`);
+    //   this.alertService.error(err);
+    // }).finally(() => {
+    //   this.waiterService.removeTask(this.waiterTask);
+    //   this.waiterTask = undefined;
+    // });
+    console.log(`Invoke PLAY transaction with parameters: option='${selectedOption}, payload='${JSON.stringify(this.rollDicesResult.payload)}, signature='${this.rollDicesResult.signature}`);
+    this.callContract(
+      (ks) => this.gameService.contracts.game.play(ks, selectedOption, this.rollDicesResult.payload, this.rollDicesResult.signature),
+      (txHash) => {
+        this.gameService.showAlert(`Play submission requested (txHash:${txHash}) ...`);
+      },
+      (txHash, blockId) => {
+        this.gameService.showAlert(`Play submitted successfully (txHash:${txHash}, blockId:${blockId})`);
+        this.gameService.updateFromGameContract();
+        this.rollDicesResult = undefined;
+      }
+    );
   }
 
   private async callContract(
@@ -144,7 +200,7 @@ export class GameControllerService {
       onSent(resultOperation.txHash);
     }).catch(
       err => {
-        this.alertService.error(err);
+        this.alertService.error((err.message) ? err.message : err);
         this.waiterService.removeTask(this.waiterTask);
         this.waiterTask = undefined;
       }
