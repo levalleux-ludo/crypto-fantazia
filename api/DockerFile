@@ -1,0 +1,17 @@
+FROM node:lts-alpine
+RUN apk add --update git
+
+ENV USER=cryptofanta
+ENV UID=12345
+ENV GID=23456
+
+RUN adduser \
+    --disabled-password \
+    "$USER"
+
+USER cryptofanta
+WORKDIR /home/cryptofanta
+RUN ls -al 
+COPY --chown=cryptofanta ../. .
+
+CMD npm install -y && npm run start-api

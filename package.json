@@ -6,8 +6,16 @@
     "scripts": {
         "postinstall": "cd tezos && npm install && cd ../api && npm install && cd ../www && npm install",
         "build-api": "cd api && npm run build",
-        "build-www": "cd www && ng build",
-        "build-all": "npm run build-api && npm run build-www"
+        "build-www": "cd www && ng build --prod",
+        "build-all": "npm run build-api && npm run build-www",
+        "start-api": "cd api && npm run start-from-docker",
+        "start-www": "cd www && npm start:prod",
+        "docker:build:api": "docker build --rm -f Dockerfile.api -t local/cryptofanta/backend:latest .",
+        "docker:create-network": "docker network create -d bridge --subnet 10.0.74.0/24 --gateway 10.0.74.1 cryptofantanet",
+        "test-env": "call env/setAWSCredentials.bat & cmd /C echo %aws_access_key_id% && echo $aws_access_key_id",
+        "docker:run:api": "call env/setAWSCredentials.bat && cmd /C docker run -p 8088:8088 --env aws_s3_avc_access_key_id=%aws_access_key_id% --env aws_s3_avc_secret_access_key=%aws_secret_access_key% --env mongodb_uri=mongodb://host.docker.internal/CryptoFantazia local/cryptofanta/backend",
+        "docker:aws:renew-token": "aws ecr get-login --no-include-email>%TEMP%\\aws-token && cmd /K<%TEMP%\\aws-token & del /Q /F %TEMP%\\aws-token",
+        "docker:aws:push:api": "docker tag local/cryptofanta/backend:latest 486699961018.dkr.ecr.eu-west-2.amazonaws.com/cryptofanta-backend:latest && docker push 486699961018.dkr.ecr.eu-west-2.amazonaws.com/cryptofanta-backend:latest"
     },
     "author": "",
     "license": "ISC"

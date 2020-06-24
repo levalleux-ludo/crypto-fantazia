@@ -32,8 +32,15 @@
     "scripts": {
         "build": "tsc",
         "start": "npm run build && set \"TEZOS_ACCOUNTS_DIR=%CD%\\..\\tezos\\accounts\" && set \"TEZOS_CONTRACTS_DIR=%CD%\\..\\tezos\\contracts\" && node build/api/src/index.js",
+        "start-from-docker": "node build/api/src/index.js",
         "start-dev": "start /B cmd /C \"npm run build --watch\" && set \"TEZOS_ACCOUNTS_DIR=%CD%\\..\\tezos\\accounts\" && set \"TEZOS_CONTRACTS_DIR=%CD%\\..\\tezos\\contracts\" && nodemon build/api/src/index.js",
-        "test": "mocha -r ts-node/register tests/**/*.test.ts"
+        "test": "mocha -r ts-node/register tests/**/*.test.ts",
+        "docker:build": "docker build --rm -f Dockerfile -t local/cryptofanta/backend:latest .",
+        "docker:create-network": "docker network create -d bridge --subnet 10.0.74.0/24 --gateway 10.0.74.1 cryptofantanet",
+        "test-env": "call env/setAWSCredentials.bat & cmd /C echo %aws_access_key_id% && echo $aws_access_key_id",
+        "docker:run": "call env/setAWSCredentials.bat && cmd /C docker run -p 4000:4000 --env aws_s3_avc_access_key_id=%aws_access_key_id% --env aws_s3_avc_secret_access_key=%aws_secret_access_key% --env mongodb_uri=mongodb://host.docker.internal/CryptoFantazia local/cryptofanta/backend",
+        "docker:aws:renew-token": "aws ecr get-login --no-include-email>%TEMP%\\aws-token && cmd /K<%TEMP%\\aws-token & del /Q /F %TEMP%\\aws-token",
+        "docker:aws:push": "docker tag local/cryptofanta/backend:latest 486699961018.dkr.ecr.eu-west-2.amazonaws.com/cryptofanta-backend:latest && docker push 486699961018.dkr.ecr.eu-west-2.amazonaws.com/cryptofanta-backend:latest"
     },
     "author": "",
     "license": "ISC"

@@ -1,13 +1,14 @@
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
 
-  protected host = 'http://localhost';
+  protected host_api_url = environment.api_url;
   protected port = 8080;
   protected httpOptions = {
     headers: new HttpHeaders({'Content-Type': 'application/json' })

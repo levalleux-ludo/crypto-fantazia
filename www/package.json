@@ -4,10 +4,15 @@
     "scripts": {
         "ng": "ng",
         "start": "ng serve",
+        "start:prod": "lite-server",
         "build": "ng build",
         "test": "ng test",
         "lint": "ng lint",
-        "e2e": "ng e2e"
+        "e2e": "ng e2e",
+        "docker:build": "docker build --rm -f Dockerfile -t local/cryptofanta/frontend:latest .",
+        "docker:run": "docker run -p 80:80 local/cryptofanta/frontend",
+        "docker:aws:renew-token": "aws ecr get-login --no-include-email>%TEMP%\\aws-token && cmd /K<%TEMP%\\aws-token & del /Q /F %TEMP%\\aws-token",
+        "docker:aws:push": "docker tag local/cryptofanta/frontend:latest 486699961018.dkr.ecr.eu-west-2.amazonaws.com/cryptofanta-frontend:latest && docker push 486699961018.dkr.ecr.eu-west-2.amazonaws.com/cryptofanta-frontend:latest"
     },
     "private": true,
     "dependencies": {
@@ -53,6 +58,7 @@
         "karma-coverage-istanbul-reporter": "~2.1.0",
         "karma-jasmine": "~2.0.1",
         "karma-jasmine-html-reporter": "^1.4.2",
+        "lite-server": "^2.5.4",
         "protractor": "~5.4.3",
         "ts-node": "~8.3.0",
         "tslint": "~5.18.0",
