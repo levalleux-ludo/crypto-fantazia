@@ -4,7 +4,7 @@
     "description": "A decentralized board game about economics (think about Monopoly) but crypto-oriented, where crypto-economics mechanisms are entirely implemented by smart contract on the Tezos blockchain.",
     "main": "index.js",
     "scripts": {
-        "postinstall": "cd api && npm install && cd ../www && npm install",
+        "postinstall": "cd tezos && npm install && cd ../api && npm install && cd ../www && npm install",
         "build-api": "cd api && npm run build",
         "build-www": "cd www && ng build",
         "build-all": "npm run build-api && npm run build-www"
