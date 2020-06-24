@@ -38,17 +38,15 @@ And it became obvious that, while the so famous Monopoly game has learnt all of 
 
 ### Architecture
 
-Frontend
-Backend (data store, random nb generation, game contract creation/deployment)
-Smart Contracts
+#### Frontend
+Angular cli + Material + Clarity
+ConseilJS + Taquito
 
-Tezos, ConseilJS
-Unity3D
-Angular cli
-Clarity
-Magic Link
+#### Backend
+Node + Express + Mongo_DB
+ConseilJS + Taquito
 
-
-
+#### Smart Contracts
+SmartPY.io
 
 
