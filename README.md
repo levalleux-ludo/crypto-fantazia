@@ -1,3 +1,6 @@
+![Image](www/src/assets/crypto-fantasia.png?raw=true)
+
+
 # Crypto Fantasia
 
 A decentralized board game about economics (think about Monopoly) but crypto-oriented, where crypto-economics mechanisms are entirely implemented by smart contract on the Tezos blockchain.
