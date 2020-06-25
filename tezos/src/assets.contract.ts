@@ -13,6 +13,8 @@ export interface AssetsContractStorage {
     assets: MichelsonMap<number, any>;
     ownership: MichelsonMap<number, string>;
     portfolio: MichelsonMap<string, BigNumber[]>;
+    features: MichelsonMap<number, string>;
+    debug: number;
 }
 
 export interface IAssetParams {assetId: number, type: string, price: number, featurePrice: number, rentRates: number[]}
@@ -80,24 +82,24 @@ export class AssetsContract extends AbstractContract<AssetsContractStorage> {
             ));
         }
         return {
-            "prim": "Pair",
-            "args": [
-              {
-                "prim": "Pair",
-                "args": [
-                  { "string": admin },
-                  {
-                    "prim": "Pair",
-                    "args": [
-                      allAssets,
-                      { "int": "0" }
-                    ]
-                  }
-                ]
-              },
-              { "prim": "Pair", "args": [ { "prim": "Pair", "args": [ [], { "string": gameContract } ] }, { "prim": "Pair", "args": [ [], [] ] } ] }
-            ]
-          };
+          "prim": "Pair",
+          "args": [
+            {
+              "prim": "Pair",
+              "args": [
+                { "string": admin },
+                {
+                  "prim": "Pair",
+                  "args": [
+                    allAssets,
+                    { "int": "0" }
+                  ]
+                }
+              ]
+            },
+            { "prim": "Pair", "args": [ { "prim": "Pair", "args": [ [], { "string": gameContract } ] }, { "prim": "Pair", "args": [ [], [] ] } ] }
+          ]
+        };
     }
 
     async buy(keyStore: KeyStore, assetId: number, buyer: string): Promise<{txHash: string, onConfirmed: Promise<number>}> {

@@ -10,7 +10,6 @@ export interface ChanceContractStorage {
     admin: string;
     chances: MichelsonMap<number, any>;
     gameContract: string;
-    tokenContract: string;
 }
 
 export interface IChanceParams {id: number, type: string, param: number}
@@ -47,14 +46,14 @@ export class ChanceContract extends AbstractContract<ChanceContractStorage> {
         return {
           "prim": "Pair",
           "args": [
+            { "string": admin },
             {
               "prim": "Pair",
               "args": [
-                { "string": admin },
-                allChances
+                allChances,
+                { "string": gameContract }
               ]
-            },
-            { "prim": "Pair", "args": [ { "string": gameContract }, { "string": admin } ] }
+            }
           ]
         };
     }

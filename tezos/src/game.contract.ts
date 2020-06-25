@@ -31,7 +31,6 @@ export interface GameContractStorage {
     chance: string;
     community: string;
     assets: string;
-    counter: number;
 }
 
 export class GameContract extends AbstractContract<GameContractStorage> {
@@ -99,8 +98,8 @@ export class GameContract extends AbstractContract<GameContractStorage> {
                 {
                   "prim": "Pair",
                   "args": [
-                    { "prim": "Pair", "args": [ { "int": "0" }, { "string": creator } ] },
-                    { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ { "int": "200" }, { "int": "0" } ] } ] }
+                    { "prim": "Pair", "args": [ { "string": creator }, [] ] },
+                    { "prim": "Pair", "args": [ { "int": "200" }, { "prim": "Pair", "args": [ { "int": "0" }, { "int": "24" } ] } ] }
                   ]
                 }
               ]
@@ -111,21 +110,21 @@ export class GameContract extends AbstractContract<GameContractStorage> {
                 {
                   "prim": "Pair",
                   "args": [
-                    { "prim": "Pair", "args": [ { "int": "24" }, { "string": originator.publicKeyHash } ] },
-                    { "prim": "Pair", "args": [ { "int": "-1" }, { "prim": "Pair", "args": [ { "string": originator.publicKey }, [] ] } ] }
+                    { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "int": "-1" } ] },
+                    { "prim": "Pair", "args": [ { "string": originator.publicKey }, { "prim": "Pair", "args": [ [], [] ] } ] }
                   ]
                 },
                 {
                   "prim": "Pair",
                   "args": [
-                    { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ [], [] ] } ] },
+                    { "prim": "Pair", "args": [ [], [] ] },
                     { "prim": "Pair", "args": [ { "int": "12" }, { "prim": "Pair", "args": [ { "string": "created" }, { "string": originator.publicKeyHash } ] } ] }
                   ]
                 }
               ]
             }
           ]
-        }
+        };
     }
     
     async register(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {

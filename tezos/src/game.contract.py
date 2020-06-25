@@ -8,7 +8,7 @@ def call(c, x):
 
 class FakeTokenContract(sp.Contract):
     def __init__(self, admin):
-        self.init(paused = False, balances = sp.map(tvalue = sp.TRecord(approvals = sp.TMap(sp.TAddress, sp.TNat), balance = sp.TNat)), admin = admin, totalSupply = 0, lastCaller = sp.address('tz1MTzrRsQLdUxLYZz6WnAnMBEx9B8v8rurG'))
+        self.init(paused = False, balances = sp.map(tvalue = sp.TRecord(approvals = sp.TMap(sp.TAddress, sp.TNat), balance = sp.TNat)), admin = admin, totalSupply = 0)
 
     @sp.entry_point
     def setAdministrator(self, params):
@@ -23,15 +23,6 @@ class FakeTokenContract(sp.Contract):
         self.data.balances[params.to].balance += params.value
         self.data.totalSupply += params.value
     
-    @sp.entry_point
-    def setCaller(self):
-        self.data.lastCaller = sp.sender
-
-    @sp.entry_point
-    def setCallerAdminOnly(self):
-        sp.verify(sp.sender == self.data.admin)
-        self.data.lastCaller = sp.sender
-
     @sp.entry_point
     def burn(self, params):
         sp.verify(sp.sender == self.data.admin)
@@ -74,14 +65,12 @@ class ChanceContract(sp.Contract):
         self.init(
             admin = admin,
             chances = chances,
-            gameContract = admin,
-            tokenContract = admin
+            gameContract = admin
         )
     
     @sp.entry_point
     def setAdministrator(self, params):
         # params: (admin)
-        sp.set_type(params.admin, sp.TAddress)
         sp.verify(sp.sender == self.data.admin)
         self.data.admin = params.admin
 
@@ -89,11 +78,6 @@ class ChanceContract(sp.Contract):
     def setGameContract(self, params):
         sp.verify(sp.sender == self.data.admin)
         self.data.gameContract = params.address
-    
-    @sp.entry_point
-    def setTokenContract(self, params):
-        sp.verify(sp.sender == self.data.admin)
-        self.data.tokenContract = params.address
     
     @sp.entry_point
     def perform(self, params):
@@ -176,7 +160,6 @@ class AssetsContract(sp.Contract):
     @sp.entry_point
     def setAdministrator(self, params):
         # params: (admin)
-        sp.set_type(params.admin, sp.TAddress)
         sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract))
         self.data.admin = params.admin
     
@@ -188,8 +171,8 @@ class AssetsContract(sp.Contract):
     @sp.entry_point
     def buy(self, params):
         # params: (assetId, buyer)
-        sp.set_type(params.assetId, sp.TNat)
-        sp.set_type(params.buyer, sp.TAddress)
+        # sp.set_type(params.assetId, sp.TNat)
+        # sp.set_type(params.buyer, sp.TAddress)
         sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract))
         sp.verify(self.data.assets.contains(params.assetId))
         self.data.debug = 0
@@ -215,8 +198,8 @@ class AssetsContract(sp.Contract):
     @sp.entry_point
     def resell(self, params):
         # params: (assetId, seller)
-        sp.set_type(params.assetId, sp.TNat)
-        sp.set_type(params.player, sp.TAddress)
+        # sp.set_type(params.assetId, sp.TNat)
+        # sp.set_type(params.player, sp.TAddress)
         sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
         sp.verify(self.data.assets.contains(params.assetId))
         sp.verify(self.data.ownership[params.assetId] == params.player)
@@ -248,8 +231,8 @@ class AssetsContract(sp.Contract):
     @sp.entry_point
     def pay_rent(self, params):
         # params: (assetId, player)
-        sp.set_type(params.assetId, sp.TNat)
-        sp.set_type(params.player, sp.TAddress)
+        # sp.set_type(params.assetId, sp.TNat)
+        # sp.set_type(params.player, sp.TAddress)
         sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
         sp.verify(self.data.assets.contains(params.assetId))
         sp.if self.data.ownership.contains(params.assetId):
@@ -271,8 +254,8 @@ class AssetsContract(sp.Contract):
     @sp.entry_point
     def invest(self, params):
         # params: (assetId, player)
-        sp.set_type(params.assetId, sp.TNat)
-        sp.set_type(params.player, sp.TAddress)
+        # sp.set_type(params.assetId, sp.TNat)
+        # sp.set_type(params.player, sp.TAddress)
         sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
         sp.verify(self.data.assets.contains(params.assetId))
         sp.verify(self.data.ownership[params.assetId] == params.player)
@@ -286,8 +269,8 @@ class AssetsContract(sp.Contract):
     @sp.entry_point
     def withdraw(self, params):
         # params: (assetId, player)
-        sp.set_type(params.assetId, sp.TNat)
-        sp.set_type(params.player, sp.TAddress)
+        # sp.set_type(params.assetId, sp.TNat)
+        # sp.set_type(params.player, sp.TAddress)
         sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
         sp.verify(self.data.assets.contains(params.assetId))
         sp.verify(self.data.ownership[params.assetId] == params.player)
@@ -300,9 +283,9 @@ class AssetsContract(sp.Contract):
     @sp.entry_point
     def pay_amount_per(self, params):
         # params: (player, amount, per)
-        sp.set_type(params.player, sp.TAddress)
-        sp.set_type(params.amount, sp.TNat)
-        sp.set_type(params.per, sp.TString)
+        # sp.set_type(params.player, sp.TAddress)
+        # sp.set_type(params.amount, sp.TNat)
+        # sp.set_type(params.per, sp.TString)
         sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
         nbCompanies = sp.local("nbCompanies", 0)
         sp.if self.data.portfolio.contains(params.player):
@@ -383,8 +366,7 @@ class GameContract(sp.Contract):
             token = admin,
             chance = admin,
             community = admin,
-            assets = admin,
-            counter = 0)
+            assets = admin)
     
     @sp.entry_point
     def register(self, params):
@@ -468,7 +450,7 @@ class GameContract(sp.Contract):
         sp.verify(self.data.nextPlayer == sp.sender, 'Only the next player is allowed to play now')
         # verify signature and payload match
         sp.set_type(params.payload, sp.TRecord(cardId = sp.TIntOrNat, dice1 = sp.TIntOrNat, dice2 = sp.TIntOrNat, newPosition = sp.TInt, options = sp.TSet(sp.TString), assetId = sp.TNat))
-        sp.set_type(params.signature, sp.TSignature)
+        # sp.set_type(params.signature, sp.TSignature)
         thingToSign = sp.pack(params.payload)
         signature = sp.local("signature", params.signature)
         sp.verify(sp.check_signature(self.data.originator_pubKey, params.signature, thingToSign))
@@ -511,26 +493,10 @@ class GameContract(sp.Contract):
 
     @sp.entry_point
     def setCreator(self, params):
-        sp.set_type(params.creator_address, sp.TAddress)
+        # sp.set_type(params.creator_address, sp.TAddress)
         sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.creator), 'Only originator or actual creator is allowed to change creator')
         self.data.creator = params.creator_address
         
-    @sp.entry_point
-    def testCallToken(self, params):
-        sp.set_type(params.token, sp.TAddress)
-        # h_setCaller: handle to the 'setCaller' entry_point of the token contract
-        h_setCaller = sp.contract(sp.TUnit, params.token, entry_point = "setCaller").open_some()
-        param = sp.unit
-        call(h_setCaller, param)
-
-    @sp.entry_point
-    def testCallTokenAdminOnly(self, params):
-        sp.set_type(params.token, sp.TAddress)
-        # h_setCaller: handle to the 'setCallerAdminOnly' entry_point of the token contract
-        h_setCaller = sp.contract(sp.TUnit, params.token, entry_point = "setCallerAdminOnly").open_some()
-        param = sp.unit
-        call(h_setCaller, param)
-
     @sp.entry_point
     def give_immunity(self, params):
         sp.verify((sp.sender == self.data.admin) | (self.data.authorized_contracts.contains(sp.sender)))
@@ -582,9 +548,9 @@ class GameContract(sp.Contract):
     @sp.entry_point
     def pay_amount_per(self, params):
         # params: (player, value, per)
-        sp.set_type(params.player, sp.TAddress)
-        sp.set_type(params.value, sp.TInt)
-        sp.set_type(params.per, sp.TString)
+        # sp.set_type(params.player, sp.TAddress)
+        # sp.set_type(params.value, sp.TInt)
+        # sp.set_type(params.per, sp.TString)
         sp.verify((sp.sender == self.data.admin) | (self.data.authorized_contracts.contains(sp.sender)))
         self._assets_pay_amount_per(params.player, sp.as_nat(params.value), params.per)
         
@@ -777,11 +743,6 @@ def test():
     scenario += chance.setGameContract(address = contract.address).run(sender = originator)
     scenario.verify(chance.data.gameContract == contract.address)
 
-    scenario.h3("set token contract address in chance")
-    scenario += chance.setTokenContract(address = token.address).run(sender = originator)
-    scenario.verify(chance.data.tokenContract == token.address)
-    
-
     scenario.h2("Test CommunityContract")
     
     community_cards = {}
@@ -800,11 +761,6 @@ def test():
     scenario.h3("set game contract address in community")
     scenario += community.setGameContract(address = contract.address).run(sender = originator)
     scenario.verify(community.data.gameContract == contract.address)
-
-    scenario.h3("set token contract address in community")
-    scenario += community.setTokenContract(address = token.address).run(sender = originator)
-    scenario.verify(community.data.tokenContract == token.address)
-
 
     scenario.h2("Test AssetsContract")
 
@@ -1346,18 +1302,6 @@ def test():
 #    scenario.h2("Test play on ended game (expect to fail)")
 #    scenario += contract.play().run (sender = alice, valid = False)
     
-    scenario.verify(token.data.lastCaller != alice.address)
-    scenario += token.setCaller().run(sender = alice)
-    scenario.verify(token.data.lastCaller == alice.address)
-    
-    scenario += contract.testCallToken(token = token.address).run(sender = bob)
-    scenario += token
-    scenario.verify(token.data.lastCaller == contract.address)
-    
-    scenario += contract.testCallTokenAdminOnly(token = token.address).run(sender = bob)
-    scenario += token
-    scenario.verify(token.data.lastCaller == contract.address)
-
 
 
 
