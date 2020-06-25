@@ -169,7 +169,7 @@ export class GameContract extends AbstractContract<GameContractStorage> {
         return new Promise((resolve, reject) => {
             Tezos.contract.at(this._address).then((ci) => {
                 try {
-                    ci.methods.start(assetsAddress, chanceAddress, communityAddress, initialBalance, tokenAddress).send({ fee: 400000, gasLimit: 800000, storageLimit: 20000 }).then((txOperation: TransactionOperation) => {
+                    ci.methods.start(assetsAddress, chanceAddress, communityAddress, initialBalance, tokenAddress).send({ fee: 400000, gasLimit: 1000000, storageLimit: 50000 }).then((txOperation: TransactionOperation) => {
                         console.log(`returns from ${operationName} call: ${txOperation}`);
                         resolve({
                             txHash: txOperation.hash,
@@ -256,22 +256,28 @@ export class GameContract extends AbstractContract<GameContractStorage> {
        return this.callMethodTaquito(keyStore, operationName, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation);
     }
 
-    // async play(keyStore: KeyStore, option: string, payload: any, signature: string): Promise<void> {
-    //     return tezosService.invokeContract(
-    //       keyStore,
-    //       this._address,
-    //       'play',
-    //       [
-    //         `"${option}"`,
-    //         payload.assetId,
-    //         payload.cardId,
-    //         payload.dice1,
-    //         payload.dice2,
-    //         payload.newPosition,
-    //         payload.options.map((an_option: string) => `"${an_option}"`),
-    //         signature
-    //       ]);
-    // }
+    async play2(keyStore: KeyStore, option: string, payload: any, signature: string): Promise<void> {
+      let allOptions = '{';
+      for (const an_option of payload.options) {
+        allOptions += `"${an_option}"`;
+      }
+      allOptions += '}';
+        return tezosService.invokeContract(
+          keyStore,
+          this._address,
+          'play',
+          [
+            `"${option}"`,
+            payload.assetId,
+            payload.cardId,
+            payload.dice1,
+            payload.dice2,
+            payload.newPosition,
+            allOptions,
+            `"${signature}"`
+          ]
+          );
+    }
     async play(keyStore: KeyStore, option: string, payload: any, signature: string): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'play';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
@@ -279,7 +285,7 @@ export class GameContract extends AbstractContract<GameContractStorage> {
          return this.callMethodTaquito(
            keyStore,
            operationName,
-           { fee: 800000, gasLimit: 400000, storageLimit: 50000 },
+           { fee: 800000, gasLimit: 1000000, storageLimit: 50000 },
            operation,
            option,
            payload.assetId,

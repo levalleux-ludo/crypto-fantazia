@@ -8,7 +8,7 @@ import { environment } from 'src/environments/environment';
 })
 export class ApiService {
 
-  protected host_api_url = environment.api_url;
+  protected hostApiUrl = environment.api_url;
   protected port = 8080;
   protected httpOptions = {
     headers: new HttpHeaders({'Content-Type': 'application/json' })
@@ -21,17 +21,17 @@ export class ApiService {
     ) { }
 
   get<T>(apiUrl: string): Observable<T> {
-    const url = `${this.host_api_url}`;
+    const url = `${this.hostApiUrl}/${apiUrl}`;
     return this.http.get<T>(url);
   }
 
   post<T>(apiUrl: string, data: any): Observable<T> {
-    const url = `${this.host_api_url}`;
+    const url = `${this.hostApiUrl}/${apiUrl}`;
     return this.http.post<T>(url, data, this.httpOptions);
   }
 
   connectSSE(apiUrl: string): Observable<any> {
-    const url = `${this.host_api_url}`;
+    const url = `${this.hostApiUrl}/${apiUrl}`;
     return new Observable((observer) => {
       if (this.eventSource) {
         this.eventSource.close();

@@ -197,9 +197,8 @@ class TezosService {
         // })
         const entryPointsMap = await this.parseContract(address);
         const ep = entryPointsMap.get(entryPoint);
-        const params = ep?.generateInvocationPair(...parameters);
+        const params =  ep?.generateInvocationPair(...parameters);
         // const params = parameters.length > 0 ? ep?.generateInvocationPair(...parameters) : undefined;
-        console.log('params', params?.parameters);
 
         const fee = Number((await TezosConseilClient.getFeeStatistics(conseilServer, conseilServer.network, OperationKindType.Transaction))[0]['high']);
    
@@ -215,8 +214,8 @@ class TezosService {
             address,
             0, // amount
             fee, // fee
-            5000, // storage_limit
-            200000, // gas_limit
+            50000, // storage_limit
+            1000000, // gas_limit
             entryPoint,
             params?.parameters,
             parameterFormat
@@ -233,7 +232,7 @@ class TezosService {
                 factor*fee, // fee
                 '', // derivationPath
                 factor*storageCost, //storage_limit
-                factor*gas, // gas_limit
+                1000000, // gas_limit
                 entryPoint,
                 parameters.length > 0 ? params?.parameters : undefined,
                 parameters.length > 0 ? parameterFormat : undefined

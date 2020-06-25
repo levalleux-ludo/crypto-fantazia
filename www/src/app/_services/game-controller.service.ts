@@ -129,26 +129,27 @@ export class GameControllerService {
       if (lastTurn && this.gameService.iAmPlaying()) {
         this.rollDicesResult = {
           payload: {
+            assetId: lastTurn.newPosition,
+            cardId: lastTurn.cardId,
             dice1: lastTurn.dices[0],
             dice2: lastTurn.dices[1],
             newPosition: lastTurn.newPosition,
-            cardId: lastTurn.cardId,
-            options: lastTurn.options,
-            assetId: lastTurn.newPosition
+            options: lastTurn.options
           },
           signature: lastTurn.signature
         };
       } else {
-        this.gameService.alertError('Unable to invole Play method because there is no rollResult recorded');
+        this.gameService.alertError('Unable to invoke Play method because there is no rollResult recorded');
         return;
       }
     }
     if (!this.gameService.contracts.game) {
-      this.gameService.alertError('Unable to invole Play method because the game contract is not set');
+      this.gameService.alertError('Unable to invoke Play method because the game contract is not set');
       return;
     }
+    console.log(`Invoke PLAY transaction with parameters: option='${selectedOption}, payload='${JSON.stringify(this.rollDicesResult.payload)}, signature='${this.rollDicesResult.signature}`);
     // this.waiterTask = this.waiterService.addTask();
-    // this.gameService.contracts.game.play(
+    // this.gameService.contracts.game.play2(
     //   this.tezosService.keyStore,
     //   selectedOption,
     //   this.rollDicesResult.payload,
@@ -164,7 +165,6 @@ export class GameControllerService {
     //   this.waiterService.removeTask(this.waiterTask);
     //   this.waiterTask = undefined;
     // });
-    console.log(`Invoke PLAY transaction with parameters: option='${selectedOption}, payload='${JSON.stringify(this.rollDicesResult.payload)}, signature='${this.rollDicesResult.signature}`);
     this.callContract(
       (ks) => this.gameService.contracts.game.play(ks, selectedOption, this.rollDicesResult.payload, this.rollDicesResult.signature),
       (txHash) => {
