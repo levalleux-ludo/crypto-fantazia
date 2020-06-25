@@ -274,7 +274,7 @@ class GameService {
         await gameContract.update().then(storage => {
             game.players = Array.from(storage.players.values());
             for (let player of game.players) {
-                game.positions.set(player, 0);
+                game.positions.set(player, storage.playerPositions.has(player) ? storage.playerPositions.get(player) as number : 0);
             }
         })
         await game.save();
@@ -334,11 +334,12 @@ class GameService {
             throw new Error(`Player ${player} is already playing`);
         }
 
-        const oldPosition = game.positions.get(player) as any;
-        // TODO: check oldPosition is the same is GameContract and in DB
-        // if (gameContract.storage.positions.get(player) !== oldPosition) {
-            // throw new Error(`Not consistent position for player ${player}: position in DB: ${oldPosition}, position in smart contract: ${gameContract.storage.positions.get(player)}`);
-        // }
+        let oldPosition = game.positions.get(player) as any;
+        // check oldPosition is the same is GameContract and in DB
+        if (gameContract.storage.playerPositions.get(player) !== oldPosition) {
+            console.warn(`Not consistent position for player ${player}: position in DB: ${oldPosition}, position in smart contract: ${gameContract.storage.playerPositions.get(player)}`);
+            oldPosition = gameContract.storage.playerPositions.get(player);
+        }
         this.currentPlayer = player;
 
         const dice1 = 1 + Math.floor(6 * Math.random());

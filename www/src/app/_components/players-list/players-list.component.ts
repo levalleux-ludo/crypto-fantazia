@@ -136,9 +136,6 @@ ngAfterViewChecked(): void {
 
   getPortfolio = (person: string) => {
     return [
-      {name: 'asset #1', category: 'FIN_TECH', value: 150, nbFeatures: 1},
-      {name: 'asset #2', category: 'MINING_FARM', value: 450, nbFeatures: 4},
-      {name: 'asset #3', category: 'MARKETPLACE', value: 300, nbFeatures: 0}
     ];
   }
 

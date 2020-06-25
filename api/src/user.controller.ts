@@ -29,7 +29,7 @@ function create(req: express.Request, res: express.Response, next: express.NextF
     if (!req.body.tezosAccountId) {
         throw new Error("'tezosAccountId' field is required in request body");
     }
-    userService.create(req.body.userName as string, req.body.tezosAccountId as string).then((userDetails) => {
+    userService.create(req.body.userName as string, req.body.tezosAccountId as string, req.body.avatar as string).then((userDetails) => {
         res.json( userDetails );
     }).catch(err => next(err));
 }

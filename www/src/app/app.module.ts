@@ -65,6 +65,8 @@ import { WelcomeComponent } from './_components/welcome/welcome.component';
 import { GameComponent } from './_components/game/game.component';
 import { OverviewComponent } from './_components/overview/overview.component';
 import { GameStatusModalComponent } from './_components/game-status-modal/game-status-modal.component';
+import { ChooseAvatarComponent } from './_components/choose-avatar/choose-avatar.component';
+import { ChooseAvatarModalComponent } from './_components/choose-avatar-modal/choose-avatar-modal.component';
 
 @NgModule({
   declarations: [
@@ -109,7 +111,9 @@ import { GameStatusModalComponent } from './_components/game-status-modal/game-s
     WelcomeComponent,
     GameComponent,
     OverviewComponent,
-    GameStatusModalComponent
+    GameStatusModalComponent,
+    ChooseAvatarComponent,
+    ChooseAvatarModalComponent
   ],
   imports: [
     BrowserModule,
@@ -142,7 +146,8 @@ import { GameStatusModalComponent } from './_components/game-status-modal/game-s
     ModalExampleComponent,
     ChooseSessionDialogComponent,
     SpaceDetailsModalComponent,
-    GameStatusComponent
+    GameStatusComponent,
+    ChooseAvatarModalComponent
   ]
 })
 export class AppModule {

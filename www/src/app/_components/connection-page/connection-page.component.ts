@@ -10,6 +10,7 @@ import { ModalService } from 'src/app/_services/modal.service';
 import { ChooseSessionDialogComponent } from '../choose-session-dialog/choose-session-dialog.component';
 import { take } from 'rxjs/operators';
 import { exec } from 'child_process';
+import { ChooseAvatarModalComponent } from '../choose-avatar-modal/choose-avatar-modal.component';
 
 @Component({
   selector: 'app-connection-page',
@@ -59,41 +60,51 @@ export class ConnectionPageComponent implements OnInit, OnDestroy, AfterViewInit
 
   submit(newSession: boolean) {
     this.isConnecting = true;
-    this.waiterTask = this.waiterService.addTask();
-    this.connectionService.connect(this.form.value).then((connectionData) => {
+    const sessionPromise = new Promise<string | undefined>((resolve, reject) => {
       if (newSession) {
+        // Create New Session
         this.gameService.createSession().then((game) => {
           this.alertService.show({message: `game session with Id ${game.sessionId} is being created. This may take several minutes.`});
-          this.isConnecting = false;
+          resolve(game.sessionId);
         }).catch(err => {
-          this.alertService.error(JSON.stringify(err));
-          this.isConnecting = false;
+          reject(err);
         });
       } else {
         this.modalService.showModal(ChooseSessionDialogComponent).then((sessionId) => {
-          if (!sessionId) {
-            this.waiterService.removeTask(this.waiterTask);
-            this.isConnecting = false;
-          } else {
-              this.gameService.connectSession(sessionId).then((game) => {
-                this.alertService.show({message: 'connected game with sessionId:' + game.sessionId});
-                this.isConnecting = false;
-              }, err => {
+          resolve(sessionId);
+        }).catch(err => {
+          reject(err);
+        });
+      }
+    });
+    sessionPromise.then((sessionId) => {
+        if (sessionId !== undefined) {
+          // Ask user avatar
+          this.modalService.showModal(ChooseAvatarModalComponent).then((avatar) => {
+            if (avatar !== undefined) {
+              this.waiterTask = this.waiterService.addTask();
+              this.connectionService.connect({avatar, ...this.form.value}).then((connectionData) => {
+                // Connect to sessionId
+                this.gameService.connectSession(sessionId).then((game) => {
+                  this.alertService.show({message: 'connected game with sessionId:' + game.sessionId});
+                }, err => {
+                  this.alertService.error(JSON.stringify(err));
+                });
+              }).catch(err => {
                 this.alertService.error(JSON.stringify(err));
+              }).finally(() => {
+                this.waiterService.removeTask(this.waiterTask);
+                this.waiterTask = undefined;
                 this.isConnecting = false;
               });
-          }
-        }).catch(err => {
-          this.waiterService.removeTask(this.waiterTask);
+            }
+          });
+        } else {
           this.isConnecting = false;
-          this.alertService.error(JSON.stringify(err));
-        });
-
-      }
+        }
     }).catch(err => {
-      this.waiterService.removeTask(this.waiterTask);
-      this.isConnecting = false;
       this.alertService.error(JSON.stringify(err));
+      this.isConnecting = false;
     });
   }
 

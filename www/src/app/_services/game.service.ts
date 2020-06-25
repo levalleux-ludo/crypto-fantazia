@@ -51,6 +51,7 @@ export class GameService {
   playersPosition = new Map<string, number>();
   lastTurn = new Map<string, any>();
   usernames = new Map();
+  avatars = new Map();
   updated = false;
 
   _game = undefined;
@@ -104,7 +105,7 @@ export class GameService {
   }
 
   getAvatar(player): string {
-    return `assets/avatar/camel.png`;
+    return this.avatars.get(player);
   }
 
   get game(): IGame {
@@ -156,8 +157,9 @@ export class GameService {
     return new Promise((resolve, reject) => {
       const creator = this.tezosService.account.account_id;
       this.apiService.post<IGame>('game/create', { creator }).subscribe(async (game) => {
-        this.connectGameEvents(game.sessionId);
-        await this.updateStatus(game);
+        // event the creator will call connectSession
+        // this.connectGameEvents(game.sessionId);
+        // await this.updateStatus(game);
         resolve(game);
       }, async (err) => {
         await this.updateStatus(undefined);
@@ -311,6 +313,7 @@ export class GameService {
           await this.userService.getUser(player).then((user) => {
             this.updated = true;
             this.usernames.set(player, user.userName);
+            this.avatars.set(player, user.avatar);
           });
         }
       }

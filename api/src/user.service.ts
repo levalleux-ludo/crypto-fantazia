@@ -15,14 +15,16 @@ class UserService {
         return await User.findOne({tezosAccountId: tezosAccountId});
     }
 
-    async create(userName: string, tezosAccountId: string) {
+    async create(userName: string, tezosAccountId: string, avatar: string) {
         let user = await User.findOne({tezosAccountId: tezosAccountId});
         if (user) {
             user.userName = userName;
+            user.avatar = avatar;
         } else {
             user = new User({
                 userName: userName,
-                tezosAccountId: tezosAccountId
+                tezosAccountId: tezosAccountId,
+                avatar: avatar
             });
         }
         await user.save();

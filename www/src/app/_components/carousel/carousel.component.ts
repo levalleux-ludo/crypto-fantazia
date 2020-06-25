@@ -30,13 +30,17 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
   targetSlide;
 
   @Output() step = new EventEmitter<number>();
-  private currentSlide = 0;
+  private position = 0;
   private nbVisibleBlocksBefore;
   private nbVisibleBlocksAfter;
   constructor(
     private builder: AnimationBuilder,
     private elementRef: ElementRef
   ) { }
+
+  private get currentSlide() {
+    return this.position + this.nbVisibleBlocksBefore;
+  }
   ngAfterContentInit(): void {
       this.nbVisibleBlocksBefore = Math.floor(1 + (this.offsetBefore) / (this.itemWidth));
       console.log('nbVisibleBlocksBefore', this.nbVisibleBlocksBefore);
@@ -55,7 +59,6 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
 
   ngAfterViewInit() {
     this.carousel.nativeElement.style['padding-top'] = `${(this.containerHeight - this.itemWidth)}px`;
-    this.currentSlide = this.nbVisibleBlocksBefore;
     this.updateSizes();
     this.translate(0, this.computeOffset());
   }
@@ -112,13 +115,13 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
 
   next(onDone?: () => void) {
     let backToBeginning = false;
-    if ( this.currentSlide === this.items.length ) {
+    if ( this.position === this.items.length ) {
       backToBeginning = true;
 
     }
 
     console.log(`next currentslide:${this.currentSlide}`);
-    this.currentSlide = this.nbVisibleBlocksBefore + (this.currentSlide - this.nbVisibleBlocksBefore + 1) % this.items.length;
+    this.position = (this.position + 1 ) % this.items.length;
     console.log(`new slide:${this.currentSlide}`);
     // this.currentSlide = (this.currentSlide + 1) % this.items.length;
 
@@ -139,7 +142,7 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
         onDone
       );
     }
-    this.step.emit(this.itemsDirectives.toArray()[this.currentSlide].itemId);
+    this.step.emit(this.position);
   }
 
   computeOffset() {
@@ -158,10 +161,10 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
   }
 
   prev() {
-    if ( this.currentSlide === this.nbVisibleBlocksBefore ) {
-      this.currentSlide += this.items.length - 1;
+    if ( this.position === 0 ) {
+      this.position = this.items.length - 1;
     } else {
-      this.currentSlide = this.currentSlide - 1;
+      this.position = this.position - 1;
     }
     const offset = this.currentSlide * this.itemWidth;
     this.updateSizes();
@@ -176,7 +179,7 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
       this.next(() => this.onNextDone(onDone));
     } else {
       if (onDone) {
-        onDone(this.currentSlide - this.nbVisibleBlocksBefore);
+        onDone(this.position);
       }
     }
   }
@@ -189,7 +192,7 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
   }
 
   setCurrentPosition(position: number) {
-    this.currentSlide = this.nbVisibleBlocksBefore + position;
+    this.position = position;
     this.updateSizes();
     const offset = this.currentSlide * this.itemWidth;
     this.translate(0, offset);

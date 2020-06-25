@@ -1,0 +1,10 @@
+<app-carousel #carousel [showControls]="true" [itemWidth]="200" [containerWidth]="300" [containerHeight]="300" (step)="selectedAvatar = avatars[$event]">
+    <ng-container *ngFor="let avatar of avatars">
+        <ng-container *appCarouselItem>
+            <div style="margin-left: 50px;">
+                <img src="assets/avatars/{{avatar}}.png" [alt]="avatar" width="150px">
+            </div>
+        </ng-container>
+    </ng-container>
+</app-carousel>
+<h3>Selected: {{selectedAvatar}}</h3>

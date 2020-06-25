@@ -1,0 +1,16 @@
+<clr-modal [(clrModalOpen)]="modalService.opened" [clrModalClosable]="false">
+    <h3 class="modal-title">Select your avatar:</h3>
+    <div class="modal-body">
+        <div style="width: 340px; height: auto;">
+            <app-choose-avatar #avatar [selectedAvatar]='selectedAvatar' (selectedAvatarChange)="selectedAvatar = $event"></app-choose-avatar>
+        </div>
+
+    </div>
+    <div class="modal-footer">
+        <div class="btn-group btn-primary">
+            <button [disabled]="(selectedAvatar === undefined) || (selectedAvatar === 'nobody')" type="button" class="btn btn-primary" (click)="modalService.hideModal(selectedAvatar)">
+        Submit
+      </button>
+        </div>
+    </div>
+</clr-modal>

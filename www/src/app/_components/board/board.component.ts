@@ -126,6 +126,9 @@ export class BoardComponent implements OnInit, AfterViewInit {
         };
       });
       const myPosition = this.gameService.playersPosition.get(this.tezosService.account.account_id);
+      for (const player of this.gameService.players) {
+        this.updateAvatarPosition(player, undefined, this.gameService.playersPosition.get(player));
+      }
       this.showSpace = (myPosition !== undefined) ? myPosition : -1;
       if (this.spacesMap.has(myPosition)) {
         setTimeout(() => {
@@ -136,30 +139,35 @@ export class BoardComponent implements OnInit, AfterViewInit {
     });
   }
 
+  updateAvatarPosition(player: string, oldPosition: number, newPosition: number) {
+    if ((oldPosition !== undefined) && (oldPosition < this.slidesStore.length)) {
+      this.slidesStore[oldPosition].players = this.slidesStore[oldPosition].players.filter(
+        aPlayer => aPlayer.address !== player
+      );
+    }
+    if ((newPosition !== undefined) && (newPosition < this.slidesStore.length)) {
+      this.slidesStore[newPosition].players.push(
+        {address: player, image: `assets/avatars/${this.gameService.getAvatar(player)}.png` , name: this.gameService.getUsername(player)}
+      );
+    }
+  }
+
   ngAfterViewInit(): void {
     this.dicePOWValue = Math.floor(1 + 6 * Math.random());
     this.dicePOSValue = Math.floor(1 + 6 * Math.random());
     const myPosition = this.gameService.playersPosition.get(this.tezosService.account.account_id);
+    this.updateAvatarPosition(this.tezosService.account.account_id, undefined, myPosition);
     this.showSpace = (myPosition !== undefined) ? myPosition : -1;
     if (this.spacesMap.has(myPosition)) {
       setTimeout(() => {
         this.carousel.setCurrentPosition(myPosition);
       }, 500);
     }
-    this.gameService.onPlayerMove.subscribe(({player, nemPosition, oldPosition}) => {
+    this.gameService.onPlayerMove.subscribe(({player, newPosition, oldPosition}) => {
       if ((player === this.tezosService.account.account_id) && !this.diceAnimated) {
-        this.showSpace = nemPosition;
+        this.showSpace = newPosition;
       }
-      if ((oldPosition !== undefined) && (oldPosition >= 0) && (oldPosition < this.slidesStore.length)) {
-        this.slidesStore[oldPosition].players = this.slidesStore[oldPosition].players.filter(
-          player => player.address !== player
-        );
-      }
-      if ((nemPosition !== undefined) && (nemPosition >= 0) && (nemPosition < this.slidesStore.length)) {
-        this.slidesStore[nemPosition].players.push(
-          {address: player, image: this.gameService.getAvatar(player), name: this.gameService.getUsername(player)}
-        );
-      }
+      this.updateAvatarPosition(player, oldPosition, newPosition);
     });
     if (this.gameService.iAmPlaying() && this.gameService.lastTurn.has(this.tezosService.account.account_id)) {
       this.showOptions = this.gameService.lastTurn.get(this.tezosService.account.account_id).options;

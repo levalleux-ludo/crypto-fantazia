@@ -43,11 +43,9 @@
                             </ul>
                         </h4> -->
                             <div *ngIf="showOptions.length > 0 && showOptions.includes('CHANCE') && showCardId !== -1">
-                                <button>Reveal</button>
                                 <h4>This is your Chance Card: {{chances.get(showCardId)}}</h4>
                             </div>
                             <div *ngIf="showOptions.length > 0 && showOptions.includes('COMMUNITY_CHEST') && showCardId !== -1">
-                                <button>Reveal</button>
                                 <h4>This is your Community Chest Card: {{community_chests.get(showCardId)}}</h4>
                             </div>
                             <div *ngIf="showOptions.length > 0 && showOptions.includes('GENESIS')">
@@ -123,7 +121,7 @@
             </ng-container>
         </app-carousel>
 
-        <app-carousel *ngIf="!mobileQuery.matches" #carousel [showControls]="false" [itemWidth]="300-36" [containerWidth]="800" [containerHeight]="300" (step)="onCarouselStep($event)">
+        <app-carousel *ngIf="!mobileQuery.matches" #carousel [showControls]="false" [itemWidth]="300-36" [containerWidth]="800" [containerHeight]="370" (step)="onCarouselStep($event)">
             <ng-container *ngFor="let slide of slidesStore">
                 <ng-container *appCarouselItem>
                     <div style="margin-left: -36px;">

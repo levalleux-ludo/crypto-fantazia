@@ -1,4 +1,5 @@
 export enum eLocalStorageDataKey {
   WALLET = 'tezos.wallet',
-  USERNAME = 'username'
+  USERNAME = 'username',
+  AVATAR = 'avatar'
 }
