@@ -1,4 +1,5 @@
 import { v4 as uuid } from 'uuid';
+import { BigNumber } from 'bignumber.js';
 import { tezosService } from '../../tezos/src/tezos.service'
 import { originator } from '../../tezos/src/token.service'
 import { GameContract } from '../../tezos/src/game.contract';
@@ -336,9 +337,10 @@ class GameService {
 
         let oldPosition = game.positions.get(player) as any;
         // check oldPosition is the same is GameContract and in DB
-        if (gameContract.storage.playerPositions.get(player) !== oldPosition) {
+        if ((gameContract.storage.playerPositions.get(player) as unknown as BigNumber).toNumber() !== oldPosition) {
             console.warn(`Not consistent position for player ${player}: position in DB: ${oldPosition}, position in smart contract: ${gameContract.storage.playerPositions.get(player)}`);
-            oldPosition = gameContract.storage.playerPositions.get(player);
+            oldPosition = (gameContract.storage.playerPositions.get(player) as unknown as BigNumber).toNumber();
+            game.positions.set(player, oldPosition);
         }
         this.currentPlayer = player;
 
