@@ -56,48 +56,48 @@ export class GameControllerService {
   }
 
   public async freeze() {
-    if (this.gameService.contracts.game) {
-      this.callContract(
-        (ks) => this.gameService.contracts.game.freeze(ks),
-        (txHash) => {
-          this.gameService.showAlert(`game freeze requested (txHash:${txHash}) ...`);
-        },
-        (txHash, blockId) => {
-          this.gameService.showAlert(`game successfully frozen (txHash:${txHash}, blockId:${blockId})`);
-          this.gameService.updateFromGameContract();
-        }
-      );
-    }
+    // if (this.gameService.contracts.game) {
+      // this.callContract(
+      //   (ks) => this.gameService.contracts.game.freeze(ks),
+      //   (txHash) => {
+      //     this.gameService.showAlert(`game freeze requested (txHash:${txHash}) ...`);
+      //   },
+      //   (txHash, blockId) => {
+      //     this.gameService.showAlert(`game successfully frozen (txHash:${txHash}, blockId:${blockId})`);
+      //     this.gameService.updateFromGameContract();
+      //   }
+      // );
+    // }
   }
 
   public async resume() {
-    if (this.gameService.contracts.game) {
-      this.callContract(
-        (ks) => this.gameService.contracts.game.resume(ks),
-        (txHash) => {
-          this.gameService.showAlert(`game resuming requested (txHash:${txHash}) ...`);
-        },
-        (txHash, blockId) => {
-          this.gameService.showAlert(`game successfully resumed (txHash:${txHash}, blockId:${blockId})`);
-          this.gameService.updateFromGameContract();
-        }
-      );
-    }
+    // if (this.gameService.contracts.game) {
+    //   this.callContract(
+    //     (ks) => this.gameService.contracts.game.resume(ks),
+    //     (txHash) => {
+    //       this.gameService.showAlert(`game resuming requested (txHash:${txHash}) ...`);
+    //     },
+    //     (txHash, blockId) => {
+    //       this.gameService.showAlert(`game successfully resumed (txHash:${txHash}, blockId:${blockId})`);
+    //       this.gameService.updateFromGameContract();
+    //     }
+    //   );
+    // }
   }
 
   public async end() {
-    if (this.gameService.contracts.game) {
-      this.callContract(
-        (ks) => this.gameService.contracts.game.end(ks),
-        (txHash) => {
-          this.gameService.showAlert(`game ending requested (txHash:${txHash}) ...`);
-        },
-        (txHash, blockId) => {
-          this.gameService.showAlert(`game successfully ended (txHash:${txHash}, blockId:${blockId})`);
-          this.gameService.updateFromGameContract();
-        }
-      );
-    }
+    // if (this.gameService.contracts.game) {
+    //   this.callContract(
+    //     (ks) => this.gameService.contracts.game.end(ks),
+    //     (txHash) => {
+    //       this.gameService.showAlert(`game ending requested (txHash:${txHash}) ...`);
+    //     },
+    //     (txHash, blockId) => {
+    //       this.gameService.showAlert(`game successfully ended (txHash:${txHash}, blockId:${blockId})`);
+    //       this.gameService.updateFromGameContract();
+    //     }
+    //   );
+    // }
   }
 
   public async rollTheDices(): Promise<any> {
