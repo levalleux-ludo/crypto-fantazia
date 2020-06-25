@@ -234,6 +234,9 @@ export class BoardComponent implements OnInit, AfterViewInit {
     });
   }
 
+  play() {
+    this.gameController.play(this.selectedOption);
+  }
 
 }
 

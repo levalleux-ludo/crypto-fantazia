@@ -1,89 +1,90 @@
-<div fxLayout="row" fxLayout.sm="column" fxLayout.xs="column" fxLayoutAlign="center center" fxLayoutGap="24px">
+<div fxLayout="column" fxLayoutAlign="start center" fxLayoutGap="24px">
+    <div fxLayout="row" fxLayout.sm="column" fxLayout.xs="column" fxLayoutAlign="center center" fxLayoutGap="24px">
 
-    <div fxFlex *ngIf="(showSpace >= 0) && (showSpace < slidesStore.length)" class="bloc">
-        <h3 style="text-align: center;">You are now at:</h3>
-        <!-- <app-space-card [space]="slidesStore[showSpace]" [width]="350"></app-space-card> -->
-        <app-space-details [space]="spacesMap.get(showSpace)"></app-space-details>
-    </div>
+        <div fxFlex *ngIf="(showSpace >= 0) && (showSpace < slidesStore.length)" class="bloc">
+            <h3 style="text-align: center; margin-top: 0;">You are now at:</h3>
+            <!-- <app-space-card [space]="slidesStore[showSpace]" [width]="350"></app-space-card> -->
+            <app-space-details [space]="spacesMap.get(showSpace)"></app-space-details>
+        </div>
 
-    <div fxFlex fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="24px">
-        <div class="bloc">
-            <div style="height: auto; width: {{mobileQuery.matches ? '340px' : '800px'}};">
-                <div *ngIf="gameService.iAmNextPlayer()">
-                    <div *ngIf="!gameService.iAmPlaying()">
-                        <div fxLayout="column">
-                            <h3>
-                                It's your turn ! Please Roll the Dices
-                            </h3>
-                            <button class="btn btn-primary" (click)="rollDices()">Roll the Dices</button>
-                        </div>
-                    </div>
-                    <div fxLayout="row" style="width: 340px;" fxLayoutGap="12px">
-                        <app-dice fxFlex [name]="'PoW'" [imagesList]="imagesDicePOW" [value]="dicePOWValue"></app-dice>
-                        <app-dice fxFlex [name]="'PoS'" [imagesList]="imagesDicePOS" [value]="dicePOSValue"></app-dice>
-                        <div style="text-align: center;">
-                            <div class="story-message">
-                                Total
+        <div fxFlex fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="24px">
+            <div class="bloc">
+                <div style="height: auto; width: {{mobileQuery.matches ? '340px' : 'auto'}}; min-width: 340px;">
+                    <div *ngIf="gameService.iAmNextPlayer()">
+                        <div *ngIf="!gameService.iAmPlaying()">
+                            <div fxLayout="column">
+                                <h3>
+                                    It's your turn ! Please Roll the Dices
+                                </h3>
+                                <button class="btn btn-primary" (click)="rollDices()">Roll the Dices</button>
                             </div>
-                            <div class="dices-total">{{dicePOWValue + dicePOSValue}}</div>
                         </div>
-                    </div>
-                    <div style="height:24px; width: 340px;">
-                        <div class="progress flash progress-fade">
-                            <progress *ngIf='rolling' max="100" value="{{progress * 10}}" data-displayval=""></progress>
+                        <div fxLayout="row" style="width: 340px;" fxLayoutGap="12px">
+                            <app-dice fxFlex [name]="'PoW'" [imagesList]="imagesDicePOW" [value]="dicePOWValue"></app-dice>
+                            <app-dice fxFlex [name]="'PoS'" [imagesList]="imagesDicePOS" [value]="dicePOSValue"></app-dice>
+                            <div style="text-align: center;">
+                                <div class="story-message">
+                                    Total
+                                </div>
+                                <div class="dices-total">{{dicePOWValue + dicePOSValue}}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div *ngIf="gameService.iAmPlaying()">
-                        <!-- <h4>Here are your options:
+                        <div style="height:24px; width: 340px;">
+                            <div class="progress flash progress-fade">
+                                <progress *ngIf='rolling' max="100" value="{{progress * 10}}" data-displayval=""></progress>
+                            </div>
+                        </div>
+                        <div *ngIf="gameService.iAmPlaying()">
+                            <!-- <h4>Here are your options:
                             <ul>
                                 <li *ngFor="let option of showOptions">
                                     {{option}}
                                 </li>
                             </ul>
                         </h4> -->
-                        <div *ngIf="showOptions.length > 0 && showOptions.includes('CHANCE') && showCardId !== -1">
-                            <button>Reveal</button>
-                            <h4>This is your Chance Card: {{chances.get(showCardId)}}</h4>
-                        </div>
-                        <div *ngIf="showOptions.length > 0 && showOptions.includes('COMMUNITY_CHEST') && showCardId !== -1">
-                            <button>Reveal</button>
-                            <h4>This is your Community Chest Card: {{community_chests.get(showCardId)}}</h4>
-                        </div>
-                        <div *ngIf="showOptions.length > 0 && showOptions.includes('GENESIS')">
-                            <h4>Congratulations, you'll receive &#8497; 200 passing through Genesis Block !</h4>
-                        </div>
-                        <div *ngIf="showOptions.length > 0 && showOptions.includes('COVID')">
-                            <!-- TODO: check if immunity -->
-                            <h4>Bad luck, you're going to Quarantine</h4>
-                        </div>
-                        <div *ngIf="showOptions.length > 0 && showOptions.includes('BUY_PRODUCT')">
-                            <h4> You've just purchase the amazing product of company '{{spacesMap.get(showSpace).title}}' </h4>
-                            <!-- TODO: get nbFeatures for company -->
-                            <h4> Please pay {{spacesMap.get(showSpace).rentRates[0]}}</h4>
-                        </div>
-                        <div *ngIf="showOptions.length > 0 && showOptions.includes('STARTUP_FOUND')">
-                            <h4> Take the opportunity to found the startup '{{spacesMap.get(showSpace).title}}' <br> Founding capital: {{spacesMap.get(showSpace).price}}</h4>
-                            <clr-radio-container style="margin-top: 0px; margin-bottom: 24px;">
-                                <!-- <label>Please Select Option</label> -->
-                                <clr-radio-wrapper style="height: 60px;">
-                                    <input type="radio" clrRadio value="{{'STARTUP_FOUND'}}" [(ngModel)]="selectedOption" />
-                                    <label>
+                            <div *ngIf="showOptions.length > 0 && showOptions.includes('CHANCE') && showCardId !== -1">
+                                <button>Reveal</button>
+                                <h4>This is your Chance Card: {{chances.get(showCardId)}}</h4>
+                            </div>
+                            <div *ngIf="showOptions.length > 0 && showOptions.includes('COMMUNITY_CHEST') && showCardId !== -1">
+                                <button>Reveal</button>
+                                <h4>This is your Community Chest Card: {{community_chests.get(showCardId)}}</h4>
+                            </div>
+                            <div *ngIf="showOptions.length > 0 && showOptions.includes('GENESIS')">
+                                <h4>Congratulations, you'll receive &#8497; 200 passing through Genesis Block !</h4>
+                            </div>
+                            <div *ngIf="showOptions.length > 0 && showOptions.includes('COVID')">
+                                <!-- TODO: check if immunity -->
+                                <h4>Bad luck, you're going to Quarantine</h4>
+                            </div>
+                            <div *ngIf="showOptions.length > 0 && showOptions.includes('BUY_PRODUCT')">
+                                <h4> You've just purchase the amazing product of company '{{spacesMap.get(showSpace).title}}' </h4>
+                                <!-- TODO: get nbFeatures for company -->
+                                <h4> Please pay {{spacesMap.get(showSpace).rentRates[0]}}</h4>
+                            </div>
+                            <div *ngIf="showOptions.length > 0 && showOptions.includes('STARTUP_FOUND')">
+                                <h4> Take the opportunity to found the startup '{{spacesMap.get(showSpace).title}}' <br> Founding capital: {{spacesMap.get(showSpace).price}}</h4>
+                                <clr-radio-container style="margin-top: 0px; margin-bottom: 24px;">
+                                    <!-- <label>Please Select Option</label> -->
+                                    <clr-radio-wrapper style="height: 60px;">
+                                        <input type="radio" clrRadio value="{{'STARTUP_FOUND'}}" [(ngModel)]="selectedOption" />
+                                        <label>
                                     <h4>Yes, great idea !</h4>
                                   </label>
-                                </clr-radio-wrapper>
-                                <clr-radio-wrapper style="height: 60px;">
-                                    <input type="radio" clrRadio value="{{'NOTHING'}}" [(ngModel)]="selectedOption" />
-                                    <label>
+                                    </clr-radio-wrapper>
+                                    <clr-radio-wrapper style="height: 60px;">
+                                        <input type="radio" clrRadio value="{{'NOTHING'}}" [(ngModel)]="selectedOption" />
+                                        <label>
                                     <h4>Sorry, not interested</h4>
                                   </label>
-                                </clr-radio-wrapper>
-                            </clr-radio-container>
-                        </div>
-                        <div *ngIf="showOptions.length === 1 && showOptions.includes('NOTHING')">
-                            <p> Nothing happens this turn. </p>
-                        </div>
-                        <div *ngIf="showOptions && showOptions.length > 0">
-                            <!-- <div *ngIf="showOptions && showOptions.length > 1">
+                                    </clr-radio-wrapper>
+                                </clr-radio-container>
+                            </div>
+                            <div *ngIf="showOptions.length === 1 && showOptions.includes('NOTHING')">
+                                <p> Nothing happens this turn. </p>
+                            </div>
+                            <div *ngIf="showOptions && showOptions.length > 0">
+                                <!-- <div *ngIf="showOptions && showOptions.length > 1">
                                 <clr-radio-container>
                                     <label>Please Select Option</label>
                                     <clr-radio-wrapper *ngFor="let option of showOptions" style="height: 60px;">
@@ -92,18 +93,19 @@
                                     </clr-radio-wrapper>
                                 </clr-radio-container>
                             </div> -->
-                            <button class="btn btn-primary" [disabled]="!showOptions.includes(selectedOption)" (click)="gameController.play(selectedOption)">Submit</button>
+                                <button class="btn btn-primary" [disabled]="!showOptions.includes(selectedOption)" (click)="play()">Submit</button>
+                            </div>
+                            <div>showOptions: {{showOptions}} length: {{showOptions.length}}</div>
+                            <div>selectedOption: {{selectedOption}}</div>
                         </div>
-                        <div>showOptions: {{showOptions}} length: {{showOptions.length}}</div>
-                        <div>selectedOption: {{selectedOption}}</div>
+
                     </div>
+                </div>
+
+                <div *ngIf="!gameService.iAmNextPlayer()">
+                    <h3>{{gameService.getUsername(gameService.nextPlayer)}} is currently playing ...</h3>
 
                 </div>
-            </div>
-
-            <div *ngIf="!gameService.iAmNextPlayer()">
-                <h3>{{gameService.getUsername(gameService.nextPlayer)}} is currently playing ...</h3>
-
             </div>
         </div>
     </div>

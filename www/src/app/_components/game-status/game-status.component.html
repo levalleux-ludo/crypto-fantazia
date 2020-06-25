@@ -5,18 +5,18 @@
 
                 <td>
                     <p>Game Session Id:</p>
-                    {{gameService.game.sessionId}}</td>
+                    {{gameService.game?.sessionId}}</td>
             </tr>
             <tr>
 
                 <td>
                     <p>Created by:</p>
-                    {{gameService.getUsername(gameService.game.creator)}}</td>
+                    {{gameService.getUsername(gameService.game?.creator)}}</td>
             </tr>
             <tr>
 
                 <td>
-                    <p>Date:</p>{{gameService.game.creationDate.toLocaleString()}}</td>
+                    <p>Date:</p>{{gameService.game?.creationDate.toLocaleString()}}</td>
             </tr>
             <tr style='height: 100px;'>
 

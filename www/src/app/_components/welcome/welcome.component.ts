@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { DOCUMENT } from '@angular/common';
 
 @Component({
   selector: 'app-welcome',
@@ -10,9 +11,14 @@ export class WelcomeComponent implements OnInit {
 
   constructor(
     public router: Router,
+    @Inject(DOCUMENT) private document: Document
   ) { }
 
   ngOnInit(): void {
+  }
+
+  scroll() {
+    this.document.scrollingElement.scrollTo({top: this.document.scrollingElement.clientHeight});
   }
 
 }
