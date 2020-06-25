@@ -10,7 +10,7 @@ import { sseService } from './sse.service';
 
 // const express = require( "express" );
 const app = express();
-const port = 8080; // default port to listen
+const port = 4444; // default port to listen
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
