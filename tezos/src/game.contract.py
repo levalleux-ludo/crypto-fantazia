@@ -195,24 +195,23 @@ class AssetsContract(sp.Contract):
         self.data.debug += 8
         self.setOwner(params.assetId, params.buyer)
 
-    @sp.entry_point
-    def resell(self, params):
-        # params: (assetId, seller)
-        # sp.set_type(params.assetId, sp.TNat)
-        # sp.set_type(params.player, sp.TAddress)
-        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
-        sp.verify(self.data.assets.contains(params.assetId))
-        sp.verify(self.data.ownership[params.assetId] == params.player)
-        resell_price = sp.local("resell_price", self.data.assets[params.assetId].price * 3 / 4)
-        sp.if self.data.features.contains(params.assetId):
-            resell_price.value += self.data.features[params.assetId] * self.data.assets[params.assetId].featureCost / 2
-            del self.data.features[params.assetId]
-        self.data.portfolio[params.player].remove(params.assetId)
-        sp.if sp.len(self.data.portfolio[params.player].elements()) == 0:
-            del self.data.portfolio[params.player]
-        del self.data.ownership[params.assetId]
-        self.call_receive_amount(params.player, resell_price.value)
-
+#    @sp.entry_point
+#    def resell(self, params):
+#        # params: (assetId, seller)
+#        # sp.set_type(params.assetId, sp.TNat)
+#        # sp.set_type(params.player, sp.TAddress)
+#        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender #== params.player))
+#        sp.verify(self.data.assets.contains(params.assetId))
+#        sp.verify(self.data.ownership[params.assetId] == params.player)
+#        resell_price = sp.local("resell_price", self.data.assets[params.assetId].price * 3 / 4)
+#        sp.if self.data.features.contains(params.assetId):
+#            resell_price.value += self.data.features[params.assetId] * self.data.assets[params.assetId].featureCost / 2
+#            del self.data.features[params.assetId]
+#        self.data.portfolio[params.player].remove(params.assetId)
+#        sp.if sp.len(self.data.portfolio[params.player].elements()) == 0:
+#            del self.data.portfolio[params.player]
+#        del self.data.ownership[params.assetId]
+#        self.call_receive_amount(params.player, resell_price.value)
 
     @sp.entry_point
     def reset(self):
@@ -266,19 +265,19 @@ class AssetsContract(sp.Contract):
             sp.else:
                 self.data.features[params.assetId] += 1
     
-    @sp.entry_point
-    def withdraw(self, params):
-        # params: (assetId, player)
-        # sp.set_type(params.assetId, sp.TNat)
-        # sp.set_type(params.player, sp.TAddress)
-        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
-        sp.verify(self.data.assets.contains(params.assetId))
-        sp.verify(self.data.ownership[params.assetId] == params.player)
-        sp.if self.data.features.contains(params.assetId) & (self.data.features[params.assetId] > 0):
-            self.data.features[params.assetId] = sp.as_nat(sp.to_int(self.data.features[params.assetId]) - 1)
-            sp.if self.data.features[params.assetId] == 0:
-                del self.data.features[params.assetId]
-            self.call_receive_amount(params.player, self.data.assets[params.assetId].featureCost / 2)
+#    @sp.entry_point
+#    def withdraw(self, params):
+#        # params: (assetId, player)
+#        # sp.set_type(params.assetId, sp.TNat)
+#        # sp.set_type(params.player, sp.TAddress)
+#        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender #== params.player))
+#        sp.verify(self.data.assets.contains(params.assetId))
+#        sp.verify(self.data.ownership[params.assetId] == params.player)
+#        sp.if self.data.features.contains(params.assetId) & (self.data.features[params.assetId] > 0):
+#            self.data.features[params.assetId] = sp.as_nat(sp.to_int(self.data.features[params.assetId]) - 1)
+#            sp.if self.data.features[params.assetId] == 0:
+#                del self.data.features[params.assetId]
+#            self.call_receive_amount(params.player, self.data.assets[params.assetId].featureCost / 2)
     
     @sp.entry_point
     def pay_amount_per(self, params):
@@ -919,101 +918,101 @@ def test():
     scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
     scenario.verify(token.data.balances[alice.address].balance == aliceBalanceExpected)
 
-    scenario.h3('Test Bob withdraw from assets[1]')
-    assetId = 1
-    scenario += assetsContract.withdraw(assetId = assetId, player = bob.address).run(sender = bob)
-    bobBalanceExpected += 25
-    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
-    scenario.verify(assetsContract.data.features.contains(assetId))
-    scenario.verify(assetsContract.data.features[assetId] == 3)
+#    scenario.h3('Test Bob withdraw from assets[1]')
+#    assetId = 1
+#    scenario += assetsContract.withdraw(assetId = assetId, player = bob.address).run(sender = bob)
+#    bobBalanceExpected += 25
+#    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
+#    scenario.verify(assetsContract.data.features.contains(assetId))
+#    scenario.verify(assetsContract.data.features[assetId] == 3)
 
-    scenario.h3('Test Alice pays rent for assets[1]')
-    assetId = 1
-    scenario += assetsContract.pay_rent(assetId = assetId, player = alice.address).run(sender = alice)
-    bobBalanceExpected += 300
-    aliceBalanceExpected -= 300
-    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
-    scenario.verify(token.data.balances[alice.address].balance == aliceBalanceExpected)
+#    scenario.h3('Test Alice pays rent for assets[1]')
+#    assetId = 1
+#    scenario += assetsContract.pay_rent(assetId = assetId, player = alice.address).run(sender = alice)
+#    bobBalanceExpected += 300
+#    aliceBalanceExpected -= 300
+#    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
+#    scenario.verify(token.data.balances[alice.address].balance == aliceBalanceExpected)
 
-    scenario.h3('Test Alice withdraw from assets[0]')
-    assetId = 0
-    scenario.verify(~assetsContract.data.features.contains(assetId))
-    scenario += assetsContract.withdraw(assetId = assetId, player = alice.address).run(sender = alice)
-    aliceBalanceExpected += 0
-    scenario.verify(token.data.balances[alice.address].balance == aliceBalanceExpected)
-    scenario.verify(~assetsContract.data.features.contains(assetId))
+#    scenario.h3('Test Alice withdraw from assets[0]')
+#    assetId = 0
+#    scenario.verify(~assetsContract.data.features.contains(assetId))
+#    scenario += assetsContract.withdraw(assetId = assetId, player = alice.address).run(sender = alice)
+#    aliceBalanceExpected += 0
+#    scenario.verify(token.data.balances[alice.address].balance == aliceBalanceExpected)
+#    scenario.verify(~assetsContract.data.features.contains(assetId))
 
-    scenario.h3('Test Bob withdraw from assets[1]')
-    assetId = 1
-    scenario += assetsContract.withdraw(assetId = assetId, player = bob.address).run(sender = bob)
-    bobBalanceExpected += 25
-    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
-    scenario.verify(assetsContract.data.features.contains(assetId))
-    scenario.verify(assetsContract.data.features[assetId] == 2)
+#    scenario.h3('Test Bob withdraw from assets[1]')
+#    assetId = 1
+#    scenario += assetsContract.withdraw(assetId = assetId, player = bob.address).run(sender = bob)
+#    bobBalanceExpected += 25
+#    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
+#    scenario.verify(assetsContract.data.features.contains(assetId))
+#    scenario.verify(assetsContract.data.features[assetId] == 2)
 
-    scenario.h3('Test Bob withdraw from assets[1]')
-    assetId = 1
-    scenario += assetsContract.withdraw(assetId = assetId, player = bob.address).run(sender = bob)
-    bobBalanceExpected += 25
-    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
-    scenario.verify(assetsContract.data.features.contains(assetId))
-    scenario.verify(assetsContract.data.features[assetId] == 1)
+#    scenario.h3('Test Bob withdraw from assets[1]')
+#    assetId = 1
+#    scenario += assetsContract.withdraw(assetId = assetId, player = bob.address).run(sender = bob)
+#    bobBalanceExpected += 25
+#    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
+#    scenario.verify(assetsContract.data.features.contains(assetId))
+#    scenario.verify(assetsContract.data.features[assetId] == 1)
 
-    scenario.h3('Test Bob withdraw from assets[1]')
-    assetId = 1
-    scenario += assetsContract.withdraw(assetId = assetId, player = bob.address).run(sender = bob)
-    bobBalanceExpected += 25
-    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
-    scenario.verify(~assetsContract.data.features.contains(assetId))
+#    scenario.h3('Test Bob withdraw from assets[1]')
+#    assetId = 1
+#    scenario += assetsContract.withdraw(assetId = assetId, player = bob.address).run(sender = bob)
+#    bobBalanceExpected += 25
+#    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
+#    scenario.verify(~assetsContract.data.features.contains(assetId))
 
-    scenario.h3('Test Alice pays rent for assets[1]')
-    assetId = 1
-    scenario += assetsContract.pay_rent(assetId = assetId, player = alice.address).run(sender = alice)
-    bobBalanceExpected += 12
-    aliceBalanceExpected -= 12
-    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
-    scenario.verify(token.data.balances[alice.address].balance == aliceBalanceExpected)
+#    scenario.h3('Test Alice pays rent for assets[1]')
+#    assetId = 1
+#    scenario += assetsContract.pay_rent(assetId = assetId, player = alice.address).run(sender = alice)
+#    bobBalanceExpected += 12
+#    aliceBalanceExpected -= 12
+#    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
+#    scenario.verify(token.data.balances[alice.address].balance == aliceBalanceExpected)
 
-    scenario.h3('Test Alice invest in assets[0]')
-    assetId = 0
-    scenario.verify(~assetsContract.data.features.contains(assetId))
-    scenario += assetsContract.invest(assetId = assetId, player = alice.address).run(sender = alice)
-    aliceBalanceExpected -= 50
-    scenario.verify(token.data.balances[alice.address].balance == aliceBalanceExpected)
-    scenario.verify(assetsContract.data.features.contains(assetId))
-    scenario.verify(assetsContract.data.features[assetId] == 1)
+#    scenario.h3('Test Alice invest in assets[0]')
+#    assetId = 0
+#    scenario.verify(~assetsContract.data.features.contains(assetId))
+#    scenario += assetsContract.invest(assetId = assetId, player = alice.address).run(sender = alice)
+#    aliceBalanceExpected -= 50
+#    scenario.verify(token.data.balances[alice.address].balance == aliceBalanceExpected)
+#    scenario.verify(assetsContract.data.features.contains(assetId))
+#    scenario.verify(assetsContract.data.features[assetId] == 1)
 
-    scenario.h3('Test Bob resell assets[0] (expect to fail)')
-    assetId = 0
-    scenario.verify(assetsContract.data.ownership[assetId] == alice.address)
-    scenario += assetsContract.resell(assetId = assetId, player = bob.address).run(sender = bob, valid = False)
-    scenario.verify(assetsContract.data.ownership[assetId] == alice.address)
+#    scenario.h3('Test Bob resell assets[0] (expect to fail)')
+#    assetId = 0
+#    scenario.verify(assetsContract.data.ownership[assetId] == alice.address)
+#    scenario += assetsContract.resell(assetId = assetId, player = bob.address).run(sender = bob, valid = False)
+#    scenario.verify(assetsContract.data.ownership[assetId] == alice.address)
+#
+#    scenario.h3('Test Alice resell assets[0]')
+#    assetId = 0
+#    scenario.verify(assetsContract.data.ownership.contains(assetId))
+#    scenario.verify(assetsContract.data.ownership[assetId] == alice.address)
+#    scenario.verify(assetsContract.data.portfolio.contains(alice.address))
+#    scenario.verify(assetsContract.data.portfolio[alice.address].contains(assetId))
+#    scenario += assetsContract.resell(assetId = assetId, player = alice.address).run(sender = alice)
+#    aliceBalanceExpected += 175 # = (200 * 3 / 4) + (50 / 2)
+#    scenario.verify(token.data.balances[alice.address].balance == aliceBalanceExpected)
+#    scenario.verify(~assetsContract.data.features.contains(assetId))
+#    scenario.verify(~assetsContract.data.ownership.contains(assetId))
+#    scenario.verify(~assetsContract.data.portfolio.contains(alice.address))
 
-    scenario.h3('Test Alice resell assets[0]')
-    assetId = 0
-    scenario.verify(assetsContract.data.ownership.contains(assetId))
-    scenario.verify(assetsContract.data.ownership[assetId] == alice.address)
-    scenario.verify(assetsContract.data.portfolio.contains(alice.address))
-    scenario.verify(assetsContract.data.portfolio[alice.address].contains(assetId))
-    scenario += assetsContract.resell(assetId = assetId, player = alice.address).run(sender = alice)
-    aliceBalanceExpected += 175 # = (200 * 3 / 4) + (50 / 2)
-    scenario.verify(token.data.balances[alice.address].balance == aliceBalanceExpected)
-    scenario.verify(~assetsContract.data.features.contains(assetId))
-    scenario.verify(~assetsContract.data.ownership.contains(assetId))
-    scenario.verify(~assetsContract.data.portfolio.contains(alice.address))
-
-    scenario.h3('Test Bob resell assets[1]')
-    assetId = 1
-    scenario.verify(assetsContract.data.ownership.contains(assetId))
-    scenario.verify(assetsContract.data.ownership[assetId] == bob.address)
-    scenario.verify(assetsContract.data.portfolio.contains(bob.address))
-    scenario.verify(assetsContract.data.portfolio[bob.address].contains(assetId))
-    scenario += assetsContract.resell(assetId = assetId, player = bob.address).run(sender = bob)
-    bobBalanceExpected += 150 # = (200 * 3 / 4)
-    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
-    scenario.verify(~assetsContract.data.features.contains(assetId))
-    scenario.verify(~assetsContract.data.ownership.contains(assetId))
-    scenario.verify(~assetsContract.data.portfolio.contains(bob.address))
+#    scenario.h3('Test Bob resell assets[1]')
+#    assetId = 1
+#    scenario.verify(assetsContract.data.ownership.contains(assetId))
+#    scenario.verify(assetsContract.data.ownership[assetId] == bob.address)
+#    scenario.verify(assetsContract.data.portfolio.contains(bob.address))
+#    scenario.verify(assetsContract.data.portfolio[bob.address].contains(assetId))
+#    scenario += assetsContract.resell(assetId = assetId, player = bob.address).run(sender = bob)
+#    bobBalanceExpected += 150 # = (200 * 3 / 4)
+#    scenario.verify(token.data.balances[bob.address].balance == bobBalanceExpected)
+#    scenario.verify(~assetsContract.data.features.contains(assetId))
+#    scenario.verify(~assetsContract.data.ownership.contains(assetId))
+#    scenario.verify(~assetsContract.data.portfolio.contains(bob.address))
 
     scenario.h2("Reset game")
     scenario += contract.reset_start().run(sender = originator)
