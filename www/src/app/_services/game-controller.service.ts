@@ -123,6 +123,8 @@ export class GameControllerService {
 
   public async play(selectedOption: string) {
     // call contract with rollDicesResult and option chosen by user
+    const sessionId = this.gameService.game.sessionId;
+    this.waiterTask = this.waiterService.addTask();
     if (this.rollDicesResult === undefined) {
       // Try to get from lastTurns in gamesService
       const lastTurn = this.gameService.lastTurn.get(this.tezosService.account.account_id);
@@ -140,13 +142,19 @@ export class GameControllerService {
         };
       } else {
         this.gameService.alertError('Unable to invoke Play method because there is no rollResult recorded');
+        this.waiterService.removeTask(this.waiterTask);
+        this.waiterTask = undefined;
         return;
       }
     }
     if (!this.gameService.contracts.game) {
       this.gameService.alertError('Unable to invoke Play method because the game contract is not set');
+      this.waiterService.removeTask(this.waiterTask);
+      this.waiterTask = undefined;
       return;
     }
+    this.waiterService.removeTask(this.waiterTask);
+    this.waiterTask = undefined;
     console.log(`Invoke PLAY transaction with parameters: option='${selectedOption}, payload='${JSON.stringify(this.rollDicesResult.payload)}, signature='${this.rollDicesResult.signature}`);
     // this.waiterTask = this.waiterService.addTask();
     // this.gameService.contracts.game.play2(
@@ -174,6 +182,22 @@ export class GameControllerService {
         this.gameService.showAlert(`Play submitted successfully (txHash:${txHash}, blockId:${blockId})`);
         this.gameService.updateFromGameContract();
         this.rollDicesResult = undefined;
+      },
+      () => {
+        this.waiterTask = this.waiterService.addTask();
+        const body = {
+          player: this.tezosService.account.account_id,
+          payload: this.rollDicesResult.payload,
+          signature: this.rollDicesResult.signature
+        };
+        this.apiService.post<any>(`game/${sessionId}/played`, body).subscribe((res) => {
+          this.waiterService.removeTask(this.waiterTask);
+          this.waiterTask = undefined;
+        }, err => {
+          this.gameService.alertError(err);
+          this.waiterService.removeTask(this.waiterTask);
+          this.waiterTask = undefined;
+        });
       }
     );
   }
@@ -181,7 +205,8 @@ export class GameControllerService {
   private async callContract(
     method: (keyStore: KeyStore) => Promise<{txHash: string, onConfirmed: Promise<number>}>,
     onSent: (txHash: string) => void,
-    onSuccess: (txHash: string, blockId: number) => void
+    onSuccess: (txHash: string, blockId: number) => void,
+    onFailure?: () => void
   ) {
     this.waiterTask = this.waiterService.addTask();
     method(this.tezosService.keyStore).then((resultOperation) => {
@@ -203,6 +228,9 @@ export class GameControllerService {
         this.alertService.error((err.message) ? err.message : err);
         this.waiterService.removeTask(this.waiterTask);
         this.waiterTask = undefined;
+        if (onFailure) {
+          onFailure();
+        }
       }
     );
   }

@@ -9,6 +9,7 @@ router.get('/', getAll);
 router.get('/:sessionId', getBySessionId);
 router.post('/:sessionId/start', startSession);
 router.post('/:sessionId/reset', resetSession);
+router.post('/:sessionId/played', played);
 router.get('/:sessionId/rollDices/:player', rollDices);
 
 function create(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -43,6 +44,24 @@ function startSession(req: express.Request, res: express.Response, next: express
 
 function resetSession(req: express.Request, res: express.Response, next: express.NextFunction) {
     gameService.resetSession(req.params.sessionId).then((result) => {
+        res.json( result );
+    }).catch(err => next(err));
+}
+
+function played(req: express.Request, res: express.Response, next: express.NextFunction) {
+    if (!req.body) {
+        throw new Error("body is required in request");
+    }
+    if (!req.body.player) {
+        throw new Error("'payload' field is required in request body");
+    }
+    if (!req.body.payload) {
+        throw new Error("'payload' field is required in request body");
+    }
+    if (!req.body.signature) {
+        throw new Error("'signature' field is required in request body");
+    }
+    gameService.played(req.params.sessionId, req.body.player, req.body.payload, req.body.signature).then((result) => {
         res.json( result );
     }).catch(err => next(err));
 }

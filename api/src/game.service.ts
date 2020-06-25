@@ -396,6 +396,34 @@ class GameService {
         return { payload, signature };
     }
 
+    async played(sessionId: string, player: string, payload: any, signature: string) {
+        const game = await Game.findOne({sessionId: sessionId});
+        if (!game) {
+            throw new Error('Unable to find Game with sessionId=' + sessionId);
+        }
+        if (game.status != 'started') {
+            throw new Error('Can not play game with status =' + game.status);
+        }
+        if (!game.positions.has(player)) {
+            throw new Error('Can not find position of player =' + player);
+        }
+        if (!game.contractAddresses.game) {
+            throw new Error('GameContract address is not set');
+        }
+        const gameContract = await GameContract.retrieve(game.contractAddresses.game);
+        if (!gameContract) {
+            throw new Error('Unable to retrieve GameContract from address ' + game.contractAddresses.game);
+        }
+        if (this.currentPlayer !== player) {
+            throw new Error(`Player ${player} is not allowed to play now (expected player: ${this.currentPlayer})`);
+        }
+        if (gameContract.storage?.nextPlayer === player) {
+            // in case the 'play' transaction failed, we need to update playerPosition and nextPlayer in game contract to allow the game to continue
+            console.log("I need to call contract to restore consistent player position");
+        }
+        return {};
+    }
+
     async getAvailableOptions(player: string, oldPosition: number, newPosition: number): Promise<ePlayOption[]> {
         const spaceDetails = await spaceService.getBySpaceId(newPosition);
         if (spaceDetails === null) {
