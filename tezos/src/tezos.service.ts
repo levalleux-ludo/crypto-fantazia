@@ -135,8 +135,8 @@ class TezosService {
             undefined, // delegate
             800000, // fee,
             '', // derivationPath
-            20000, // storage_limit
-            900000, // gas_limit
+            50000, // storage_limit
+            1000000, // gas_limit
             contract,
             storage,
             TezosParameterFormat.Micheline

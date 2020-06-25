@@ -7,8 +7,10 @@ import { KeyStore } from "conseiljs";
 import { tezosService } from "./tezos.service";
 import { sign } from "crypto";
 import { TransactionOperation } from "@taquito/taquito/dist/types/operations/transaction-operation";
-import { AssetsContract } from "./assets.contract";
+import { AssetsContract, IAssetParams } from "./assets.contract";
 import { MichelsonV1Expression } from '@taquito/rpc';
+import { IChanceParams } from "./chance.contract";
+import { BigNumber } from "bignumber.js";
 
 export interface GameContractStorage {
     admin: string;
@@ -27,18 +29,22 @@ export interface GameContractStorage {
     lapIncome: number;
     nbLaps: number;
     quarantinePlayers: MichelsonMap<string, number>;
-    token: string;
-    chance: string;
-    community: string;
-    assets: string;
+    balances: MichelsonMap<string, {approvals: any, balance: number}>;
+    totalSupply: number,
+    chances: MichelsonMap<number, any>;
+    community_chests: MichelsonMap<number, any>;
+    assets: MichelsonMap<number, any>;
+    ownership: MichelsonMap<number, string>;
+    portfolio: MichelsonMap<string, BigNumber[]>;
+    features: MichelsonMap<number, string>;
     counter: number;
 }
 
 export class GameContract extends AbstractContract<GameContractStorage> {
-    public static async deploy(keyStore: KeyStore, creator_address: string): Promise<GameContract> {
+    public static async deploy(keyStore: KeyStore, creator_address: string, assets: IAssetParams[], chances: IChanceParams[], community_chests: IChanceParams[]): Promise<GameContract> {
         const address = await tezosService.deployContract(
             JSON.stringify(gameContract),
-            JSON.stringify(this.getInitialStorage(keyStore, creator_address)),
+            JSON.stringify(this.getInitialStorage(keyStore, creator_address, assets, chances, community_chests)),
             keyStore
         ).catch(err => {
             console.error('Error during game contract deployment:' + err);
@@ -79,53 +85,125 @@ export class GameContract extends AbstractContract<GameContractStorage> {
           }
       ]
     };
-    protected static getInitialStorage(originator: KeyStore, creator: string) {
+    protected static getInitialStorage(originator: KeyStore, creator: string, assets: IAssetParams[], chances: IChanceParams[], community_chests: IChanceParams[]) {
+      const cardDescription = (card: IChanceParams) => {
+        return { "prim": "Elt", "args": [ { "int": card.id.toFixed(0) }, { "prim": "Pair", "args": [ { "int": card.param.toString() }, { "string": card.type } ] } ] };
+      }
+      const assetDescription = (assetId: number, type: string, price: number, featurePrice: number, rentRates: number[]) => {
         return {
-          "prim": "Pair",
-          "args": [
-            {
-              "prim": "Pair",
-              "args": [
-                {
-                  "prim": "Pair",
-                  "args": [
-                    { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "string": originator.publicKeyHash } ] },
-                    {
-                      "prim": "Pair",
-                      "args": [ [], { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "string": originator.publicKeyHash } ] } ]
-                    }
-                  ]
-                },
-                {
-                  "prim": "Pair",
-                  "args": [
-                    { "prim": "Pair", "args": [ { "int": "0" }, { "string": creator } ] },
-                    { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ { "int": "200" }, { "int": "0" } ] } ] }
-                  ]
-                }
-              ]
-            },
-            {
-              "prim": "Pair",
-              "args": [
-                {
-                  "prim": "Pair",
-                  "args": [
-                    { "prim": "Pair", "args": [ { "int": "24" }, { "string": originator.publicKeyHash } ] },
-                    { "prim": "Pair", "args": [ { "int": "-1" }, { "prim": "Pair", "args": [ { "string": originator.publicKey }, [] ] } ] }
-                  ]
-                },
-                {
-                  "prim": "Pair",
-                  "args": [
-                    { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ [], [] ] } ] },
-                    { "prim": "Pair", "args": [ { "int": "12" }, { "prim": "Pair", "args": [ { "string": "created" }, { "string": originator.publicKeyHash } ] } ] }
-                  ]
-                }
-              ]
-            }
-          ]
+            "prim": "Elt",
+            "args": [
+              { "int": assetId.toFixed(0) },
+              {
+                "prim": "Pair",
+                "args": [
+                  { "prim": "Pair", "args": [ { "int": assetId.toFixed(0) }, { "string": type } ] },
+                  {
+                    "prim": "Pair",
+                    "args": [
+                      { "int": featurePrice.toString() },
+                      { "prim": "Pair", "args": [ { "int": price.toString() }, [ { "int": rentRates[0].toString() }, { "int": rentRates[1].toString() }, { "int": rentRates[2].toString() }, { "int": rentRates[3].toString() }, { "int": rentRates[4].toString() } ] ] }
+                    ]
+                  }
+                ]
+              }
+            ]
+          };
+      }
+      const allChances = [];
+      for (const card of chances) {
+        allChances.push(cardDescription(card));
+      }
+      const allCChests = [];
+      for (const card of community_chests) {
+        allCChests.push(cardDescription(card));
+      }
+      const allAssets = [];
+      for (const asset of assets) {
+        if (asset.rentRates.length === 0) {
+          if (asset.featurePrice !== 0) {
+            throw new Error('Was expecting some rentRates set for asset with id ' + asset.assetId);
+          }
+          asset.rentRates = [0, 0, 0, 0, 0];
         }
+        if (asset.rentRates.length != 5) {
+          throw new Error('Was expecting 5 elements in rentRates set for asset with id ' + asset.assetId);
+        }
+        allAssets.push(assetDescription(
+            asset.assetId,
+            asset.type,
+            asset.price,
+            asset.featurePrice,
+            asset.rentRates
+        ));
+      }
+      return {
+        "prim": "Pair",
+        "args": [
+          {
+            "prim": "Pair",
+            "args": [
+              {
+                "prim": "Pair",
+                "args": [
+                  {
+                    "prim": "Pair",
+                    "args": [
+                      { "string": originator.publicKeyHash },
+                      {
+                        "prim": "Pair",
+                        "args": [
+                            allAssets,
+                          []
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "prim": "Pair",
+                    "args": [
+                      [],
+                      {
+                        "prim": "Pair",
+                        "args": [
+                          allChances,
+                          allCChests
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "prim": "Pair",
+                "args": [
+                  { "prim": "Pair", "args": [ { "int": "0" }, { "prim": "Pair", "args": [ { "string": creator }, [] ] } ] },
+                  { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ { "int": "200" }, { "int": "0" } ] } ] }
+                ]
+              }
+            ]
+          },
+          {
+            "prim": "Pair",
+            "args": [
+              {
+                "prim": "Pair",
+                "args": [
+                  { "prim": "Pair", "args": [ { "int": "24" }, { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "int": "-1" } ] } ] },
+                  { "prim": "Pair", "args": [ { "string": originator.publicKey }, { "prim": "Pair", "args": [ [], [] ] } ] }
+                ]
+              },
+              {
+                "prim": "Pair",
+                "args": [
+                  { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ [], [] ] } ] },
+                  { "prim": "Pair", "args": [ { "prim": "Pair", "args": [ [], { "int": "12" } ] }, { "prim": "Pair", "args": [ { "string": "created" }, { "int": "0" } ] } ] }
+                ]
+              }
+            ]
+          }
+        ]
+      };
     }
     
     async register(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
@@ -137,13 +215,13 @@ export class GameContract extends AbstractContract<GameContractStorage> {
     }
 
 
-    async start(keyStore: KeyStore, tokenAddress: string, chanceAddress: string, communityAddress: string, assetsAddress: string, initialBalance: number): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+    async start(keyStore: KeyStore, initialBalance: number): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'start';
         Tezos.setProvider({ signer: new InMemorySigner(keyStore.privateKey) });
         return new Promise((resolve, reject) => {
             Tezos.contract.at(this._address).then((ci) => {
                 try {
-                    ci.methods.start(assetsAddress, chanceAddress, communityAddress, initialBalance, tokenAddress).send({ fee: 400000, gasLimit: 800000, storageLimit: 20000 }).then((txOperation: TransactionOperation) => {
+                    ci.methods.start(initialBalance).send({ fee: 400000, gasLimit: 800000, storageLimit: 20000 }).then((txOperation: TransactionOperation) => {
                         console.log(`returns from ${operationName} call: ${txOperation}`);
                         resolve({
                             txHash: txOperation.hash,
@@ -164,20 +242,6 @@ export class GameContract extends AbstractContract<GameContractStorage> {
     // async start(keyStore: KeyStore, tokenAddress: string, initialBalance: number) {
     //      return tezosService.invokeContract(keyStore, this._address, 'start', [initialBalance, '"' + tokenAddress + '"']);
     // }
-
-    async testCallToken(keyStore: KeyStore, tokenAddress: string) {
-        const operationName = 'testCallToken';
-        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
-         = (ci: any) => ci.methods.testCallToken;
-         return this.callMethodTaquito(keyStore, operationName, undefined, operation, tokenAddress);        
-    }
-
-    async testCallTokenAdminOnly(keyStore: KeyStore, tokenAddress: string) {
-        const operationName = 'testCallTokenAdminOnly';
-        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
-         = (ci: any) => ci.methods.testCallTokenAdminOnly;
-         return this.callMethodTaquito(keyStore, operationName, undefined, operation, tokenAddress);        
-    }
 
     async end(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'end';
@@ -208,17 +272,11 @@ export class GameContract extends AbstractContract<GameContractStorage> {
          this.callMethodTaquito(keyStore, operationName, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation)
          .then(operationResult => {
            operationResult.onConfirmed.then(() => {
-             AssetsContract.retrieve(this._storage?.assets as string).then((assetsContract) => {
-               assetsContract.reset(keyStore).then((resetResult) => {
-                resetResult.onConfirmed.then(() => {
-                  const operationName2 = 'reset_complete';
-                  const operation2:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
-                   = (ci: any) => ci.methods.reset_start;
-                   resolve(this.callMethodTaquito(keyStore, operationName2, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation2));
-                }).catch(err => reject(err));
+                const operationName2 = 'reset_complete';
+                const operation2:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+                  = (ci: any) => ci.methods.reset_start;
+                  resolve(this.callMethodTaquito(keyStore, operationName2, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation2));
               }).catch(err => reject(err));
-            }).catch(err => reject(err));
-           }).catch(err => reject(err));
           }).catch(err => reject(err));
       });
     }

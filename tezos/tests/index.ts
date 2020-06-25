@@ -79,9 +79,9 @@ const sampleStorage =
 
 const redeploy = false;
 const redeploy_game = true;
-const redeploy_assets = true;
-const redeploy_token = true;
-const redeploy_chances = true;
+const redeploy_assets = false;
+const redeploy_token = false;
+const redeploy_chances = false;
 let gameContractAddress = '';
 let assetsContractAddress = '';
 let tokenContractAddress = '';
@@ -90,7 +90,7 @@ let chanceContractAddress = '';
 const register_alice = false;
 const register_bob = true;
 const reset_game = true;
-const testGameContract = false;
+const testGameContract = true;
 const testAssetContract = false;
 const testSampleContract = false;
 const sampleContractAddress = 'KT1BLuqcTJr2csiiZecpeEPmC9mHQh7hevN2';
@@ -265,7 +265,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
     }
     if (testGameContract) {
         if (redeploy_game) {
-            await GameContract.deploy(keyStore, 'tz1fV4G1dwVXwXfrrBKvpWUg5B1HNUKYhcki')
+            await GameContract.deploy(keyStore, 'tz1fV4G1dwVXwXfrrBKvpWUg5B1HNUKYhcki', allAssets, allChances, allChances)
             .then(gameContract => {
                 console.log('Game contract deployed at ', gameContract.address);
                 gameContractAddress = gameContract.address;
@@ -355,7 +355,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                     console.log("Bob is already registered");
                 }
                 let startPromise = undefined;
-                await gameContract.start(keyStore, tokenContractAddress, chanceContractAddress, chanceContractAddress, assetsContractAddress, 1500).then((operation) => {
+                await gameContract.start(keyStore, 1500).then((operation) => {
                     console.log('returns from start call:' + operation.txHash);
                     startPromise = operation.onConfirmed;
                 }).catch(err => {
