@@ -423,6 +423,20 @@ class GameService {
         if (gameContract.storage?.nextPlayer === player) {
             // in case the 'play' transaction failed, we need to update playerPosition and nextPlayer in game contract to allow the game to continue
             console.log("I need to call contract to restore consistent player position");
+            const keyStore = await tezosService.getAccount(originator);
+
+            const txOper = await gameContract.force_next_player(keyStore, player, payload.newPosition).catch(err => {
+                console.error(`Error during force_next_player call: ${err.id}, ${err.message}`);
+                throw new Error(`[ERROR] force_next_player request failed with error: ${err}`);
+            });
+            console.log('returns from force_next_player call:' + txOper.txHash);
+            txOper.onConfirmed.then((blockId) => {
+                console.log('Tx confirmed', txOper.txHash, blockId);
+                console.log(`force_next_player request succeed`);
+            }).catch(err => {
+                console.log(`[ERROR] force_next_player request failed with error: ${err}`);
+                throw new Error(`[ERROR] force_next_player request failed with error: ${err}`);
+            });
         }
         return {};
     }

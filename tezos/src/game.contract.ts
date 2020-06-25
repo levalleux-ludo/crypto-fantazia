@@ -178,27 +178,6 @@ export class GameContract extends AbstractContract<GameContractStorage> {
          return this.callMethodTaquito(keyStore, operationName, undefined, operation, tokenAddress);        
     }
 
-    async end(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
-        const operationName = 'end';
-        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
-         = (ci: any) => ci.methods.end;
-        return this.callMethodTaquito(keyStore, operationName, undefined, operation);
-    }
-
-    async freeze(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
-        const operationName = 'freeze';
-        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
-         = (ci: any) => ci.methods.freeze;
-         return this.callMethodTaquito(keyStore, operationName, undefined, operation);
-    }
-
-    async resume(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
-        const operationName = 'resume';
-        const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
-         = (ci: any) => ci.methods.resume;
-         return this.callMethodTaquito(keyStore, operationName, undefined, operation);
-    }
-
     async reset(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
       return new Promise<{txHash: string, onConfirmed: Promise<number>}>((resolve, reject) => {
         const operationName = 'reset_start';
@@ -228,6 +207,14 @@ export class GameContract extends AbstractContract<GameContractStorage> {
        = (ci: any) => ci.methods.reset_complete;
        return this.callMethodTaquito(keyStore, operationName, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation);
     }
+
+    async force_next_player(keyStore: KeyStore, player: string, newPosition: number): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+      const operationName = 'force_next_player';
+      const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+       = (ci: any) => ci.methods.force_next_player;
+      const callParams = { fee: 400000, gasLimit: 1000000, storageLimit: 20000 };
+      return this.callMethodTaquito(keyStore, operationName, callParams, operation, newPosition, player);
+  }
 
     async play2(keyStore: KeyStore, option: string, payload: any, signature: string): Promise<void> {
       let allOptions = '{';

@@ -442,6 +442,14 @@ class GameContract(sp.Contract):
         sp.verify(self.data.status == 'frozen', 'Resume only allowed when game is in frozen state')
         sp.verify(sp.sender == self.data.creator, 'Only game creator is allowed to resume game')
         self.data.status = 'started'
+        
+    @sp.entry_point
+    def force_next_player(self, params):
+        sp.verify(sp.sender == self.data.admin, 'Only originator is allowed to force_next_player')
+        sp.verify(self.data.status == 'started', 'Play only allowed when game is in started state')
+        sp.verify(self.data.nextPlayer == params.player)
+        self._go_to_space(params.player, params.newPosition)
+        self.findNextPlayer()
 
     @sp.entry_point
     def play(self, params):
@@ -1287,6 +1295,19 @@ def test():
     scenario.verify(contract.data.nextPlayer == alice.address)
     scenario.verify(contract.data.playerPositions.get(bob.address) == 14)
     
+    scenario.h2("Test force_next_player (rescue mode) from unauthorized user (expect to fail)")
+    scenario.verify(contract.data.playerPositions.get(alice.address) == 12)
+    scenario += contract.force_next_player(newPosition = 15, player = alice.address).run(sender = alice, valid = False)
+    scenario.verify(contract.data.playerPositions.get(alice.address) == 12)
+    
+    scenario.h2("Test force_next_player (rescue mode) for a wrong player (expect to fail)")
+    scenario += contract.force_next_player(newPosition = 15, player = bob.address).run(sender = originator, valid = False)
+    scenario.verify(contract.data.nextPlayer == alice.address)
+
+    scenario.h2("Test force_next_player (rescue mode)")
+    scenario += contract.force_next_player(newPosition = 15, player = alice.address).run(sender = originator)
+    scenario.verify(contract.data.nextPlayer == bob.address)
+    scenario.verify(contract.data.playerPositions.get(alice.address) == 15)
     
     scenario.h2("Test end game from unauthorized user (expect to fail)")
     scenario += contract.end().run(sender = bob, valid = False)
@@ -1301,6 +1322,3 @@ def test():
 #    scenario.h2("Test play on ended game (expect to fail)")
 #    scenario += contract.play().run (sender = alice, valid = False)
     
-
-
-
