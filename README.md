@@ -29,15 +29,17 @@ I've developed this game with the idea that the new economical mechanisms brough
 So, could a 'mainstream' game allow others (non-technical people) to discover, explore, understand, and play with these new tools and paradigms, to better assess what's going on ?
 And it became obvious that, while the so famous Monopoly game has learnt all of us about traditional capitalist economics (mortgages, investments, good/bad fortune, wealth management, etc), a similar approach could be used to educate everyone, in a playful way, with this new world of crypto-economics.
 
-## Demo
+## Links
 
-### Website
+[Video](https://levalleux-ludo.github.io/DAPP/CryptoFantazia/videos.html)
 
-### Video
+[Demo](https://levalleux-ludo.github.io/DAPP/CryptoFantazia/demo.html)
 
 ## Technical Description
 
 ### Source Repository
+
+https://github.com/levalleux-ludo/crypto-fantazia
 
 ### Architecture
 
