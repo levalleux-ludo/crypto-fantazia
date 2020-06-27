@@ -33,7 +33,7 @@ export enum ePlayOption {
 
 class GameService {
 
-    currentPlayer: string | undefined;
+    currentPlayer = new Map<string, string | undefined>();
 
     async create(creator: string, createContract = true): Promise<IGame> {
         return new Promise(async (resolve, reject) => {
@@ -244,6 +244,7 @@ class GameService {
     }
 
     async startSession(sessionId: string): Promise<{txHash: string}> {
+        this.currentPlayer.set(sessionId, undefined);
         const game = await Game.findOne({sessionId: sessionId});
         if (!game) {
             throw new Error('Unable to find Game with sessionId=' + sessionId);
@@ -283,6 +284,7 @@ class GameService {
     }
 
     async resetSession(sessionId: string): Promise<{txHash: string}> {
+        this.currentPlayer.set(sessionId, undefined);
         const game = await Game.findOne({sessionId: sessionId});
         if (!game) {
             throw new Error('Unable to find Game with sessionId=' + sessionId);
@@ -331,7 +333,7 @@ class GameService {
         if (gameContract.storage?.nextPlayer !== player) {
             throw new Error(`Player ${player} is not allowed to play now (expected player: ${gameContract.storage?.nextPlayer})`);
         }
-        if (this.currentPlayer === player) {
+        if (this.currentPlayer.get(sessionId) === player) {
             throw new Error(`Player ${player} is already playing`);
         }
 
@@ -342,14 +344,14 @@ class GameService {
             oldPosition = (gameContract.storage.playerPositions.get(player) as unknown as BigNumber).toNumber();
             game.positions.set(player, oldPosition);
         }
-        this.currentPlayer = player;
+        this.currentPlayer.set(sessionId, player);
 
         const dice1 = 1 + Math.floor(6 * Math.random());
         const dice2 = 1 + Math.floor(6 * Math.random());
         const cardId = Math.floor(GameConfig.nbChancesOrCC * Math.random());
         const newPosition = (oldPosition + dice1 + dice2) % GameConfig.nbSpaces;
         console.log(`Roll the dices player ${player}: D1:${dice1}, D2:${dice2} => new Position: ${newPosition}`);
-        const options = await this.getAvailableOptions(this.currentPlayer, oldPosition, newPosition);
+        const options = await this.getAvailableOptions(player, oldPosition, newPosition);
         const payload = {
             dice1: dice1,
             dice2: dice2,
@@ -417,8 +419,8 @@ class GameService {
         if (!gameContract) {
             throw new Error('Unable to retrieve GameContract from address ' + game.contractAddresses.game);
         }
-        if (this.currentPlayer !== player) {
-            throw new Error(`Player ${player} is not allowed to play now (expected player: ${this.currentPlayer})`);
+        if (this.currentPlayer.get(sessionId) !== player) {
+            throw new Error(`Player ${player} is not allowed to play now (expected player: ${this.currentPlayer.get(sessionId)})`);
         }
         if (gameContract.storage?.nextPlayer === player) {
             // in case the 'play' transaction failed, we need to update playerPosition and nextPlayer in game contract to allow the game to continue

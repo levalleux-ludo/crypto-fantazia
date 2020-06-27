@@ -425,24 +425,7 @@ class GameContract(sp.Contract):
         sp.for player in self.data.playersSet.elements():
             self.data.playerPositions[player] = 0
 
-    @sp.entry_point
-    def end(self, params):
-        sp.verify((self.data.status == 'started') | (self.data.status == 'frozen'), 'End only allowed when game is in started or frozen state')
-        sp.verify(sp.sender == self.data.creator, 'Only game creator is allowed to end game')
-        self.data.status = 'ended'
-
-    @sp.entry_point
-    def freeze(self, params):
-        sp.verify(self.data.status == 'started', 'Freeze only allowed when game is in started state')
-        sp.verify(sp.sender == self.data.creator, 'Only game creator is allowed to freeze game')
-        self.data.status = 'frozen'
-
-    @sp.entry_point
-    def resume(self, params):
-        sp.verify(self.data.status == 'frozen', 'Resume only allowed when game is in frozen state')
-        sp.verify(sp.sender == self.data.creator, 'Only game creator is allowed to resume game')
-        self.data.status = 'started'
-        
+   
     @sp.entry_point
     def force_next_player(self, params):
         sp.verify(sp.sender == self.data.admin, 'Only originator is allowed to force_next_player')
@@ -1160,29 +1143,6 @@ def test():
     # Verify expected results
     scenario.verify(sp.len(contract.data.players) == 2)
 
-    scenario.h2("Test freeze game from unauthorized user (expect to fail)")
-    scenario += contract.freeze().run(sender = bob, valid = False)
-    # Verify expected results
-    scenario.verify(contract.data.status == 'started')
-
-    scenario.h2("Test freeze game")
-    scenario += contract.freeze().run(sender = alice)
-    # Verify expected results
-    scenario.verify(contract.data.status == 'frozen')
-    
-#    scenario.h2("Test play on frozen game (expect to fail)")
-#    scenario += contract.play().run (sender = alice, valid = False)
-
-    scenario.h2("Test resume game from unauthorized user (expect to fail)")
-    scenario += contract.resume().run(sender = bob, valid = False)
-    # Verify expected results
-    scenario.verify(contract.data.status == 'frozen')
-
-    scenario.h2("Test resume game")
-    scenario += contract.resume().run(sender = alice)
-    # Verify expected results
-    scenario.verify(contract.data.status == 'started')
-    
     scenario.h2("Test play from Alice with wrong option (expect to fail)")
     payload = sp.record(dice1 = 1, dice2 = 3, newPosition = 4, cardId = 0, options = sp.set(["NOTHING", "STARTUP_FOUND"]), assetId = 4)
     signature = sp.make_signature(originator.secret_key, sp.pack(payload))
@@ -1309,16 +1269,7 @@ def test():
     scenario.verify(contract.data.nextPlayer == bob.address)
     scenario.verify(contract.data.playerPositions.get(alice.address) == 15)
     
-    scenario.h2("Test end game from unauthorized user (expect to fail)")
-    scenario += contract.end().run(sender = bob, valid = False)
-    # Verify expected results
-    scenario.verify(contract.data.status == 'started')
 
-    scenario.h2("Test end game")
-    scenario += contract.end().run(sender = alice)
-    # Verify expected results
-    scenario.verify(contract.data.status == 'ended')
-    
 #    scenario.h2("Test play on ended game (expect to fail)")
 #    scenario += contract.play().run (sender = alice, valid = False)
     
