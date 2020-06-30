@@ -127,8 +127,23 @@
                                                             "prim": "pair",
                                                             "args": [{
                                                                     "prim": "pair",
-                                                                    "args": [
-                                                                        { "prim": "nat", "annots": ["%assetId"] },
+                                                                    "args": [{
+                                                                            "prim": "pair",
+                                                                            "args": [
+                                                                                { "prim": "pair", "args": [{ "prim": "nat", "annots": ["%assetId"] }, { "prim": "string", "annots": ["%assetType"] }] },
+                                                                                {
+                                                                                    "prim": "pair",
+                                                                                    "args": [
+                                                                                        { "prim": "nat", "annots": ["%featureCost"] },
+                                                                                        {
+                                                                                            "prim": "pair",
+                                                                                            "args": [{ "prim": "nat", "annots": ["%price"] }, { "prim": "set", "args": [{ "prim": "nat" }], "annots": ["%rentRates"] }]
+                                                                                        }
+                                                                                    ]
+                                                                                }
+                                                                            ],
+                                                                            "annots": ["%asset"]
+                                                                        },
                                                                         { "prim": "pair", "args": [{ "prim": "nat", "annots": ["%cardId"] }, { "prim": "int", "annots": ["%dice1"] }] }
                                                                     ]
                                                                 },
@@ -373,7 +388,7 @@
                                                     "prim": "IF_NONE",
                                                     "args": [
                                                         [
-                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:433" }] }, { "prim": "FAILWITH" }]
+                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:429" }] }, { "prim": "FAILWITH" }]
                                                         ],
                                                         []
                                                     ]
@@ -496,7 +511,7 @@
                                                     "prim": "IF_NONE",
                                                     "args": [
                                                         [
-                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:433" }] }, { "prim": "FAILWITH" }]
+                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:429" }] }, { "prim": "FAILWITH" }]
                                                         ],
                                                         []
                                                     ]
@@ -751,7 +766,7 @@
                                                                 "prim": "IF_NONE",
                                                                 "args": [
                                                                     [
-                                                                        [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:562" }] }, { "prim": "FAILWITH" }]
+                                                                        [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:558" }] }, { "prim": "FAILWITH" }]
                                                                     ],
                                                                     []
                                                                 ]
@@ -824,7 +839,7 @@
                                                                                 "prim": "IF_NONE",
                                                                                 "args": [
                                                                                     [
-                                                                                        [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:433" }] }, { "prim": "FAILWITH" }]
+                                                                                        [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:429" }] }, { "prim": "FAILWITH" }]
                                                                                     ],
                                                                                     []
                                                                                 ]
@@ -1145,7 +1160,7 @@
                                                             "prim": "IF_NONE",
                                                             "args": [
                                                                 [
-                                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:522" }] }, { "prim": "FAILWITH" }]
+                                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:518" }] }, { "prim": "FAILWITH" }]
                                                                 ],
                                                                 []
                                                             ]
@@ -1268,7 +1283,7 @@
                                                             "prim": "IF_NONE",
                                                             "args": [
                                                                 [
-                                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:522" }] }, { "prim": "FAILWITH" }]
+                                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:518" }] }, { "prim": "FAILWITH" }]
                                                                 ],
                                                                 []
                                                             ]
@@ -1489,7 +1504,7 @@
                                                             "prim": "IF_NONE",
                                                             "args": [
                                                                 [
-                                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:509" }] }, { "prim": "FAILWITH" }]
+                                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:505" }] }, { "prim": "FAILWITH" }]
                                                                 ],
                                                                 []
                                                             ]
@@ -2516,7 +2531,31 @@
                                                                         { "prim": "CDR" },
                                                                         {
                                                                             "prim": "CONTRACT",
-                                                                            "args": [{ "prim": "pair", "args": [{ "prim": "nat", "annots": ["%assetId"] }, { "prim": "address", "annots": ["%buyer"] }] }],
+                                                                            "args": [{
+                                                                                "prim": "pair",
+                                                                                "args": [{
+                                                                                        "prim": "pair",
+                                                                                        "args": [
+                                                                                            { "prim": "pair", "args": [{ "prim": "nat", "annots": ["%assetId"] }, { "prim": "string", "annots": ["%assetType"] }] },
+                                                                                            {
+                                                                                                "prim": "pair",
+                                                                                                "args": [
+                                                                                                    { "prim": "nat", "annots": ["%featureCost"] },
+                                                                                                    {
+                                                                                                        "prim": "pair",
+                                                                                                        "args": [
+                                                                                                            { "prim": "nat", "annots": ["%price"] },
+                                                                                                            { "prim": "set", "args": [{ "prim": "nat" }], "annots": ["%rentRates"] }
+                                                                                                        ]
+                                                                                                    }
+                                                                                                ]
+                                                                                            }
+                                                                                        ],
+                                                                                        "annots": ["%asset"]
+                                                                                    },
+                                                                                    { "prim": "address", "annots": ["%buyer"] }
+                                                                                ]
+                                                                            }],
                                                                             "annots": ["%buy"]
                                                                         },
                                                                         {
@@ -2539,7 +2578,7 @@
                                                                         { "prim": "CAR" },
                                                                         { "prim": "CAR" },
                                                                         { "prim": "CAR" },
-                                                                        { "prim": "PAIR", "annots": ["%assetId", "%buyer"] },
+                                                                        { "prim": "PAIR", "annots": ["%asset", "%buyer"] },
                                                                         { "prim": "TRANSFER_TOKENS" },
                                                                         { "prim": "CONS" }
                                                                     ]
@@ -2570,7 +2609,31 @@
                                                                         { "prim": "CDR" },
                                                                         {
                                                                             "prim": "CONTRACT",
-                                                                            "args": [{ "prim": "pair", "args": [{ "prim": "nat", "annots": ["%assetId"] }, { "prim": "address", "annots": ["%player"] }] }],
+                                                                            "args": [{
+                                                                                "prim": "pair",
+                                                                                "args": [{
+                                                                                        "prim": "pair",
+                                                                                        "args": [
+                                                                                            { "prim": "pair", "args": [{ "prim": "nat", "annots": ["%assetId"] }, { "prim": "string", "annots": ["%assetType"] }] },
+                                                                                            {
+                                                                                                "prim": "pair",
+                                                                                                "args": [
+                                                                                                    { "prim": "nat", "annots": ["%featureCost"] },
+                                                                                                    {
+                                                                                                        "prim": "pair",
+                                                                                                        "args": [
+                                                                                                            { "prim": "nat", "annots": ["%price"] },
+                                                                                                            { "prim": "set", "args": [{ "prim": "nat" }], "annots": ["%rentRates"] }
+                                                                                                        ]
+                                                                                                    }
+                                                                                                ]
+                                                                                            }
+                                                                                        ],
+                                                                                        "annots": ["%asset"]
+                                                                                    },
+                                                                                    { "prim": "address", "annots": ["%player"] }
+                                                                                ]
+                                                                            }],
                                                                             "annots": ["%pay_rent"]
                                                                         },
                                                                         {
@@ -2593,7 +2656,7 @@
                                                                         { "prim": "CAR" },
                                                                         { "prim": "CAR" },
                                                                         { "prim": "CAR" },
-                                                                        { "prim": "PAIR", "annots": ["%assetId", "%player"] },
+                                                                        { "prim": "PAIR", "annots": ["%asset", "%player"] },
                                                                         { "prim": "TRANSFER_TOKENS" },
                                                                         { "prim": "CONS" }
                                                                     ]
@@ -2899,7 +2962,7 @@
                                                                         "prim": "IF_NONE",
                                                                         "args": [
                                                                             [
-                                                                                [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:562" }] }, { "prim": "FAILWITH" }]
+                                                                                [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:558" }] }, { "prim": "FAILWITH" }]
                                                                             ],
                                                                             []
                                                                         ]
@@ -2972,7 +3035,7 @@
                                                                                         "prim": "IF_NONE",
                                                                                         "args": [
                                                                                             [
-                                                                                                [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:433" }] }, { "prim": "FAILWITH" }]
+                                                                                                [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:429" }] }, { "prim": "FAILWITH" }]
                                                                                             ],
                                                                                             []
                                                                                         ]
@@ -4578,7 +4641,7 @@
                                                                         "prim": "IF_NONE",
                                                                         "args": [
                                                                             [
-                                                                                [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:562" }] }, { "prim": "FAILWITH" }]
+                                                                                [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:558" }] }, { "prim": "FAILWITH" }]
                                                                             ],
                                                                             []
                                                                         ]
@@ -4651,7 +4714,7 @@
                                                                                         "prim": "IF_NONE",
                                                                                         "args": [
                                                                                             [
-                                                                                                [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:433" }] }, { "prim": "FAILWITH" }]
+                                                                                                [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:429" }] }, { "prim": "FAILWITH" }]
                                                                                             ],
                                                                                             []
                                                                                         ]

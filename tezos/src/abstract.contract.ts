@@ -71,18 +71,19 @@ export abstract class AbstractContract<T> {
             Tezos.contract.at(this._address).then((ci) => {
                 try {
                     let method = args.length === 0 ? operation(ci)(null)
-                     : args.length === 1 ? operation(ci)(args[0])
-                     : args.length === 2 ? operation(ci)(args[0], args[1])
-                     : args.length === 3 ? operation(ci)(args[0], args[1], args[2])
-                     : args.length === 4 ? operation(ci)(args[0], args[1], args[2], args[3])
-                     : args.length === 5 ? operation(ci)(args[0], args[1], args[2], args[3], args[4])
-                     : args.length === 6 ? operation(ci)(args[0], args[1], args[2], args[3], args[4], args[5])
-                     : args.length === 7 ? operation(ci)(args[0], args[1], args[2], args[3], args[4], args[5], args[6])
-                     : args.length === 8 ? operation(ci)(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7])
-                     : undefined;
-                     if (!method) {
-                         throw new Error('Too many parameters: ' + args);
-                     }
+                    : operation(ci).apply(undefined, args);
+                    //  : args.length === 1 ? operation(ci)(args[0])
+                    //  : args.length === 2 ? operation(ci)(args[0], args[1])
+                    //  : args.length === 3 ? operation(ci)(args[0], args[1], args[2])
+                    //  : args.length === 4 ? operation(ci)(args[0], args[1], args[2], args[3])
+                    //  : args.length === 5 ? operation(ci)(args[0], args[1], args[2], args[3], args[4])
+                    //  : args.length === 6 ? operation(ci)(args[0], args[1], args[2], args[3], args[4], args[5])
+                    //  : args.length === 7 ? operation(ci)(args[0], args[1], args[2], args[3], args[4], args[5], args[6])
+                    //  : args.length === 8 ? operation(ci)(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7])
+                    //  : undefined;
+                    //  if (!method) {
+                    //      throw new Error('Too many parameters: ' + args);
+                    //  }
 
                     method.send(callParams).then((txOperation: TransactionOperation) => {
                         console.log(`returns from ${operationName} call: ${txOperation}`);

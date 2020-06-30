@@ -325,10 +325,25 @@ class TezosService {
         });
     }
 
+
+    recursiveGetFieldsValues(obj: any): any[] {
+        const props: any[] = [];
+        for (const field of Object.keys(obj).sort()) {
+            const value = Object.getOwnPropertyDescriptor(obj, field)?.value;
+            if ((typeof(value) === 'object') && (!util.isArray(value))) {
+                props.push.apply(props, this.recursiveGetFieldsValues(value));
+            }
+            else {
+                props.push(value);
+            }
+        }
+        return props;
+    }
+
     async packData2(format: MichelsonV1Expression, obj: any): Promise<Buffer> {
         return new Promise((resolve, reject) => {
-            const schema = new ParameterSchema( format );
-            const props = Object.keys(obj).sort().map(field => Object.getOwnPropertyDescriptor(obj, field)?.value)
+           const schema = new ParameterSchema( format );
+            const props = this.recursiveGetFieldsValues(obj);
             const data = schema.Encode.apply(schema, props);
             console.log('data', JSON.stringify(data));
             const rpcClient = new RpcClient(tezosNode);

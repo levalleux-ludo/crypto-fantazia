@@ -172,18 +172,10 @@ class GameService {
             await game.save();
             sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${communityContract.address}. Creating still in progress...`);
 
-            const assets = (await spaceService.getAll()).filter(
-                space => (space.type == eSpaceType.BAKERY) || (space.type == eSpaceType.MINING_FARM)
-                || (space.type == eSpaceType.MARKETPLACE) || (space.type == eSpaceType.EXCHANGE)
-                || (space.type == eSpaceType.STARTUP)
-            ).map(space => {
-                return {assetId: space.spaceId, type: space.type, price: space.price, featurePrice: space.featureCost, rentRates: space.rentRates};
-            });
             const assetsContract = await AssetsContract.deploy(
                 keyStore,
                 keyStore.publicKeyHash, // dont set game contract as admin because we need originator being able to call 'reset' entry-point 
-                gameContract.address,
-                assets
+                gameContract.address
             );
             // store assetsContract.address for session
             console.log(`Assets Contract created at ${assetsContract.address} for sessionId ${sessionId}`);
@@ -344,8 +336,16 @@ class GameService {
             oldPosition = (gameContract.storage.playerPositions.get(player) as unknown as BigNumber).toNumber();
             game.positions.set(player, oldPosition);
         }
-        this.currentPlayer.set(sessionId, player);
 
+        const assets = (await spaceService.getAll()).filter(
+            space => (space.type == eSpaceType.BAKERY) || (space.type == eSpaceType.MINING_FARM)
+            || (space.type == eSpaceType.MARKETPLACE) || (space.type == eSpaceType.EXCHANGE)
+            || (space.type == eSpaceType.STARTUP)
+        ).map(space => {
+            return {assetId: space.spaceId, type: space.type, price: space.price, featurePrice: space.featureCost, rentRates: space.rentRates};
+        });
+
+        this.currentPlayer.set(sessionId, player);
         const dice1 = 1 + Math.floor(6 * Math.random());
         const dice2 = 1 + Math.floor(6 * Math.random());
         const cardId = Math.floor(GameConfig.nbChancesOrCC * Math.random());
@@ -358,7 +358,7 @@ class GameService {
             newPosition: newPosition,
             cardId: cardId,
             options: options, // The smart contract will verify that the chose option is in the list
-            assetId: newPosition // by simplicity, we use the spaceId as assetId
+            asset: assets[newPosition]
         }
         const keyStore = await tezosService.getAccount(originator);
         const thingsToSign = await tezosService.packData2(GameContract.payloadFormat, payload);

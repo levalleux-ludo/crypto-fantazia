@@ -20,10 +20,10 @@ export interface AssetsContractStorage {
 export interface IAssetParams {assetId: number, type: string, price: number, featurePrice: number, rentRates: number[]}
 
 export class AssetsContract extends AbstractContract<AssetsContractStorage> {
-    public static async deploy(keyStore: KeyStore, admin: string, gameContract: string, assets: IAssetParams[]): Promise<AssetsContract> {
+    public static async deploy(keyStore: KeyStore, admin: string, gameContract: string): Promise<AssetsContract> {
         const address = await tezosService.deployContract(
             JSON.stringify(assetsContract),
-            JSON.stringify(this.getInitialStorage(admin, gameContract, assets)),
+            JSON.stringify(this.getInitialStorage(admin, gameContract)),
             keyStore
         ).catch(err => {
             console.error('Error during Assets contract deployment:' + err);
@@ -40,74 +40,62 @@ export class AssetsContract extends AbstractContract<AssetsContractStorage> {
     protected constructor(address: string) {
         super(address);
     }
-    protected static getInitialStorage(admin: string, gameContract: string, assets: IAssetParams[]) {
-        const assetDescription = (assetId: number, type: string, price: number, featurePrice: number, rentRates: number[]) => {
-            return {
-                "prim": "Elt",
-                "args": [
-                  { "int": assetId.toFixed(0) },
-                  {
-                    "prim": "Pair",
-                    "args": [
-                      { "prim": "Pair", "args": [ { "int": assetId.toFixed(0) }, { "string": type } ] },
-                      {
-                        "prim": "Pair",
-                        "args": [
-                          { "int": featurePrice.toString() },
-                          { "prim": "Pair", "args": [ { "int": price.toString() }, [ { "int": rentRates[0].toString() }, { "int": rentRates[1].toString() }, { "int": rentRates[2].toString() }, { "int": rentRates[3].toString() }, { "int": rentRates[4].toString() } ] ] }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              };
-        }
-        const allAssets = [];
-        for (const asset of assets) {
-            if (asset.rentRates.length === 0) {
-              if (asset.featurePrice !== 0) {
-                throw new Error('Was expecting some rentRates set for asset with id ' + asset.assetId);
-              }
-              asset.rentRates = [0, 0, 0, 0, 0];
-            }
-            if (asset.rentRates.length != 5) {
-              throw new Error('Was expecting 5 elements in rentRates set for asset with id ' + asset.assetId);
-            }
-            allAssets.push(assetDescription(
-                asset.assetId,
-                asset.type,
-                asset.price,
-                asset.featurePrice,
-                asset.rentRates
-            ));
-        }
+    protected static getInitialStorage(admin: string, gameContract: string) {
+        // const assetDescription = (assetId: number, type: string, price: number, featurePrice: number, rentRates: number[]) => {
+        //     return {
+        //         "prim": "Elt",
+        //         "args": [
+        //           { "int": assetId.toFixed(0) },
+        //           {
+        //             "prim": "Pair",
+        //             "args": [
+        //               { "prim": "Pair", "args": [ { "int": assetId.toFixed(0) }, { "string": type } ] },
+        //               {
+        //                 "prim": "Pair",
+        //                 "args": [
+        //                   { "int": featurePrice.toString() },
+        //                   { "prim": "Pair", "args": [ { "int": price.toString() }, [ { "int": rentRates[0].toString() }, { "int": rentRates[1].toString() }, { "int": rentRates[2].toString() }, { "int": rentRates[3].toString() }, { "int": rentRates[4].toString() } ] ] }
+        //                 ]
+        //               }
+        //             ]
+        //           }
+        //         ]
+        //       };
+        // }
+        // const allAssets = [];
+        // for (const asset of assets) {
+        //     if (asset.rentRates.length === 0) {
+        //       if (asset.featurePrice !== 0) {
+        //         throw new Error('Was expecting some rentRates set for asset with id ' + asset.assetId);
+        //       }
+        //       asset.rentRates = [0, 0, 0, 0, 0];
+        //     }
+        //     if (asset.rentRates.length != 5) {
+        //       throw new Error('Was expecting 5 elements in rentRates set for asset with id ' + asset.assetId);
+        //     }
+        //     allAssets.push(assetDescription(
+        //         asset.assetId,
+        //         asset.type,
+        //         asset.price,
+        //         asset.featurePrice,
+        //         asset.rentRates
+        //     ));
+        // }
         return {
           "prim": "Pair",
           "args": [
-            {
-              "prim": "Pair",
-              "args": [
-                { "string": admin },
-                {
-                  "prim": "Pair",
-                  "args": [
-                    allAssets,
-                    { "int": "0" }
-                  ]
-                }
-              ]
-            },
-            { "prim": "Pair", "args": [ { "prim": "Pair", "args": [ [], { "string": gameContract } ] }, { "prim": "Pair", "args": [ [], [] ] } ] }
+            { "prim": "Pair", "args": [ { "string": admin }, { "prim": "Pair", "args": [ { "int": "0" }, [] ] } ] },
+            { "prim": "Pair", "args": [ { "string": gameContract }, { "prim": "Pair", "args": [ [], [] ] } ] }
           ]
         };
     }
 
-    async buy(keyStore: KeyStore, assetId: number, buyer: string): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+    async buy(keyStore: KeyStore, asset: IAssetParams, buyer: string): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'buy';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.buy;
         const callParams = { fee: 800000, gasLimit: 1000000, storageLimit: 50000 };
-        return this.callMethodTaquito(keyStore, operationName, callParams, operation, assetId, buyer);
+        return this.callMethodTaquito(keyStore, operationName, callParams, operation, asset.assetId, asset.type, asset.featurePrice, asset.price, asset.rentRates, buyer);
     }
 
     async reset(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {

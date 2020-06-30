@@ -82,12 +82,16 @@ const redeploy_game = true;
 const redeploy_assets = true;
 const redeploy_token = true;
 const redeploy_chances = true;
-let gameContractAddress = '';
-let assetsContractAddress = '';
-let tokenContractAddress = '';
-let chanceContractAddress = '';
+let gameContractAddress = 'KT1SdmaC2Dkbpr9RwF5wx7h2Hz7HM4xpXJQW';
+let assetsContractAddress = 'KT1GuAA9LfopKuiGiWJbWQt9CZaZsdrmvhig';
+let tokenContractAddress = 'KT1Wdtw9tt7xb6n3j3sqSFLZna5wQbxxoC5T';
+let chanceContractAddress = 'KT1Wm88VhXj71jRUjAU6M7Z2VYmCpT4PEoBv';
 
-const register_alice = false;
+const buy_assets = false;
+const play_nothing = false;
+const play_found_startup = false;
+const play_chance = true;
+const register_alice = true;
 const register_bob = true;
 const reset_game = true;
 const testGameContract = true;
@@ -121,6 +125,8 @@ async function sign(message: Buffer, secret_key: string) {
     return (await CryptoUtils.signDetached(hash, key));
     // return message.toString('hex');
 }
+
+
 
 tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
     console.log('Originator Account is initialized:', keyStore);
@@ -183,7 +189,17 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
         console.log('payload', JSON.stringify(payload2));
         console.log('signature', signature);
     })
-    const payload3 = {assetId:9, cardId:19,dice1:6,dice2:6,newPosition:9,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
+    const theAsset = {
+        assetId: 5,
+        assetType: "STARTUP",
+        featurePrice: 50,
+        price: 150,
+        rentRates: [13, 60, 100, 200, 300]
+    }
+    const payload3 = {asset: theAsset, cardId:19,dice1:6,dice2:6,newPosition:9,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
+
+    const values = tezosService.recursiveGetFieldsValues(payload3);
+
     tezosService.packData2(GameContract.payloadFormat, payload3)
     .then((thingsToSign3) => {
         tezosService.make_signature(thingsToSign3, keyStore.privateKey).then(signature => {
@@ -242,7 +258,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
     
     if (testAssetContract) {
         if (redeploy_assets) {
-            await AssetsContract.deploy(keyStore, originator, originator, allAssets)
+            await AssetsContract.deploy(keyStore, originator, originator)
             .then(assetsContract => {
                 console.log('Assets contract deployed at ', assetsContract.address);
                 assetsContractAddress = assetsContract.address;
@@ -250,6 +266,8 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                 throw new Error('Error when deploying Assets contract:' + err);
             })
         }
+        const keyStoreAlice = await tezosService.getAccount('tz1ePDRmZSsfULRxNJD7Skiwc3AmLjwDYbb8');
+        const keyStoreBob = await tezosService.getAccount('tz1fQnrGvwHXh9YrkrjY6VwcHpfqWm3i8bdB');
         const assetsContract = await AssetsContract.retrieve(assetsContractAddress);
         let resetPromise = undefined;
         await assetsContract.reset(keyStore).then((txOper) => {
@@ -261,6 +279,14 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
             console.log('Reset Tx confirmed', blockId);
         }).catch((err: any) => {
             throw new Error(`Error during reset call: ${err.id}, ${err.message}`);
+        });
+        const buyResult = await assetsContract.buy(keyStore, allAssets[0], keyStoreAlice.publicKeyHash).catch(err => {
+            throw new Error(`Error during buy call: ${err.id}, ${err.message}`);
+        });
+        await buyResult.onConfirmed.then((blockId:  number) => {
+            console.log('Buy Tx confirmed', blockId);
+        }).catch((err: any) => {
+            throw new Error(`Error during buy call: ${err.id}, ${err.message}`);
         });
     }
     if (testGameContract) {
@@ -274,7 +300,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
             });
         }
         if (redeploy_assets) {
-            await AssetsContract.deploy(keyStore, originator, gameContractAddress, allAssets)
+            await AssetsContract.deploy(keyStore, originator, gameContractAddress)
             .then(assetsContract => {
                 console.log('Assets contract deployed at ', assetsContract.address);
                 assetsContractAddress = assetsContract.address;
@@ -372,35 +398,115 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
             }
             const assetsContract = await AssetsContract.retrieve(assetsContractAddress);
             const portfolioAlice = assetsContract.storage?.portfolio.get(keyStoreAlice.publicKeyHash);
-            for (let assetId of [0, 4]) {
-                if (!portfolioAlice || !portfolioAlice.map(bn => bn.toNumber()).includes(assetId)) {
-                    // let buyPromise = undefined;
-                    // await assetsContract.buy(keyStore, assetId, keyStoreAlice.publicKeyHash).then((operation) => {
-                    //     console.log('returns from Alice buy assetId:' + assetId + ' call:' + operation.txHash);
-                    //     buyPromise = operation.onConfirmed;
-                    // }).catch(err => {
-                    //     throw new Error(`Error during Alice buy  assetId:' + assetId + 'call: ${err.id}, ${err.message}`);
-                    // });
-                    // await (buyPromise as any).then((blockId: number) => {
-                    //     console.log('Alice buy  assetId:' + assetId + 'Tx confirmed', blockId);
-                    // }).catch((err: any) => console.error('Alice buy  assetId:' + assetId + 'tx failed:' + err))
+            if (buy_assets) {
+                for (let assetId of [0, 4]) {
+                    if (!portfolioAlice || !portfolioAlice.map(bn => bn.toNumber()).includes(assetId)) {
+                        let buyPromise = undefined;
+                        await assetsContract.buy(keyStore, allAssets[assetId], keyStoreAlice.publicKeyHash).then((operation) => {
+                            console.log('returns from Alice buy assetId:' + assetId + ' call:' + operation.txHash);
+                            buyPromise = operation.onConfirmed;
+                        }).catch(err => {
+                            throw new Error(`Error during Alice buy  assetId:' + assetId + 'call: ${err.id}, ${err.message}`);
+                        });
+                        await (buyPromise as any).then((blockId: number) => {
+                            console.log('Alice buy  assetId:' + assetId + 'Tx confirmed', blockId);
+                        }).catch((err: any) => console.error('Alice buy  assetId:' + assetId + 'tx failed:' + err))
+                    }
+                }
+                const portfolioBob = assetsContract.storage?.portfolio.get(keyStoreBob.publicKeyHash);
+                for (let assetId of [4]) {
+                    if (!portfolioBob || !portfolioBob.map(bn => bn.toNumber()).includes(assetId)) {
+                        let buyPromise = undefined;
+                        await assetsContract.buy(keyStore, allAssets[assetId], keyStoreBob.publicKeyHash).then((operation) => {
+                            console.log('returns from Bob buy assetId:' + assetId + ' call:' + operation.txHash);
+                            buyPromise = operation.onConfirmed;
+                        }).catch(err => {
+                            throw new Error(`Error during Bob buy  assetId:' + assetId + 'call: ${err.id}, ${err.message}`);
+                        });
+                        await (buyPromise as any).then((blockId: number) => {
+                            console.log('Bob buy  assetId:' + assetId + 'Tx confirmed', blockId);
+                        }).catch((err: any) => console.error('Bob buy  assetId:' + assetId + 'tx failed:' + err))
+                    }
                 }
             }
-            const portfolioBob = assetsContract.storage?.portfolio.get(keyStoreBob.publicKeyHash);
-            for (let assetId of [4]) {
-                if (!portfolioBob || !portfolioBob.map(bn => bn.toNumber()).includes(assetId)) {
-                    // let buyPromise = undefined;
-                    // await assetsContract.buy(keyStore, assetId, keyStoreBob.publicKeyHash).then((operation) => {
-                    //     console.log('returns from Bob buy assetId:' + assetId + ' call:' + operation.txHash);
-                    //     buyPromise = operation.onConfirmed;
-                    // }).catch(err => {
-                    //     throw new Error(`Error during Bob buy  assetId:' + assetId + 'call: ${err.id}, ${err.message}`);
-                    // });
-                    // await (buyPromise as any).then((blockId: number) => {
-                    //     console.log('Bob buy  assetId:' + assetId + 'Tx confirmed', blockId);
-                    // }).catch((err: any) => console.error('Bob buy  assetId:' + assetId + 'tx failed:' + err))
-                }
+            const theAsset = {
+                assetId: 3,
+                assetType: "STARTUP",
+                featurePrice: 50,
+                price: 150,
+                rentRates: [13, 60, 100, 200, 300]
             }
+            if (play_nothing) {
+                const payload3 = {asset: theAsset, cardId:0, dice1:1, dice2:2, newPosition:3, options:["NOTHING"]};
+            
+                const values = tezosService.recursiveGetFieldsValues(payload3);
+                const thingsToSign3 = await tezosService.packData2(GameContract.payloadFormat, payload3).catch(err => {
+                    console.error('Error during packData2');
+                    throw new Error(err);
+                });
+                const signature = await tezosService.make_signature(thingsToSign3 as Buffer, keyStore.privateKey).catch(err => {
+                    console.error('Error during make_signature');
+                    throw new Error(err);
+                });
+                console.log('payload', JSON.stringify(payload3));
+                console.log('thingsToSign', JSON.stringify(thingsToSign3));
+                console.log('signature', signature);
+                const playResult = await gameContract.play(keyStoreAlice, "NOTHING", payload3, signature as string).catch(err => {
+                    console.error('Error during play NOTHING');
+                    throw new Error(err);
+                });
+                await playResult.onConfirmed.then((blockId: number) => {
+                    console.log('Alice play NOTHING confirmed in block ', blockId);
+                }).catch((err: any) => console.error('Alice play NOTHING failed:' + err));
+            }
+        
+            if (play_found_startup) {
+                const payload3 = {asset: theAsset, cardId:19,dice1:1,dice2:2,newPosition:3,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
+            
+                const values = tezosService.recursiveGetFieldsValues(payload3);
+                const thingsToSign3 = await tezosService.packData2(GameContract.payloadFormat, payload3).catch(err => {
+                    console.error('Error during packData2');
+                    throw new Error(err);
+                });
+                const signature = await tezosService.make_signature(thingsToSign3 as Buffer, keyStore.privateKey).catch(err => {
+                    console.error('Error during make_signature');
+                    throw new Error(err);
+                });
+                console.log('payload', JSON.stringify(payload3));
+                console.log('thingsToSign', JSON.stringify(thingsToSign3));
+                console.log('signature', signature);
+                const playResult = await gameContract.play(keyStoreAlice, "STARTUP_FOUND", payload3, signature as string).catch(err => {
+                    console.error('Error during play');
+                    throw new Error(err);
+                });
+                await playResult.onConfirmed.then((blockId: number) => {
+                    console.log('Alice play confirmed in block ', blockId);
+                }).catch((err: any) => console.error('Alice play failed:' + err));
+            }
+            if (play_chance) {
+                const payload3 = {asset: theAsset, cardId:4, dice1:1, dice2:2, newPosition:3, options:["CHANCE"]};
+            
+                const values = tezosService.recursiveGetFieldsValues(payload3);
+                const thingsToSign3 = await tezosService.packData2(GameContract.payloadFormat, payload3).catch(err => {
+                    console.error('Error during packData2');
+                    throw new Error(err);
+                });
+                const signature = await tezosService.make_signature(thingsToSign3 as Buffer, keyStore.privateKey).catch(err => {
+                    console.error('Error during make_signature');
+                    throw new Error(err);
+                });
+                console.log('payload', JSON.stringify(payload3));
+                console.log('thingsToSign', JSON.stringify(thingsToSign3));
+                console.log('signature', signature);
+                const playResult = await gameContract.play(keyStoreAlice, "CHANCE", payload3, signature as string).catch(err => {
+                    console.error('Error during play chance');
+                    throw new Error(err);
+                });
+                await playResult.onConfirmed.then((blockId: number) => {
+                    console.log('Alice play confirmed in block ', blockId);
+                }).catch((err: any) => console.error('Alice play failed:' + err));
+            }
+        
             if (reset_game) {
                 let resetPromise = undefined;
                 await gameContract.reset(keyStore).then((operation) => {

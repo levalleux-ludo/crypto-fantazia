@@ -1,17 +1,17 @@
 import { Injectable, EventEmitter, NgZone } from '@angular/core';
 import { ApiService } from './api.service';
 import { Observable, interval, Subject } from 'rxjs';
-import { GameContract } from '../../../../tezos/src/game.contract';
-import { TokenContract } from '../../../../tezos/src/token.contract';
+import { GameContract } from '../../tezos/src/game.contract';
+import { TokenContract } from '../../tezos/src/token.contract';
 import { IGame } from '../../../../api/src/db/game.model';
 import { ConnectionService } from './connection.service';
-import { AbstractContract } from '../../../../tezos/src/abstract.contract';
+import { AbstractContract } from '../../tezos/src/abstract.contract';
 import { AlertService } from './alert.service';
 import { TezosService } from './tezos.service';
 import { WaiterService } from './waiter.service';
-import { KeyStore } from '../../../../tezos/node_modules/conseiljs/dist';
+import { KeyStore } from '../../tezos/node_modules/conseiljs/dist';
 import { fadeSlide } from '@clr/angular';
-import { tokenService } from '../../../../tezos/src/token.service';
+import { tokenService } from '../../tezos/src/token.service';
 import { UserService } from './user.service';
 
 export enum eGameCreationStatus {

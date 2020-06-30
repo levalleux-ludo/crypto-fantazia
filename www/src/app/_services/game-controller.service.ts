@@ -4,7 +4,7 @@ import { ApiService } from './api.service';
 import { AlertService } from './alert.service';
 import { TezosService } from './tezos.service';
 import { WaiterService } from './waiter.service';
-import { KeyStore } from '../../../../tezos/node_modules/conseiljs/dist';
+import { KeyStore } from '../../tezos/node_modules/conseiljs/dist';
 
 @Injectable({
   providedIn: 'root'

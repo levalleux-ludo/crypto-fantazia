@@ -55,28 +55,40 @@ export class GameContract extends AbstractContract<GameContractStorage> {
         super(address);
     }
     public static payloadFormat: MichelsonV1Expression = {
-      "prim": "pair",
-      "args": [{
-              "prim": "pair",
-              "args": [
-                  { "prim": "nat", "annots": ["%assetId"] },
-                  { "prim": "pair", "args": [{ "prim": "nat", "annots": ["%cardId"] }, { "prim": "int", "annots": ["%dice1"] }] }
-              ]
-          },
-          {
-              "prim": "pair",
-              "args": [
-                  { "prim": "int", "annots": ["%dice2"] },
-                  {
-                      "prim": "pair",
-                      "args": [
-                          { "prim": "int", "annots": ["%newPosition"] },
-                          { "prim": "set", "args": [{ "prim": "string" }], "annots": ["%options"] }
-                      ]
-                  }
-              ]
-          }
-      ]
+        "prim": "pair",
+        "args": [{
+                "prim": "pair",
+                "args": [{
+                        "prim": "pair",
+                        "args": [
+                            { "prim": "pair", "args": [{ "prim": "nat", "annots": ["%assetId"] }, { "prim": "string", "annots": ["%assetType"] }] },
+                            {
+                                "prim": "pair",
+                                "args": [
+                                    { "prim": "nat", "annots": ["%featureCost"] },
+                                    {
+                                        "prim": "pair",
+                                        "args": [{ "prim": "nat", "annots": ["%price"] }, { "prim": "set", "args": [{ "prim": "nat" }], "annots": ["%rentRates"] }]
+                                    }
+                                ]
+                            }
+                        ],
+                        "annots": ["%asset"]
+                    },
+                    { "prim": "pair", "args": [{ "prim": "nat", "annots": ["%cardId"] }, { "prim": "int", "annots": ["%dice1"] }] }
+                ]
+            },
+            {
+                "prim": "pair",
+                "args": [
+                    { "prim": "int", "annots": ["%dice2"] },
+                    {
+                        "prim": "pair",
+                        "args": [{ "prim": "int", "annots": ["%newPosition"] }, { "prim": "set", "args": [{ "prim": "string" }], "annots": ["%options"] }]
+                    }
+                ]
+            }
+        ]
     };
     protected static getInitialStorage(originator: KeyStore, creator: string) {
         return {
@@ -191,7 +203,7 @@ export class GameContract extends AbstractContract<GameContractStorage> {
                 resetResult.onConfirmed.then(() => {
                   const operationName2 = 'reset_complete';
                   const operation2:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
-                   = (ci: any) => ci.methods.reset_start;
+                   = (ci: any) => ci.methods.reset_complete;
                    resolve(this.callMethodTaquito(keyStore, operationName2, { fee: 400000, gasLimit: 900000, storageLimit: 20000 }, operation2));
                 }).catch(err => reject(err));
               }).catch(err => reject(err));
@@ -228,7 +240,11 @@ export class GameContract extends AbstractContract<GameContractStorage> {
           'play',
           [
             `"${option}"`,
-            payload.assetId,
+            payload.asset.assetId,
+            payload.asset.assetType,
+            payload.asset.featurePrice,
+            payload.asset.price,
+            payload.asset.rentRates,
             payload.cardId,
             payload.dice1,
             payload.dice2,
@@ -248,7 +264,11 @@ export class GameContract extends AbstractContract<GameContractStorage> {
            { fee: 800000, gasLimit: 1000000, storageLimit: 50000 },
            operation,
            option,
-           payload.assetId,
+           payload.asset.assetId,
+           payload.asset.assetType,
+           payload.asset.featurePrice,
+           payload.asset.price,
+           payload.asset.rentRates,
            payload.cardId,
            payload.dice1,
            payload.dice2,
