@@ -81,7 +81,7 @@ class ChanceContract(sp.Contract):
     
     @sp.entry_point
     def perform(self, params):
-        sp.verify(sp.sender == self.data.admin)
+        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract))
         chance = self.data.chances[params.chanceId]
         #   receive_amount (N)  -> token.mint(N, player)
         #   pay_amount (N) -> token.burn(N, player)
