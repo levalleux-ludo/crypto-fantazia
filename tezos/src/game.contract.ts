@@ -256,27 +256,33 @@ export class GameContract extends AbstractContract<GameContractStorage> {
           );
     }
     async play(keyStore: KeyStore, option: string, payload: any, signature: string): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+        if (["STARTUP_FOUND", "BUY_PRODUCT"].includes(option)) {
+          // Call the assets contract instead of the Game one
+          console.log(`PLAY OPTION '${option}' -> Call the assets contract instead of the Game one`);
+          const assetsContract = await AssetsContract.retrieve((this.storage as any).assets);
+          return assetsContract.play(keyStore, option, payload, signature);
+        }
         const operationName = 'play';
         const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
          = (ci: any) => ci.methods.play;
-         return this.callMethodTaquito(
-           keyStore,
-           operationName,
-           { fee: 800000, gasLimit: 1000000, storageLimit: 50000 },
-           operation,
-           option,
-           payload.asset.assetId,
-           payload.asset.assetType,
-           payload.asset.featurePrice,
-           payload.asset.price,
-           payload.asset.rentRates,
-           payload.card.param,
-           payload.card.type,
-           payload.dice1,
-           payload.dice2,
-           payload.newPosition,
-           payload.options,
-           signature);    
+        return this.callMethodTaquito(
+          keyStore,
+          operationName,
+          { fee: 800000, gasLimit: 1000000, storageLimit: 50000 },
+          operation,
+          option,
+          payload.asset.assetId,
+          payload.asset.assetType,
+          payload.asset.featurePrice,
+          payload.asset.price,
+          payload.asset.rentRates,
+          payload.card.param,
+          payload.card.type,
+          payload.dice1,
+          payload.dice2,
+          payload.newPosition,
+          payload.options,
+          signature);
     }
 
     async setInitialBalances(keyStore: KeyStore) {

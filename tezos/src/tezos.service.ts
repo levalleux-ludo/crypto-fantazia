@@ -135,7 +135,7 @@ class TezosService {
             undefined, // delegate
             800000, // fee,
             '', // derivationPath
-            20000, // storage_limit
+            30000, // storage_limit
             900000, // gas_limit
             contract,
             storage,

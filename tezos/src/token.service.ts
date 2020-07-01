@@ -1,7 +1,7 @@
 import { tezosService } from "./tezos.service";
 import { KeyStore, Tzip7ReferenceTokenHelper } from "conseiljs";
 
-export const originator = 'tz1bwKJe27WPPXwkbNbTfC4d2rkV7eCb5v44';
+export const originator = 'tz1fV4G1dwVXwXfrrBKvpWUg5B1HNUKYhcki';
 export const issuer = 'tz1fV4G1dwVXwXfrrBKvpWUg5B1HNUKYhcki';
 
 class TokenService {

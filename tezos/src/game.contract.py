@@ -8,7 +8,13 @@ def call(c, x):
 
 class FakeTokenContract(sp.Contract):
     def __init__(self, admin):
-        self.init(paused = False, balances = sp.map(tvalue = sp.TRecord(approvals = sp.TMap(sp.TAddress, sp.TNat), balance = sp.TNat)), admin = admin, totalSupply = 0)
+        self.init(
+            paused = False,
+            balances = sp.map(tvalue = sp.TRecord(approvals = sp.TMap(sp.TAddress, sp.TNat), balance = sp.TNat)),
+            admin = admin,
+            totalSupply = 0,
+            authorized_contracts = sp.set(t = sp.TAddress)
+        )
 
     @sp.entry_point
     def setAdministrator(self, params):
@@ -16,16 +22,22 @@ class FakeTokenContract(sp.Contract):
         self.data.admin = params.admin
 
     @sp.entry_point
+    def addAuthorizedContract(self, params):
+        sp.set_type(params.contract, sp.TAddress)
+        sp.verify(sp.sender == self.data.admin)
+        self.data.authorized_contracts.add(params.contract)
+
+    @sp.entry_point
     def mint(self, params):
         # Pb with SmartPY ? (do not occur wit hdev version https://smartpy.io/dev/index.html)
-        sp.verify(sp.sender == self.data.admin)
+        sp.verify((sp.sender == self.data.admin) | (self.data.authorized_contracts.contains(sp.sender)))
         self.addAddressIfNecessary(params.to)
         self.data.balances[params.to].balance += params.value
         self.data.totalSupply += params.value
     
     @sp.entry_point
     def burn(self, params):
-        sp.verify(sp.sender == self.data.admin)
+        sp.verify((sp.sender == self.data.admin) | (self.data.authorized_contracts.contains(sp.sender)))
         sp.verify(self.data.balances[params.address].balance >= params.amount)
         self.data.balances[params.address].balance = sp.as_nat(self.data.balances[params.address].balance - params.amount)
         self.data.totalSupply = sp.as_nat(self.data.totalSupply - params.amount)
@@ -33,6 +45,7 @@ class FakeTokenContract(sp.Contract):
     @sp.entry_point
     def transfer(self, params):
         sp.verify((sp.sender == self.data.admin) |
+            (self.data.authorized_contracts.contains(sp.sender)) |
             (~self.data.paused &
                 ((params.f == sp.sender) |
                  (self.data.balances[params.f].approvals[sp.sender] >= params.amount))))
@@ -40,7 +53,7 @@ class FakeTokenContract(sp.Contract):
         sp.verify(self.data.balances[params.f].balance >= params.amount)
         self.data.balances[params.f].balance = sp.as_nat(self.data.balances[params.f].balance - params.amount)
         self.data.balances[params.t].balance += params.amount
-        sp.if (params.f != sp.sender) & (self.data.admin != sp.sender):
+        sp.if (params.f != sp.sender) & (self.data.admin != sp.sender) & (~self.data.authorized_contracts.contains(sp.sender)):
             self.data.balances[params.f].approvals[sp.sender] = sp.as_nat(self.data.balances[params.f].approvals[sp.sender] - params.amount)
 
     @sp.entry_point
@@ -106,10 +119,12 @@ class ChanceContract(sp.Contract):
 ######################### ASSETS CONTRACT ###################################
 
 class AssetsContract(sp.Contract):
-    def __init__(self, admin, assets):
+    def __init__(self, admin, originator_pubKey):
         self.init(
             admin = admin,
+            originator_pubKey = originator_pubKey,
             gameContract = admin,
+            tokenContract = admin,
             #assets = sp.map(tkey = sp.TNat, tvalue = sp.TRecord(assetId = sp.TNat, price = sp.TNat, featureCost = sp.TNat, rentRates = sp.set(t = sp.TNat), assetType = sp.TString)),
             ownership = sp.map(tkey = sp.TNat, tvalue = sp.TAddress),
             portfolio = sp.map(tkey = sp.TAddress, tvalue = sp.TSet(t = sp.TNat)),
@@ -127,32 +142,57 @@ class AssetsContract(sp.Contract):
     def setGameContract(self, params):
         sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract))
         self.data.gameContract = params.address
+
+    @sp.entry_point
+    def setTokenContract(self, params):
+        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract))
+        self.data.tokenContract = params.contract
     
     @sp.entry_point
+    def play(self, params):
+        sp.set_type(params.option, sp.TString)
+        sp.set_type(params.payload, sp.TRecord(card = sp.TRecord(type = sp.TString, param = sp.TInt), dice1 = sp.TIntOrNat, dice2 = sp.TIntOrNat, newPosition = sp.TInt, options = sp.TSet(sp.TString), asset = sp.TRecord(assetId = sp.TNat, price = sp.TNat, featureCost = sp.TNat, rentRates = sp.TSet(sp.TNat), assetType = sp.TString)))
+        sp.set_type(params.signature, sp.TSignature)
+        thingToSign = sp.pack(params.payload)
+        sp.verify(sp.check_signature(self.data.originator_pubKey, params.signature, thingToSign))
+        # verify that option chosen by the player is listed in payload
+        sp.verify(params.payload.options.contains(params.option))
+        # then perform the option
+        sp.if params.option == 'STARTUP_FOUND':
+            self._buy(params.payload.asset, sp.sender)
+        sp.if params.option == 'BUY_PRODUCT':
+            self._pay_rent(params.payload.asset, sp.sender)
+        self.call_game_play(params.option, params.payload, params.signature)
+
+    
+    @sp.private_entry_point
     def buy(self, params):
         # params: (asset, buyer)
         sp.set_type(params.asset, sp.TRecord(assetId = sp.TNat, price = sp.TNat, featureCost = sp.TNat, rentRates = sp.TSet(sp.TNat), assetType = sp.TString))
         sp.set_type(params.buyer, sp.TAddress)
         sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract))
+        self._buy(params.asset, params.buyer)
+        
+    def _buy(self, asset, buyer):
         self.data.debug = 0
-        price =  sp.local("price", params.asset.price)
-        sp.if self.data.features.contains(params.asset.assetId):
+        price =  sp.local("price", asset.price)
+        sp.if self.data.features.contains(asset.assetId):
             self.data.debug += 32
-            price.value += params.asset.featureCost * self.data.features[params.asset.assetId] / 2
+            price.value += asset.featureCost * self.data.features[asset.assetId] / 2
         # get oldOwner
-        sp.if self.data.ownership.contains(params.asset.assetId):
+        sp.if self.data.ownership.contains(asset.assetId):
         #sp.if self.getOwner(params.assetId).is_some():
-            sp.if self.data.ownership[params.asset.assetId] == params.buyer:
+            sp.if self.data.ownership[asset.assetId] == buyer:
                 self.data.debug += 1
             sp.else:
                 # the asset is owned by another player
                 self.data.debug += 2
-                self.call_transfer_amount(params.buyer, self.getOwner(params.asset.assetId).open_some(), price.value)
+                self.call_transfer_amount(buyer, self.getOwner(asset.assetId).open_some(), price.value)
         sp.else:
             self.data.debug += 4
-            self.call_pay_amount(params.buyer, price.value)
+            self.call_pay_amount(buyer, price.value)
         self.data.debug += 8
-        self.setOwner(params.asset.assetId, params.buyer)
+        self.setOwner(asset.assetId, buyer)
 
 #    @sp.entry_point
 #    def resell(self, params):
@@ -186,27 +226,30 @@ class AssetsContract(sp.Contract):
             del self.data.features[key]
         self.data.debug = 16
         
-    @sp.entry_point
+    @sp.private_entry_point
     def pay_rent(self, params):
         # params: (asset, player)
         sp.set_type(params.asset, sp.TRecord(assetId = sp.TNat, price = sp.TNat, featureCost = sp.TNat, rentRates = sp.TSet(sp.TNat), assetType = sp.TString))
         # sp.set_type(params.player, sp.TAddress)
         sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract) | (sp.sender == params.player))
-        sp.if self.data.ownership.contains(params.asset.assetId):
+        self._pay_rent(params.asset, params.player)
+        
+    def _pay_rent(self, asset, player):
+        sp.if self.data.ownership.contains(asset.assetId):
             # the asset is owned by someone
-            sp.if self.data.ownership[params.asset.assetId] != params.player:
+            sp.if self.data.ownership[asset.assetId] != player:
                 # the asset is owned by someone else
                 nbFeatures = sp.local("nbFeatures", 0)
-                sp.if self.data.features.contains(params.asset.assetId):
-                    nbFeatures.value = self.data.features[params.asset.assetId]
+                sp.if self.data.features.contains(asset.assetId):
+                    nbFeatures.value = self.data.features[asset.assetId]
                 #rentRatesMap = sp.local("rentRatesMap", sp.map(l = self.data.assets[params.assetId].rentRates, tkey = sp.TNat, tvalue = sp.TNat))
                 #rentRatesMap = sp.map(tkey = sp.TNat, tvalue = sp.TNat)
                 rentRatesMap = sp.local("rentRatesMap", sp.map(tkey = sp.TNat, tvalue = sp.TNat))
                 index = sp.local("index", 0)
-                sp.for rate in params.asset.rentRates.elements():
+                sp.for rate in asset.rentRates.elements():
                     rentRatesMap.value[index.value] = rate
                     index.value += 1
-                self.call_transfer_amount(params.player, self.getOwner(params.asset.assetId).open_some(), rentRatesMap.value[nbFeatures.value])
+                self.call_transfer_amount(player, self.getOwner(asset.assetId).open_some(), rentRatesMap.value[nbFeatures.value])
                 
     @sp.entry_point
     def invest(self, params):
@@ -272,29 +315,36 @@ class AssetsContract(sp.Contract):
         return sp.none
         
     def call_transfer_amount(self, from_, to, value):
-        # tk : type of params expected by 'transfer_amount' entry_point
-        tk = sp.TRecord(from_ = sp.TAddress, to = sp.TAddress, value = sp.TNat)
-        # h_transfer_amount: handle to the 'transfer_amount' entry_point of the GamedContract
-        h_transfer_amount = sp.contract(tk, self.data.gameContract, entry_point = "transfer_amount").open_some()
-        param = sp.record(from_ = from_, to = to, value = value)
-        call(h_transfer_amount, param)       
+        # tk : type of params expected by 'transfer' entry_point
+        tk = sp.TRecord(f = sp.TAddress, t = sp.TAddress, amount = sp.TNat)
+        # h_transfer: handle to the 'transfer' entry_point of the token contract
+        h_transfer = sp.contract(tk, self.data.tokenContract, entry_point = "transfer").open_some()
+        param = sp.record(f = from_, t = to, amount = value)
+        call(h_transfer, param)
 
     def call_pay_amount(self, from_, value):
-        # tk : type of params expected by 'pay_amount' entry_point
-        tk = sp.TRecord(player = sp.TAddress, value = sp.TInt)
-        # h_pay_amount: handle to the 'pay_amount' entry_point of the GamedContract
-        h_pay_amount = sp.contract(tk, self.data.gameContract, entry_point = "pay_amount").open_some()
-        param = sp.record(player = from_, value = sp.to_int(value))
-        call(h_pay_amount, param)
+        # tk : type of params expected by 'burn' entry_point
+        tk = sp.TRecord(address = sp.TAddress, amount = sp.TNat)
+        # h_burn: handle to the 'burn' entry_point of the token contract
+        h_burn = sp.contract(tk, self.data.tokenContract, entry_point = "burn").open_some()
+        param = sp.record(address = from_, amount = value)
+        call(h_burn, param)
 
     def call_receive_amount(self, to, value):
-        # tk : type of params expected by 'receive_amount' entry_point
-        tk = sp.TRecord(player = sp.TAddress, value = sp.TInt)
-        # h_receive_amount: handle to the 'receive_amount' entry_point of the GamedContract
-        h_receive_amount = sp.contract(tk, self.data.gameContract, entry_point = "receive_amount").open_some()
-        param = sp.record(player = to, value = sp.to_int(value))
-        call(h_receive_amount, param)
+         # tk : type of params expected by 'mint' entry_point
+        tk = sp.TRecord(to = sp.TAddress, value = sp.TNat)
+        # h_mint: handle to the 'mint' entry_point of the token contract
+        h_mint = sp.contract(tk, self.data.tokenContract, entry_point = "mint").open_some()
+        param = sp.record(to = to, value = value)
+        call(h_mint, param)
 
+    def call_game_play(self, option, payload, signature):
+        # tk : type of params expected by 'force_next_player' entry_point
+        tk = sp.TRecord(player = sp.TAddress, newPosition = sp.TInt)
+        # h_play: handle to the 'force_next_player' entry_point of the GamedContract
+        h_play = sp.contract(tk, self.data.gameContract, entry_point = "force_next_player").open_some()
+        param = sp.record(player = sp.sender, newPosition = payload.newPosition)
+        call(h_play, param)
 
 
 ######################### GAME CONTRACT ###################################
@@ -342,6 +392,7 @@ class GameContract(sp.Contract):
         self.data.authorized_contracts.add(params.token)
         self.data.assets = params.assets
         self.data.authorized_contracts.add(params.assets)
+        self.token_addAuthorizedContract(params.assets)
         self.data.status = 'started'
         self.findNextPlayer()
         #self.giveInitialBalance(params.token, params.initialBalance)
@@ -376,7 +427,8 @@ class GameContract(sp.Contract):
    
     @sp.entry_point
     def force_next_player(self, params):
-        sp.verify(sp.sender == self.data.admin, 'Only originator is allowed to force_next_player')
+        # params = (player, newPosition)
+        sp.verify((sp.sender == self.data.admin) | (self.data.authorized_contracts.contains(sp.sender)))
         sp.verify(self.data.status == 'started', 'Play only allowed when game is in started state')
         sp.verify(self.data.nextPlayer == params.player)
         self._go_to_space(params.player, params.newPosition)
@@ -385,40 +437,35 @@ class GameContract(sp.Contract):
     @sp.entry_point
     def play(self, params):
         sp.verify(self.data.status == 'started', 'Play only allowed when game is in started state')
-        sp.verify(self.data.nextPlayer == sp.sender, 'Only the next player is allowed to play now')
         # verify signature and payload match
         sp.set_type(params.payload, sp.TRecord(card = sp.TRecord(type = sp.TString, param = sp.TInt), dice1 = sp.TIntOrNat, dice2 = sp.TIntOrNat, newPosition = sp.TInt, options = sp.TSet(sp.TString), asset = sp.TRecord(assetId = sp.TNat, price = sp.TNat, featureCost = sp.TNat, rentRates = sp.TSet(sp.TNat), assetType = sp.TString)))
-        # sp.set_type(params.signature, sp.TSignature)
-        thingToSign = sp.pack(params.payload)
-        signature = sp.local("signature", params.signature)
-        sp.verify(sp.check_signature(self.data.originator_pubKey, params.signature, thingToSign))
+        self._play(params.option, params.payload, params.signature, sp.sender)
+        
+    def _play(self, option, payload, signature, player):
+        sp.verify(self.data.nextPlayer == player, 'Only the next player is allowed to play now')
+        thingToSign = sp.pack(payload)
+        sp.verify(sp.check_signature(self.data.originator_pubKey, signature, thingToSign))
         # verify that option chosen by the player is listed in payload
-        sp.verify(params.payload.options.contains(params.option))
+        sp.verify(payload.options.contains(option))
         # verify that oldPosition + dices = newPosition
-        sp.verify((self.getPlayerPosition(sp.sender) + params.payload.dice1 + params.payload.dice2) % self.data.nbSpaces == sp.as_nat(params.payload.newPosition))
+        sp.verify((self.getPlayerPosition(player) + payload.dice1 + payload.dice2) % self.data.nbSpaces == sp.as_nat(payload.newPosition))
         # Move the player position to the new position
-        self._go_to_space(sp.sender, params.payload.newPosition)
+        self._go_to_space(player, payload.newPosition)
         # TODO: distribute PoW rewards (dice1) to MINING_FARM owners according to their hashrate
         # call mining contract REWARD(dice1) -> compute reward % numLap -> compute reward[ownerX] = reward * hashrateX / totalHashrate -> token.mint(rewardX, ownerX)
         # TODO: distribute PoS rewards (dice2)  to BAKERY owners according to their stakes
         # call bakery contract REWARD(dice1) -> compute reward % numLap -> compute reward[ownerX] = reward * stakeX / totalStake -> token.mint(rewardX, ownerX)
         # apply OPTION:
         # if COVID: if player owns immunity passport, do nothing, else move player position to quarantine + set player in quarantine mode until lap = currentLap+1
-        sp.if params.option == 'COVID':
-            self._put_in_quarantine(sp.sender)
-        # if ASSET FOUND: call asset.buy(assetId, player) --> token.transfer(price, newOwner -> oldOwner) or token.burn() if no oldOwner
-        sp.if params.option == 'STARTUP_FOUND':
-            self._assets_buy(params.payload.asset, sp.sender)
-        # if ASSET BUY PRODUCT: call asset.pay_rent(assetId, player) --> token.transfer(asset.rentRate * owner_prorata, asset.owner) + for each shareholder token.transfer(asset.rentRate * share_prorata, shareholder)
-        sp.if params.option == 'BUY_PRODUCT':
-            self._assets_pay_rent(params.payload.asset, sp.sender)
+        sp.if option == 'COVID':
+            self._put_in_quarantine(player)
         # if CHANCE/COMMUNITY_CHEST:
-        sp.if params.option == 'CHANCE':
+        sp.if option == 'CHANCE':
             # call chance contract with params.payload.cardId
-            self.chance_cc_perform(params.payload.card.type, params.payload.card.param, sp.sender)
-        sp.if params.option == 'COMMUNITY_CHEST':
+            self.chance_cc_perform(payload.card.type, payload.card.param, player)
+        sp.if option == 'COMMUNITY_CHEST':
             # call chance contract with params.payload.cardId
-            self.chance_cc_perform(params.payload.card.type, params.payload.card.param, sp.sender)
+            self.chance_cc_perform(payload.card.type, payload.card.param, player)
         self.findNextPlayer()
         # TODO: contracts calls outside of play:
         # SALE ASSET on MARKETPLACE: call marketplace contract SALE(price, asset) --> onSales.add(asset)
@@ -464,7 +511,6 @@ class GameContract(sp.Contract):
     def _go_to_space(self, player, value):
         #oldPosition2 = sp.local("oldPosition2", self.getPlayerPosition(player))
         #newPosition2 = sp.local("newPosition", self.getPlayerPosition(player))
-        
         sp.if ~self.data.playerPositions.contains(player):
             self.data.playerPositions[player] = 0
         sp.if value < self.data.playerPositions[player] :
@@ -473,37 +519,6 @@ class GameContract(sp.Contract):
         self.setPlayerPosition(player, value)
         #newPosition2 = sp.local("newPosition2", self.getPlayerPosition(player))
         
-
-    @sp.entry_point
-    def pay_amount(self, params):
-        # params: (player, value)
-        sp.verify((sp.sender == self.data.admin) | (self.data.authorized_contracts.contains(sp.sender)))
-        self._pay_amount(params.player, params.value)
-
-    def _pay_amount(self, player, value):
-        # params: (player, value)
-        self.token_burn(player, sp.as_nat(value))
-    
-    def _pay_amount_per(self, player, value, per):
-        # params: (player, value, per)
-        sp.set_type(player, sp.TAddress)
-        sp.set_type(value, sp.TInt)
-        sp.set_type(per, sp.TString)
-        self._assets_pay_amount_per(player, sp.as_nat(value), per)
-        
-    @sp.entry_point
-    def receive_amount(self, params):
-        sp.verify((sp.sender == self.data.admin) | (self.data.authorized_contracts.contains(sp.sender)))
-        self._receive_amount(params.player, params.value)
-
-    def _receive_amount(self, player, value):
-        self.token_mint(player, sp.as_nat(value))
-
-    @sp.entry_point
-    def transfer_amount(self, params):
-        sp.verify((sp.sender == self.data.admin) | (self.data.authorized_contracts.contains(sp.sender)))
-        self.token_transfer(params.from_, params.to, params.value)
-
     def findNextPlayer(self):
         nbPlayers = sp.to_int(sp.len(self.data.players))
         foundNextPlayer = sp.local("foundNextPlayer", False)
@@ -541,15 +556,6 @@ class GameContract(sp.Contract):
             param = sp.record(address = player)
             call(h_resetBalance, param)
     
-    def resetAssets(self):
-        # tk : type of params expected by 'reset' entry_point
-        tk = sp.TUnit
-        # h_reset: handle to the 'reset' entry_point of the assets contract
-        h_reset = sp.contract(tk, self.data.assets, entry_point = "reset").open_some()
-        param = sp.unit
-        call(h_reset, param)
-        
-
     def setPlayerPosition(self, player, position):
         self.data.playerPositions[player] = position
     
@@ -577,21 +583,21 @@ class GameContract(sp.Contract):
         param = sp.record(to = to, value = value)
         call(h_mint, param)
         
-    def token_transfer(self, from_, to, value):
-        # tk : type of params expected by 'transfer' entry_point
-        tk = sp.TRecord(f = sp.TAddress, t = sp.TAddress, amount = sp.TNat)
-        # h_transfer: handle to the 'transfer' entry_point of the token contract
-        h_transfer = sp.contract(tk, self.data.token, entry_point = "transfer").open_some()
-        param = sp.record(f = from_, t = to, amount = value)
-        call(h_transfer, param)
+    def token_addAuthorizedContract(self, contract):
+        # tk : type of params expected by 'addAuthorizedContract' entry_point
+        tk = sp.TRecord(contract = sp.TAddress)
+        # h_addAuthorizedContract: handle to the 'addAuthorizedContract' entry_point of the token contract
+        h_addAuthorizedContract = sp.contract(tk, self.data.token, entry_point = "addAuthorizedContract").open_some()
+        param = sp.record(contract = contract)
+        call(h_addAuthorizedContract, param)
         
     def chance_cc_perform(self, cardType, cardParam, player):
         sp.if cardType == 'receive_amount':
-            self._receive_amount(player, cardParam)
+            self.token_mint(player, sp.as_nat(cardParam))
         sp.if cardType == 'pay_amount':
-            self._pay_amount(player, cardParam)
+            self.token_burn(player, sp.as_nat(cardParam))
         sp.if cardType == 'pay_amount_per_company':
-            self._pay_amount_per(player, cardParam, "company")
+            self._assets_pay_amount_per(player, sp.as_nat(cardParam), "company")
         sp.if cardType == 'go_to_space':
             self._go_to_space(player, cardParam)
         sp.if cardType == 'move_n_spaces':
@@ -601,22 +607,6 @@ class GameContract(sp.Contract):
         sp.if cardType == 'go_to_quarantine':
             self._put_in_quarantine(player)
     
-    def _assets_buy(self, asset, buyer):
-        # tk : type of params expected by 'buy' entry_point
-        tk = sp.TRecord(asset = sp.TRecord(assetId = sp.TNat, price = sp.TNat, featureCost = sp.TNat, rentRates = sp.TSet(sp.TNat), assetType = sp.TString), buyer = sp.TAddress)
-        # h_perform: handle to the 'buy' entry_point of the chance contract
-        h_buy = sp.contract(tk, self.data.assets, entry_point = "buy").open_some()
-        param = sp.record(asset = asset, buyer = buyer)
-        call(h_buy, param)
-
-    def _assets_pay_rent(self, asset, player):
-        # tk : type of params expected by 'pay_rent' entry_point
-        tk = sp.TRecord(asset = sp.TRecord(assetId = sp.TNat, price = sp.TNat, featureCost = sp.TNat, rentRates = sp.TSet(sp.TNat), assetType = sp.TString), player = sp.TAddress)
-        # h_perform: handle to the 'pay_rent' entry_point of the chance contract
-        h_pay_rent = sp.contract(tk, self.data.assets, entry_point = "pay_rent").open_some()
-        param = sp.record(asset = asset, player = player)
-        call(h_pay_rent, param)
-
     def _assets_pay_amount_per(self, player, amount, per):
         # tk : type of params expected by 'pay_amount_per' entry_point
         tk = sp.TRecord(player = sp.TAddress, amount = sp.TNat, per = sp.TString)
@@ -719,12 +709,16 @@ def test():
     assets[3] = sp.record(assetId = 3, price = 200, featureCost = 50, rentRates = sp.set([12, 36, 150, 300, 600]), assetType = 'STARTUP')
     assets[4] = sp.record(assetId = 4, price = 1500, featureCost = 50, rentRates = sp.set([12, 36, 150, 300, 600]), assetType = 'STARTUP')
     
-    assetsContract = AssetsContract(originator.address, assets)
+    assetsContract = AssetsContract(originator.address, originator.public_key)
     scenario += assetsContract
     
     scenario.h3("set game contract address in assets contract")
     scenario += assetsContract.setGameContract(address = contract.address).run(sender = originator)
     scenario.verify(assetsContract.data.gameContract == contract.address)
+
+    scenario.h3("set token contract address in assets contract")
+    scenario += assetsContract.setTokenContract(contract = token.address).run(sender = originator)
+    scenario.verify(assetsContract.data.tokenContract == token.address)
 
 #    scenario.h2("Test play on not started game (expect to fail)")
 #    scenario += contract.play().run (sender = alice, valid = False)
@@ -1093,7 +1087,7 @@ def test():
     scenario.h2("Test play STARTUP_FOUND asset #2 from Bob")
     payload = sp.record(dice1 = 6, dice2 = 6, newPosition = 12, card = chances[0], options = sp.set(["NOTHING", "STARTUP_FOUND"]), asset = assets[2])
     signature = sp.make_signature(originator.secret_key, sp.pack(payload))
-    scenario += contract.play(option = 'STARTUP_FOUND', payload = payload, signature = signature).run (sender = bob)
+    scenario += assetsContract.play(option = 'STARTUP_FOUND', payload = payload, signature = signature).run (sender = bob)
     scenario.verify(contract.data.nextPlayer == alice.address)
     scenario.verify(contract.data.playerPositions.get(bob.address) == 12)
     bobBalanceExpected -= 200
@@ -1120,7 +1114,7 @@ def test():
     scenario.h2("Test play STARTUP_FOUND asset #0 from Bob")
     payload = sp.record(dice1 = 6, dice2 = 6, newPosition = 0, card = chances[0], options = sp.set(["NOTHING", "STARTUP_FOUND"]), asset = assets[0])
     signature = sp.make_signature(originator.secret_key, sp.pack(payload))
-    scenario += contract.play(option = 'STARTUP_FOUND', payload = payload, signature = signature).run (sender = bob)
+    scenario += assetsContract.play(option = 'STARTUP_FOUND', payload = payload, signature = signature).run (sender = bob)
     scenario.verify(contract.data.nextPlayer == alice.address)
     scenario.verify(contract.data.playerPositions.get(bob.address) == 0)
     bobBalanceExpected += 0 # +200 income -200 found statup

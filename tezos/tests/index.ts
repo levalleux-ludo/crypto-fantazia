@@ -83,9 +83,9 @@ const redeploy_game = true;
 const redeploy_assets = true;
 const redeploy_token = true;
 const redeploy_chances = false;
-let gameContractAddress = 'KT1TRiYDzVDdtL6TVYnzKJwSGi4JvKFXLjfv';
-let assetsContractAddress = 'KT1WGBQWt7GdQuK8g3E45zRqe6Qkc2WRMB7d';
-let tokenContractAddress = 'KT1RBiGRYe8QAerLSCKWNSJ2gJ6ZAdGFRdVR';
+let gameContractAddress = '';
+let assetsContractAddress = '';
+let tokenContractAddress = '';
 let chanceContractAddress = '';
 
 const buy_assets = false;
@@ -283,7 +283,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
     
     if (testAssetContract) {
         if (redeploy_assets) {
-            await AssetsContract.deploy(keyStore, originator, originator)
+            await AssetsContract.deploy(keyStore, keyStore, originator, originator)
             .then(assetsContract => {
                 console.log('Assets contract deployed at ', assetsContract.address);
                 assetsContractAddress = assetsContract.address;
@@ -324,15 +324,6 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                 throw new Error('Error when deploying game contract:' + err);
             });
         }
-        if (redeploy_assets) {
-            await AssetsContract.deploy(keyStore, originator, gameContractAddress)
-            .then(assetsContract => {
-                console.log('Assets contract deployed at ', assetsContract.address);
-                assetsContractAddress = assetsContract.address;
-            }).catch(err => {
-                throw new Error('Error when deploying Assets contract:' + err);
-            })
-        }
         if (redeploy_token) {
             await TokenContract.deploy(keyStore, gameContractAddress)
             .then(tokenContract => {
@@ -340,6 +331,15 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                 tokenContractAddress = tokenContract.address;
             }).catch(err => {
                 throw new Error('Error when deploying Token contract:' + err);
+            })
+        }
+        if (redeploy_assets) {
+            await AssetsContract.deploy(keyStore, keyStore, gameContractAddress, tokenContractAddress)
+            .then(assetsContract => {
+                console.log('Assets contract deployed at ', assetsContract.address);
+                assetsContractAddress = assetsContract.address;
+            }).catch(err => {
+                throw new Error('Error when deploying Assets contract:' + err);
             })
         }
         if (redeploy_chances) {

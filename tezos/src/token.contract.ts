@@ -13,7 +13,8 @@ export interface TokenContractStorage {
     admin: string;
     balances: MichelsonMap<string, {approvals: any, balance: number}>;
     paused: boolean,
-    totalSupply: number
+    totalSupply: number,
+    authorized_contracts: string[]
 }
 
 export class TokenContract extends AbstractContract<TokenContractStorage> {
@@ -40,13 +41,13 @@ export class TokenContract extends AbstractContract<TokenContractStorage> {
     }
 
     protected static getInitialStorage(admin: string) {
-        return { 
+        return {
             "prim": "Pair",
             "args": [
-               { "prim": "Pair", "args": [ { "string": admin }, [] ] },
-               { "prim": "Pair", "args": [ { "prim": "False" }, { "int": "0" } ] }
+              { "prim": "Pair", "args": [ { "string": admin }, [] ] },
+              { "prim": "Pair", "args": [ [], { "prim": "Pair", "args": [ { "prim": "False" }, { "int": "0" } ] } ] }
             ]
-        };
+          };
     };
 
     protected constructor(address: string) {

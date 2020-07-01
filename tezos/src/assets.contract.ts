@@ -10,6 +10,7 @@ import { assert } from "console";
 export interface AssetsContractStorage {
     admin: string;
     gameContract: string;
+    tokenContract: string;
     assets: MichelsonMap<number, any>;
     ownership: MichelsonMap<number, string>;
     portfolio: MichelsonMap<string, BigNumber[]>;
@@ -20,10 +21,10 @@ export interface AssetsContractStorage {
 export interface IAssetParams {assetId: number, type: string, price: number, featurePrice: number, rentRates: number[]}
 
 export class AssetsContract extends AbstractContract<AssetsContractStorage> {
-    public static async deploy(keyStore: KeyStore, admin: string, gameContract: string): Promise<AssetsContract> {
+    public static async deploy(keyStore: KeyStore, adminKeyStore: KeyStore, gameContract: string, tokenContract: string): Promise<AssetsContract> {
         const address = await tezosService.deployContract(
             JSON.stringify(assetsContract),
-            JSON.stringify(this.getInitialStorage(admin, gameContract)),
+            JSON.stringify(this.getInitialStorage(adminKeyStore, gameContract, tokenContract)),
             keyStore
         ).catch(err => {
             console.error('Error during Assets contract deployment:' + err);
@@ -40,7 +41,7 @@ export class AssetsContract extends AbstractContract<AssetsContractStorage> {
     protected constructor(address: string) {
         super(address);
     }
-    protected static getInitialStorage(admin: string, gameContract: string) {
+    protected static getInitialStorage(originator: KeyStore, gameContract: string, tokenContract: string) {
         // const assetDescription = (assetId: number, type: string, price: number, featurePrice: number, rentRates: number[]) => {
         //     return {
         //         "prim": "Elt",
@@ -82,11 +83,23 @@ export class AssetsContract extends AbstractContract<AssetsContractStorage> {
         //     ));
         // }
         return {
-          "prim": "Pair",
-          "args": [
-            { "prim": "Pair", "args": [ { "string": admin }, { "prim": "Pair", "args": [ { "int": "0" }, [] ] } ] },
-            { "prim": "Pair", "args": [ { "string": gameContract }, { "prim": "Pair", "args": [ [], [] ] } ] }
-          ]
+            "prim": "Pair",
+            "args": [
+              {
+                "prim": "Pair",
+                "args": [
+                  { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "int": "0" } ] },
+                  { "prim": "Pair", "args": [ [], { "string": gameContract } ] }
+                ]
+              },
+              {
+                "prim": "Pair",
+                "args": [
+                  { "prim": "Pair", "args": [ { "string": originator.publicKey }, [] ] },
+                  { "prim": "Pair", "args": [ [], { "string": tokenContract } ] }
+                ]
+              }
+            ]
         };
     }
 
@@ -104,6 +117,30 @@ export class AssetsContract extends AbstractContract<AssetsContractStorage> {
        = (ci: any) => ci.methods.reset;
       const callParams = { fee: 800000, gasLimit: 1000000, storageLimit: 50000 };
       return this.callMethodTaquito(keyStore, operationName, callParams, operation);
+  }
+
+  async play(keyStore: KeyStore, option: string, payload: any, signature: string): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+    const operationName = 'play';
+    const operation:(ci: ContractAbstraction<ContractProvider>) => ((...args: any[]) => ContractMethod<ContractProvider>)
+     = (ci: any) => ci.methods.play;
+    return this.callMethodTaquito(
+        keyStore,
+        operationName,
+        { fee: 800000, gasLimit: 1000000, storageLimit: 50000 },
+        operation,
+        option,
+        payload.asset.assetId,
+        payload.asset.assetType,
+        payload.asset.featurePrice,
+        payload.asset.price,
+        payload.asset.rentRates,
+        payload.card.param,
+        payload.card.type,
+        payload.dice1,
+        payload.dice2,
+        payload.newPosition,
+        payload.options,
+        signature);
   }
 
 
