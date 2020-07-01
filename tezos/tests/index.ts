@@ -13,6 +13,7 @@ import { ChanceContract, IChanceParams } from "../src/chance.contract";
 import { Operation } from "@taquito/taquito/dist/types/operations/operations";
 import { RpcClient, MichelsonV1Expression } from '@taquito/rpc';
 import { ParameterSchema } from '@taquito/michelson-encoder';
+import { isNullOrUndefined } from "util";
 
 console.log('Hello World!');
 
@@ -81,19 +82,20 @@ const redeploy = false;
 const redeploy_game = true;
 const redeploy_assets = true;
 const redeploy_token = true;
-const redeploy_chances = true;
-let gameContractAddress = 'KT1SdmaC2Dkbpr9RwF5wx7h2Hz7HM4xpXJQW';
-let assetsContractAddress = 'KT1GuAA9LfopKuiGiWJbWQt9CZaZsdrmvhig';
-let tokenContractAddress = 'KT1Wdtw9tt7xb6n3j3sqSFLZna5wQbxxoC5T';
-let chanceContractAddress = 'KT1Wm88VhXj71jRUjAU6M7Z2VYmCpT4PEoBv';
+const redeploy_chances = false;
+let gameContractAddress = 'KT1TRiYDzVDdtL6TVYnzKJwSGi4JvKFXLjfv';
+let assetsContractAddress = 'KT1WGBQWt7GdQuK8g3E45zRqe6Qkc2WRMB7d';
+let tokenContractAddress = 'KT1RBiGRYe8QAerLSCKWNSJ2gJ6ZAdGFRdVR';
+let chanceContractAddress = '';
 
 const buy_assets = false;
 const play_nothing = false;
-const play_found_startup = false;
-const play_chance = true;
+const play_found_startup = true;
+const play_chance = false;
 const register_alice = true;
 const register_bob = true;
 const reset_game = true;
+const reset_game_at_end = false;
 const testGameContract = true;
 const testAssetContract = false;
 const testSampleContract = false;
@@ -126,6 +128,29 @@ async function sign(message: Buffer, secret_key: string) {
     // return message.toString('hex');
 }
 
+async function findNextPlayer(gameContract: GameContract, keyStores: KeyStore[]): Promise<KeyStore> {
+    await gameContract.update().catch(err => {
+        console.error('Error during gameContract.update');
+        throw new Error(err);
+    });
+    for (let keyStore of keyStores) {
+        if (gameContract.storage?.nextPlayer === keyStore.publicKeyHash) {
+            return keyStore;
+        }    
+    }
+    throw new Error('Unable to find next player with address ' + gameContract.storage?.nextPlayer );
+}
+
+async function getPlayerPosition(gameContract: GameContract, player: string): Promise<number> {
+    await gameContract.update().catch(err => {
+        console.error('Error during gameContract.update');
+        throw new Error(err);
+    });
+    if (gameContract.storage?.playerPositions.has(player)) {
+        return +((gameContract.storage as any).playerPositions.get(player));
+    }
+    throw new Error('Unable to find position for pleyr ' + player);
+}
 
 
 tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
@@ -196,7 +221,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
         price: 150,
         rentRates: [13, 60, 100, 200, 300]
     }
-    const payload3 = {asset: theAsset, cardId:19,dice1:6,dice2:6,newPosition:9,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
+    const payload3 = {asset: theAsset, card: { param: allChances[4].param, type: allChances[4].type},dice1:6,dice2:6,newPosition:9,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
 
     const values = tezosService.recursiveGetFieldsValues(payload3);
 
@@ -381,7 +406,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                     console.log("Bob is already registered");
                 }
                 let startPromise = undefined;
-                await gameContract.start(keyStore, tokenContractAddress, chanceContractAddress, chanceContractAddress, assetsContractAddress, 1500).then((operation) => {
+                await gameContract.start(keyStore, tokenContractAddress, assetsContractAddress, 1500).then((operation) => {
                     console.log('returns from start call:' + operation.txHash);
                     startPromise = operation.onConfirmed;
                 }).catch(err => {
@@ -437,7 +462,11 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                 rentRates: [13, 60, 100, 200, 300]
             }
             if (play_nothing) {
-                const payload3 = {asset: theAsset, cardId:0, dice1:1, dice2:2, newPosition:3, options:["NOTHING"]};
+                const nextPlayerKeyStore = await findNextPlayer(gameContract, [keyStoreAlice, keyStoreBob]);
+
+                const oldPosition = await getPlayerPosition(gameContract, nextPlayerKeyStore.publicKeyHash);
+
+                const payload3 = {asset: theAsset, card: { param: allChances[0].param, type: allChances[0].type}, dice1:1, dice2:2, newPosition: oldPosition + 3, options:["NOTHING"]};
             
                 const values = tezosService.recursiveGetFieldsValues(payload3);
                 const thingsToSign3 = await tezosService.packData2(GameContract.payloadFormat, payload3).catch(err => {
@@ -451,7 +480,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                 console.log('payload', JSON.stringify(payload3));
                 console.log('thingsToSign', JSON.stringify(thingsToSign3));
                 console.log('signature', signature);
-                const playResult = await gameContract.play(keyStoreAlice, "NOTHING", payload3, signature as string).catch(err => {
+                const playResult = await gameContract.play(nextPlayerKeyStore, "NOTHING", payload3, signature as string).catch(err => {
                     console.error('Error during play NOTHING');
                     throw new Error(err);
                 });
@@ -460,8 +489,42 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                 }).catch((err: any) => console.error('Alice play NOTHING failed:' + err));
             }
         
+            if (play_chance) {
+                for (const chanceId of [0, 1, 2, 3, 4, 5]) {
+                    const nextPlayerKeyStore = await findNextPlayer(gameContract, [keyStoreAlice, keyStoreBob]);
+
+                    const oldPosition = await getPlayerPosition(gameContract, nextPlayerKeyStore.publicKeyHash);
+
+                    const payload3 = {asset: theAsset, card:{ param: allChances[chanceId].param, type: allChances[chanceId].type}, dice1:1, dice2:2, newPosition:oldPosition + 3, options:["CHANCE"]};
+                
+                    const values = tezosService.recursiveGetFieldsValues(payload3);
+                    const thingsToSign3 = await tezosService.packData2(GameContract.payloadFormat, payload3).catch(err => {
+                        console.error('Error during packData2');
+                        throw new Error(err);
+                    });
+                    const signature = await tezosService.make_signature(thingsToSign3 as Buffer, keyStore.privateKey).catch(err => {
+                        console.error('Error during make_signature');
+                        throw new Error(err);
+                    });
+                    console.log('payload', JSON.stringify(payload3));
+                    console.log('thingsToSign', JSON.stringify(thingsToSign3));
+                    console.log('signature', signature);
+                    const playResult = await gameContract.play(nextPlayerKeyStore, "CHANCE", payload3, signature as string).catch(err => {
+                        console.error('Error during play chance ' + chanceId);
+                        throw new Error(err);
+                    });
+                    await playResult.onConfirmed.then((blockId: number) => {
+                        console.log('play confirmed in block ', blockId);
+                    }).catch((err: any) => console.error('Play failed:' + err));
+                }
+            }
+
             if (play_found_startup) {
-                const payload3 = {asset: theAsset, cardId:19,dice1:1,dice2:2,newPosition:3,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
+                const nextPlayerKeyStore = await findNextPlayer(gameContract, [keyStoreAlice, keyStoreBob]);
+
+                const oldPosition = await getPlayerPosition(gameContract, nextPlayerKeyStore.publicKeyHash);
+
+                const payload3 = {asset: theAsset, card:{ param: allChances[4].param, type: allChances[4].type},dice1:1,dice2:2,newPosition:oldPosition + 3,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
             
                 const values = tezosService.recursiveGetFieldsValues(payload3);
                 const thingsToSign3 = await tezosService.packData2(GameContract.payloadFormat, payload3).catch(err => {
@@ -475,7 +538,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                 console.log('payload', JSON.stringify(payload3));
                 console.log('thingsToSign', JSON.stringify(thingsToSign3));
                 console.log('signature', signature);
-                const playResult = await gameContract.play(keyStoreAlice, "STARTUP_FOUND", payload3, signature as string).catch(err => {
+                const playResult = await gameContract.play(nextPlayerKeyStore, "STARTUP_FOUND", payload3, signature as string).catch(err => {
                     console.error('Error during play');
                     throw new Error(err);
                 });
@@ -483,31 +546,8 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
                     console.log('Alice play confirmed in block ', blockId);
                 }).catch((err: any) => console.error('Alice play failed:' + err));
             }
-            if (play_chance) {
-                const payload3 = {asset: theAsset, cardId:4, dice1:1, dice2:2, newPosition:3, options:["CHANCE"]};
-            
-                const values = tezosService.recursiveGetFieldsValues(payload3);
-                const thingsToSign3 = await tezosService.packData2(GameContract.payloadFormat, payload3).catch(err => {
-                    console.error('Error during packData2');
-                    throw new Error(err);
-                });
-                const signature = await tezosService.make_signature(thingsToSign3 as Buffer, keyStore.privateKey).catch(err => {
-                    console.error('Error during make_signature');
-                    throw new Error(err);
-                });
-                console.log('payload', JSON.stringify(payload3));
-                console.log('thingsToSign', JSON.stringify(thingsToSign3));
-                console.log('signature', signature);
-                const playResult = await gameContract.play(keyStoreAlice, "CHANCE", payload3, signature as string).catch(err => {
-                    console.error('Error during play chance');
-                    throw new Error(err);
-                });
-                await playResult.onConfirmed.then((blockId: number) => {
-                    console.log('Alice play confirmed in block ', blockId);
-                }).catch((err: any) => console.error('Alice play failed:' + err));
-            }
         
-            if (reset_game) {
+            if (reset_game_at_end) {
                 let resetPromise = undefined;
                 await gameContract.reset(keyStore).then((operation) => {
                     console.log('returns from reset call:' + operation.txHash);

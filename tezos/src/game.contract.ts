@@ -28,8 +28,6 @@ export interface GameContractStorage {
     nbLaps: number;
     quarantinePlayers: MichelsonMap<string, number>;
     token: string;
-    chance: string;
-    community: string;
     assets: string;
 }
 
@@ -55,88 +53,91 @@ export class GameContract extends AbstractContract<GameContractStorage> {
         super(address);
     }
     public static payloadFormat: MichelsonV1Expression = {
-        "prim": "pair",
-        "args": [{
-                "prim": "pair",
-                "args": [{
-                        "prim": "pair",
-                        "args": [
-                            { "prim": "pair", "args": [{ "prim": "nat", "annots": ["%assetId"] }, { "prim": "string", "annots": ["%assetType"] }] },
-                            {
-                                "prim": "pair",
-                                "args": [
-                                    { "prim": "nat", "annots": ["%featureCost"] },
-                                    {
-                                        "prim": "pair",
-                                        "args": [{ "prim": "nat", "annots": ["%price"] }, { "prim": "set", "args": [{ "prim": "nat" }], "annots": ["%rentRates"] }]
-                                    }
-                                ]
-                            }
-                        ],
-                        "annots": ["%asset"]
-                    },
-                    { "prim": "pair", "args": [{ "prim": "nat", "annots": ["%cardId"] }, { "prim": "int", "annots": ["%dice1"] }] }
-                ]
-            },
-            {
-                "prim": "pair",
-                "args": [
-                    { "prim": "int", "annots": ["%dice2"] },
-                    {
-                        "prim": "pair",
-                        "args": [{ "prim": "int", "annots": ["%newPosition"] }, { "prim": "set", "args": [{ "prim": "string" }], "annots": ["%options"] }]
-                    }
-                ]
-            }
-        ]
+      "prim": "pair",
+      "args": [{
+              "prim": "pair",
+              "args": [{
+                      "prim": "pair",
+                      "args": [
+                          { "prim": "pair", "args": [{ "prim": "nat", "annots": ["%assetId"] }, { "prim": "string", "annots": ["%assetType"] }] },
+                          {
+                              "prim": "pair",
+                              "args": [
+                                  { "prim": "nat", "annots": ["%featureCost"] },
+                                  {
+                                      "prim": "pair",
+                                      "args": [{ "prim": "nat", "annots": ["%price"] }, { "prim": "set", "args": [{ "prim": "nat" }], "annots": ["%rentRates"] }]
+                                  }
+                              ]
+                          }
+                      ],
+                      "annots": ["%asset"]
+                  },
+                  {
+                      "prim": "pair",
+                      "args": [
+                          { "prim": "pair", "args": [{ "prim": "int", "annots": ["%param"] }, { "prim": "string", "annots": ["%type"] }], "annots": ["%card"] },
+                          { "prim": "int", "annots": ["%dice1"] }
+                      ]
+                  }
+              ]
+          },
+          {
+              "prim": "pair",
+              "args": [
+                  { "prim": "int", "annots": ["%dice2"] },
+                  {
+                      "prim": "pair",
+                      "args": [{ "prim": "int", "annots": ["%newPosition"] }, { "prim": "set", "args": [{ "prim": "string" }], "annots": ["%options"] }]
+                  }
+              ]
+          }
+      ]
     };
     protected static getInitialStorage(originator: KeyStore, creator: string) {
-        return {
-          "prim": "Pair",
-          "args": [
-            {
-              "prim": "Pair",
-              "args": [
-                {
-                  "prim": "Pair",
-                  "args": [
-                    { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "string": originator.publicKeyHash } ] },
-                    {
-                      "prim": "Pair",
-                      "args": [ [], { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "string": originator.publicKeyHash } ] } ]
-                    }
-                  ]
-                },
-                {
-                  "prim": "Pair",
-                  "args": [
-                    { "prim": "Pair", "args": [ { "string": creator }, [] ] },
-                    { "prim": "Pair", "args": [ { "int": "200" }, { "prim": "Pair", "args": [ { "int": "0" }, { "int": "24" } ] } ] }
-                  ]
-                }
-              ]
-            },
-            {
-              "prim": "Pair",
-              "args": [
-                {
-                  "prim": "Pair",
-                  "args": [
-                    { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "int": "-1" } ] },
-                    { "prim": "Pair", "args": [ { "string": originator.publicKey }, { "prim": "Pair", "args": [ [], [] ] } ] }
-                  ]
-                },
-                {
-                  "prim": "Pair",
-                  "args": [
-                    { "prim": "Pair", "args": [ [], [] ] },
-                    { "prim": "Pair", "args": [ { "int": "12" }, { "prim": "Pair", "args": [ { "string": "created" }, { "string": originator.publicKeyHash } ] } ] }
-                  ]
-                }
-              ]
-            }
-          ]
-        };
+      return {
+        "prim": "Pair",
+        "args": [
+          {
+            "prim": "Pair",
+            "args": [
+              {
+                "prim": "Pair",
+                "args": [
+                  { "prim": "Pair", "args": [ { "string": originator.publicKeyHash }, { "string": originator.publicKeyHash } ] },
+                  { "prim": "Pair", "args": [ [], { "string": creator } ] }
+                ]
+              },
+              {
+                "prim": "Pair",
+                "args": [
+                  { "prim": "Pair", "args": [ [], { "int": "200" } ] },
+                  { "prim": "Pair", "args": [ { "int": "0" }, { "prim": "Pair", "args": [ { "int": "24" }, { "string": originator.publicKeyHash } ] } ] }
+                ]
+              }
+            ]
+          },
+          {
+            "prim": "Pair",
+            "args": [
+              {
+                "prim": "Pair",
+                "args": [
+                  { "prim": "Pair", "args": [ { "int": "-1" }, { "string": originator.publicKey } ] },
+                  { "prim": "Pair", "args": [ [], [] ] }
+                ]
+              },
+              {
+                "prim": "Pair",
+                "args": [
+                  { "prim": "Pair", "args": [ [], [] ] },
+                  { "prim": "Pair", "args": [ { "int": "12" }, { "prim": "Pair", "args": [ { "string": "created" }, { "string": originator.publicKeyHash } ] } ] }
+                ]
+              }
+            ]
+          }
+        ]
+      };
     }
     
     async register(keyStore: KeyStore): Promise<{txHash: string, onConfirmed: Promise<number>}> {
@@ -148,13 +149,13 @@ export class GameContract extends AbstractContract<GameContractStorage> {
     }
 
 
-    async start(keyStore: KeyStore, tokenAddress: string, chanceAddress: string, communityAddress: string, assetsAddress: string, initialBalance: number): Promise<{txHash: string, onConfirmed: Promise<number>}> {
+    async start(keyStore: KeyStore, tokenAddress: string, assetsAddress: string, initialBalance: number): Promise<{txHash: string, onConfirmed: Promise<number>}> {
         const operationName = 'start';
         Tezos.setProvider({ signer: new InMemorySigner(keyStore.privateKey) });
         return new Promise((resolve, reject) => {
             Tezos.contract.at(this._address).then((ci) => {
                 try {
-                    ci.methods.start(assetsAddress, chanceAddress, communityAddress, initialBalance, tokenAddress).send({ fee: 400000, gasLimit: 1000000, storageLimit: 50000 }).then((txOperation: TransactionOperation) => {
+                    ci.methods.start(assetsAddress, initialBalance, tokenAddress).send({ fee: 400000, gasLimit: 1000000, storageLimit: 50000 }).then((txOperation: TransactionOperation) => {
                         console.log(`returns from ${operationName} call: ${txOperation}`);
                         resolve({
                             txHash: txOperation.hash,
@@ -269,7 +270,8 @@ export class GameContract extends AbstractContract<GameContractStorage> {
            payload.asset.featurePrice,
            payload.asset.price,
            payload.asset.rentRates,
-           payload.cardId,
+           payload.card.param,
+           payload.card.type,
            payload.dice1,
            payload.dice2,
            payload.newPosition,
