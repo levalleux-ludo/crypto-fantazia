@@ -70,7 +70,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
   mobileQuery: MediaQueryList;
   private _mobileQueryListener: () => void;
 
-  diceAnimated = false;
+  isPlaying = false;
 
   public get carouselSizeParams() {
     return {
@@ -127,7 +127,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
       });
       const myPosition = this.gameService.playersPosition.get(this.tezosService.account.account_id);
       for (const player of this.gameService.players) {
-        this.updateAvatarPosition(player, undefined, this.gameService.playersPosition.get(player));
+        this.updateAvatarPosition(player, this.gameService.playersPosition.get(player));
       }
       this.showSpace = (myPosition !== undefined) ? myPosition : -1;
       if (this.spacesMap.has(myPosition)) {
@@ -139,9 +139,9 @@ export class BoardComponent implements OnInit, AfterViewInit {
     });
   }
 
-  updateAvatarPosition(player: string, oldPosition: number, newPosition: number) {
-    if ((oldPosition !== undefined) && (oldPosition < this.slidesStore.length)) {
-      this.slidesStore[oldPosition].players = this.slidesStore[oldPosition].players.filter(
+  updateAvatarPosition(player: string, newPosition: number) {
+    for (const slide of this.slidesStore) {
+      slide.players = slide.players.filter(
         aPlayer => aPlayer.address !== player
       );
     }
@@ -156,7 +156,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
     this.dicePOWValue = Math.floor(1 + 6 * Math.random());
     this.dicePOSValue = Math.floor(1 + 6 * Math.random());
     const myPosition = this.gameService.playersPosition.get(this.tezosService.account.account_id);
-    this.updateAvatarPosition(this.tezosService.account.account_id, undefined, myPosition);
+    this.updateAvatarPosition(this.tezosService.account.account_id, myPosition);
     this.showSpace = (myPosition !== undefined) ? myPosition : -1;
     if (this.spacesMap.has(myPosition)) {
       setTimeout(() => {
@@ -164,19 +164,28 @@ export class BoardComponent implements OnInit, AfterViewInit {
       }, 500);
     }
     this.gameService.onPlayerMove.subscribe(({player, newPosition, oldPosition}) => {
-      if ((player === this.tezosService.account.account_id) && !this.diceAnimated) {
+      if ((player === this.tezosService.account.account_id) && !this.isPlaying) {
         this.showSpace = newPosition;
+        this.updateAvatarPosition(player, newPosition);
+        if (this.spacesMap.has(newPosition)) {
+          setTimeout(() => {
+            this.carousel.setCurrentPosition(newPosition);
+          }, 500);
+        }
+      } else if (player !== this.tezosService.account.account_id) {
+        this.updateAvatarPosition(player, newPosition);
       }
-      this.updateAvatarPosition(player, oldPosition, newPosition);
     });
     if (this.gameService.iAmPlaying() && this.gameService.lastTurn.has(this.tezosService.account.account_id)) {
       this.showOptions = this.gameService.lastTurn.get(this.tezosService.account.account_id).options;
       if (this.showOptions.length === 1) {
         this.selectedOption = this.showOptions[0];
+      } else if (this.showOptions.length === 2 && this.showOptions.includes("GENESIS")) {
+        this.selectedOption = this.showOptions[(this.showOptions.indexOf("GENESIS") + 1) % 2];
       } else {
         this.selectedOption = undefined;
       }
-      this.showCardId = this.gameService.lastTurn.get(this.tezosService.account.account_id).cardId;
+      this.showCardId = this.gameService.lastTurn.get(this.tezosService.account.account_id).card.id;
       this.dicePOWValue = this.gameService.lastTurn.get(this.tezosService.account.account_id).dices[0];
       this.dicePOSValue = this.gameService.lastTurn.get(this.tezosService.account.account_id).dices[1];
     }
@@ -191,24 +200,27 @@ export class BoardComponent implements OnInit, AfterViewInit {
   onCarouselStep(event: any) {
     console.log(`onCarouselStep(${event})`);
     const prevBlock = (event > 0) ? event - 1 : this.slidesStore.length - 1;
-
+    this.updateAvatarPosition(this.tezosService.account.account_id, event);
   }
   rollDices() {
+    this.showOptions = [];
     this.gameController.rollTheDices().then((rollResult) => {
       const targetPOW = rollResult.payload.dice1;
       const targetPOS = rollResult.payload.dice2;
-      this.diceAnimated = true;
+      this.isPlaying = true;
       this.animateDices(targetPOW, targetPOS).then(() => {
         this.carousel.goto(rollResult.payload.newPosition, (newPosition) => {
           this.showSpace = newPosition;
-          this.diceAnimated = false;
           this.showOptions = rollResult.payload.options;
           if (this.showOptions.length === 1) {
             this.selectedOption = this.showOptions[0];
+          } else if (this.showOptions.length === 2 && this.showOptions.includes("GENESIS")) {
+            this.selectedOption = this.showOptions[(this.showOptions.indexOf("GENESIS") + 1) % 2];
           } else {
             this.selectedOption = undefined;
           }
-          this.showCardId = rollResult.payload.cardId;
+          this.showCardId = rollResult.payload.card.id;
+          this.updateAvatarPosition(this.tezosService.account.account_id, newPosition);
         });
       });
     });
@@ -243,7 +255,15 @@ export class BoardComponent implements OnInit, AfterViewInit {
   }
 
   play() {
-    this.gameController.play(this.selectedOption);
+    this.showOptions = [];
+    this.gameController.play(this.selectedOption).finally(() => {
+      this.isPlaying = false;
+    });
+  }
+
+  getChanceText(cardId: number) {
+    const card = this.chances.get(cardId);
+    return card;
   }
 
 }

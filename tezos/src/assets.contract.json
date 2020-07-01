@@ -98,8 +98,14 @@
                                                                 },
                                                                 {
                                                                     "prim": "pair",
-                                                                    "args": [
-                                                                        { "prim": "pair", "args": [{ "prim": "int", "annots": ["%param"] }, { "prim": "string", "annots": ["%type"] }], "annots": ["%card"] },
+                                                                    "args": [{
+                                                                            "prim": "pair",
+                                                                            "args": [
+                                                                                { "prim": "nat", "annots": ["%id"] },
+                                                                                { "prim": "pair", "args": [{ "prim": "int", "annots": ["%param"] }, { "prim": "string", "annots": ["%type"] }] }
+                                                                            ],
+                                                                            "annots": ["%card"]
+                                                                        },
                                                                         { "prim": "int", "annots": ["%dice1"] }
                                                                     ]
                                                                 }
@@ -227,7 +233,7 @@
                                         { "prim": "GET" },
                                         { "prim": "IF_NONE", "args": [
                                                 [
-                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:260" }] }, { "prim": "FAILWITH" }]
+                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:215" }] }, { "prim": "FAILWITH" }]
                                                 ],
                                                 []
                                             ] },
@@ -283,7 +289,7 @@
                                                             "prim": "IF_NONE",
                                                             "args": [
                                                                 [
-                                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:260" }] }, { "prim": "FAILWITH" }]
+                                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:215" }] }, { "prim": "FAILWITH" }]
                                                                 ],
                                                                 []
                                                             ]
@@ -383,7 +389,7 @@
                                                                             "prim": "IF_NONE",
                                                                             "args": [
                                                                                 [
-                                                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:260" }] }, { "prim": "FAILWITH" }]
+                                                                                    [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:215" }] }, { "prim": "FAILWITH" }]
                                                                                 ],
                                                                                 []
                                                                             ]
@@ -540,7 +546,7 @@
                                                                     "prim": "IF_NONE",
                                                                     "args": [
                                                                         [
-                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:288" }] }, { "prim": "FAILWITH" }]
+                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:243" }] }, { "prim": "FAILWITH" }]
                                                                         ],
                                                                         []
                                                                     ]
@@ -800,7 +806,7 @@
                                                                                     "prim": "IF_NONE",
                                                                                     "args": [
                                                                                         [
-                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:179" }] }, { "prim": "FAILWITH" }]
+                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:134" }] }, { "prim": "FAILWITH" }]
                                                                                         ],
                                                                                         []
                                                                                     ]
@@ -875,7 +881,7 @@
                                                                                     "prim": "IF_NONE",
                                                                                     "args": [
                                                                                         [
-                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:179" }] }, { "prim": "FAILWITH" }]
+                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:134" }] }, { "prim": "FAILWITH" }]
                                                                                         ],
                                                                                         []
                                                                                     ]
@@ -1005,7 +1011,7 @@
                                                                                                     "prim": "IF_NONE",
                                                                                                     "args": [
                                                                                                         [
-                                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:179" }] }, { "prim": "FAILWITH" }]
+                                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:134" }] }, { "prim": "FAILWITH" }]
                                                                                                         ],
                                                                                                         []
                                                                                                     ]
@@ -1193,7 +1199,7 @@
                                                                                     "prim": "IF_NONE",
                                                                                     "args": [
                                                                                         [
-                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:179" }] }, { "prim": "FAILWITH" }]
+                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:134" }] }, { "prim": "FAILWITH" }]
                                                                                         ],
                                                                                         []
                                                                                     ]
@@ -1435,7 +1441,7 @@
                                                                                     "prim": "IF_NONE",
                                                                                     "args": [
                                                                                         [
-                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:179" }] }, { "prim": "FAILWITH" }]
+                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:134" }] }, { "prim": "FAILWITH" }]
                                                                                         ],
                                                                                         []
                                                                                     ]
@@ -1490,7 +1496,7 @@
                                                                                                                     "prim": "IF_NONE",
                                                                                                                     "args": [
                                                                                                                         [
-                                                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:179" }] }, { "prim": "FAILWITH" }]
+                                                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:134" }] }, { "prim": "FAILWITH" }]
                                                                                                                         ],
                                                                                                                         []
                                                                                                                     ]
@@ -1600,7 +1606,7 @@
                                                                                                     "prim": "IF_NONE",
                                                                                                     "args": [
                                                                                                         [
-                                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:179" }] }, { "prim": "FAILWITH" }]
+                                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:134" }] }, { "prim": "FAILWITH" }]
                                                                                                         ],
                                                                                                         []
                                                                                                     ]
@@ -1626,7 +1632,7 @@
                                                                                                     "prim": "IF_NONE",
                                                                                                     "args": [
                                                                                                         [
-                                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:252" }] }, { "prim": "FAILWITH" }]
+                                                                                                            [{ "prim": "PUSH", "args": [{ "prim": "string" }, { "string": "Get-item:207" }] }, { "prim": "FAILWITH" }]
                                                                                                         ],
                                                                                                         []
                                                                                                     ]

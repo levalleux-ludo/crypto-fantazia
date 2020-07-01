@@ -1,18 +1,21 @@
 import { Injectable, EventEmitter, NgZone } from '@angular/core';
 import { ApiService } from './api.service';
 import { Observable, interval, Subject } from 'rxjs';
-import { GameContract } from '../../tezos/src/game.contract';
-import { TokenContract } from '../../tezos/src/token.contract';
+import { GameContract } from '../../../../tezos/src/game.contract';
+import { TokenContract } from '../../../../tezos/src/token.contract';
 import { IGame } from '../../../../api/src/db/game.model';
 import { ConnectionService } from './connection.service';
-import { AbstractContract } from '../../tezos/src/abstract.contract';
+import { AbstractContract } from '../../../../tezos/src/abstract.contract';
 import { AlertService } from './alert.service';
 import { TezosService } from './tezos.service';
 import { WaiterService } from './waiter.service';
-import { KeyStore } from '../../tezos/node_modules/conseiljs/dist';
+import { KeyStore } from '../../../../tezos/node_modules/conseiljs/dist';
 import { fadeSlide } from '@clr/angular';
-import { tokenService } from '../../tezos/src/token.service';
+import { tokenService } from '../../../../tezos/src/token.service';
 import { UserService } from './user.service';
+import { AssetsContract } from '../../../../tezos/src/assets.contract';
+import { SpacesService, ISpace } from './spaces.service';
+import { posix } from 'path';
 
 export enum eGameCreationStatus {
   NONE = 'NONE',
@@ -25,7 +28,8 @@ export enum eGameCreationStatus {
 
 export enum eContractType {
   GAME = 'GAME',
-  TOKEN = 'TOKEN'
+  TOKEN = 'TOKEN',
+  ASSETS = 'ASSETS'
 }
 
 @Injectable({
@@ -49,6 +53,7 @@ export class GameService {
   currentPlayer: string | undefined;
   currentTurn: number = -1;
   playersPosition = new Map<string, number>();
+  playersAssets = new Map<string, ISpace[]>();
   lastTurn = new Map<string, any>();
   usernames = new Map();
   avatars = new Map();
@@ -58,15 +63,19 @@ export class GameService {
 
   contracts: {
     game: GameContract | undefined,
-    token: TokenContract | undefined
+    token: TokenContract | undefined,
+    assets: AssetsContract | undefined
   } = {
     game: undefined,
-    token: undefined
+    token: undefined,
+    assets: undefined
   };
 
   onChange: EventEmitter<string> = new EventEmitter();
 
   onPlayerMove: EventEmitter<{player: string, newPosition: number, oldPosition: number}> = new EventEmitter();
+
+  onAssetsChange: EventEmitter<{player: string, portfolio: ISpace[]}> = new EventEmitter();
 
   constructor(
     private apiService: ApiService,
@@ -74,6 +83,7 @@ export class GameService {
     private alertService: AlertService,
     private tezosService: TezosService,
     private waiterService: WaiterService,
+    private spaceService: SpacesService,
     private ngZone: NgZone,
     private userService: UserService
   ) {
@@ -146,6 +156,10 @@ export class GameService {
         TokenContract.retrieve(this._game.contractAddresses.token).then((contract) => {
           resolve(contract as unknown as T);
         }).catch(err => reject(err));
+      } else if (this._game && contractType === eContractType.ASSETS && this._game.contractAddresses.assets) {
+        AssetsContract.retrieve(this._game.contractAddresses.assets).then((contract) => {
+          resolve(contract as unknown as T);
+        }).catch(err => reject(err));
       } else {
         reject();
       }
@@ -176,15 +190,17 @@ export class GameService {
           this._turns.push({id: event.id, ...event.data});
           this.currentTurn = Math.max(event.id, this.currentTurn);
           if (this.currentTurn === event.id) {
-            this.currentPlayer = event.data.player;
-            const oldPosition = this.playersPosition.get(event.data.player);
-            this.playersPosition.set(event.data.player, event.data.newPosition);
             this.lastTurn.set(event.data.player, event.data);
-            this.onPlayerMove.emit({
-              player: event.data.player,
-              newPosition: event.data.newPosition,
-              oldPosition: oldPosition
-            });
+            const oldPosition = this.playersPosition.get(event.data.player);
+            if (oldPosition !== event.data.newPosition) {
+              this.currentPlayer = event.data.player;
+              this.playersPosition.set(event.data.player, event.data.newPosition);
+              this.onPlayerMove.emit({
+                player: event.data.player,
+                newPosition: event.data.newPosition,
+                oldPosition: oldPosition
+              });
+            }
           }
           break;
         }
@@ -256,6 +272,7 @@ export class GameService {
       }
       await this.updateFromGameContract();
       await this.updateFromTokenContract();
+      await this.updateFromAssetsContract();
       // await this.updatePlayers();
       if (!this.isRegistering && !this.isRegistered) {
         this.registerWhenPossible();
@@ -278,6 +295,44 @@ export class GameService {
         }
       });
     }
+  }
+
+  private async updateFromAssetsContract() {
+    if (this.contracts.assets) {
+      await this.contracts.assets.update();
+      const spaces = await this.spaceService.getSpaces();
+      for (const player of this.players) {
+        const portfolio = this.contracts.assets.getPortfolio(player);
+        const oldPortfolio = this.playersAssets.get(player);
+        let newPortfolio = []
+        if (portfolio && portfolio.length > 0) {
+          newPortfolio = portfolio.map((assetId) => spaces[assetId]);
+        }
+        if ( !this.compareArray(oldPortfolio, newPortfolio) ) {
+          this.playersAssets.set(player, newPortfolio);
+          this.onAssetsChange.emit({ player, portfolio: newPortfolio } );
+          this.updated = true;
+        }
+      }
+    }
+  }
+
+  private compareArray(set1: any[], set2: any[]): boolean {
+    if (set1 && !set2 ) {
+      return false;
+    }
+    if (set2 && !set1) {
+      return false;
+    }
+    if (set1.length !== set2.length) {
+      return false;
+    }
+    for (const item1 of set1) {
+      if (!set2.includes(item1)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private compareMaps<T, U>(maps1: Map<T, U>, maps2: Map<T, U>): boolean {
@@ -308,6 +363,21 @@ export class GameService {
         if (!this.playersPosition.has(player)) {
           this.updated = true;
           this.playersPosition.set(player, 0);
+        }
+        const posInContract = storage.playerPositions.get(player).toNumber();
+        if (posInContract !== undefined) {
+          if ((this.currentPlayer === this.tezosService.account.account_id)
+             && this.lastTurn.has(this.currentPlayer)
+             && (posInContract === this.lastTurn.get(this.currentPlayer).newPosition)) {
+              // cancel the current play, since the contract is already updated
+              // this.currentPlayer = undefined;
+          }
+          if (posInContract !== this.playersPosition.get(player)) {
+            this.updated = true;
+            const oldPosition = this.playersPosition.get(player);
+            this.playersPosition.set(player, posInContract);
+            this.onPlayerMove.emit({player, newPosition: posInContract, oldPosition});
+          }
         }
         if (!this.usernames.has(player)) {
           await this.userService.getUser(player).then((user) => {
@@ -387,6 +457,13 @@ export class GameService {
       }).catch(err => { /* fail is acceptable meaning that contract is not created yet */ });
       promises.push(p);
     }
+    if (!this.contracts.assets) {
+      const p = await this.getContract<AssetsContract>(eContractType.ASSETS).then((assetsContract) => {
+        this.updated = true;
+        this.contracts.assets = assetsContract;
+      }).catch(err => { /* fail is acceptable meaning that contract is not created yet */ });
+      promises.push(p);
+    }
     if (promises.length > 0) {
       await Promise.all(promises);
     }
@@ -422,12 +499,14 @@ export class GameService {
     this.creationStatus = eGameCreationStatus.NONE;
     this.contracts = {
       game: undefined,
-      token: undefined
+      token: undefined,
+      assets: undefined
     };
     this.balances = new Map();
     this._turns = [];
     this._players = [];
     this.playersPosition = new Map<string, number>();
+    this.playersAssets = new Map<string, ISpace[]>();
   }
 
   public getAllSessions(): Observable<any[]> {

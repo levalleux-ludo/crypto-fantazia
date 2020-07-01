@@ -55,29 +55,32 @@ export class PlayersListComponent implements OnInit, AfterViewInit, AfterViewChe
       // this.ngZone.runTask(() => {
         // this.changeDetector.reattach();
     // });
-  });
-}
-
-needRefresh = false;
-ngAfterViewChecked(): void {
-  if (this.needRefresh) {
-    this.gameService.players.forEach(player => {
-      if (player === this.tezosService.account.account_id) {
-        this.updatePlayerDetail(player, this.me);
-
-      } else {
-        if (this.otherPlayers.has(player)) {
-          this.updatePlayerDetail(player, this.otherPlayers.get(player));
-        }
-      }
-      this.computeBars();
     });
-    // this.changeDetector.markForCheck();
-    // this.changeDetector.reattach();
-    // this.changeDetector.detectChanges();
+    this.gameService.onAssetsChange.subscribe(() => {
+      this.changeDetector.detectChanges();
+    });
   }
-  this.needRefresh = false;
-}
+
+  needRefresh = false;
+  ngAfterViewChecked(): void {
+    if (this.needRefresh) {
+      this.gameService.players.forEach(player => {
+        if (player === this.tezosService.account.account_id) {
+          this.updatePlayerDetail(player, this.me);
+
+        } else {
+          if (this.otherPlayers.has(player)) {
+            this.updatePlayerDetail(player, this.otherPlayers.get(player));
+          }
+        }
+        this.computeBars();
+      });
+      // this.changeDetector.markForCheck();
+      // this.changeDetector.reattach();
+      // this.changeDetector.detectChanges();
+    }
+    this.needRefresh = false;
+  }
 
 
   createPlayerDetail(player: string) {
@@ -85,15 +88,25 @@ ngAfterViewChecked(): void {
       address: player,
       name: this.gameService.getUsername(player),
       cash: this.gameService.balanceOf(player),
-      assets: 0,
+      assets: this.getTotalAssetValue(player),
       position: this.gameService.playersPosition.has(player) ? this.gameService.playersPosition.get(player) : -1
     };
+  }
+
+  getTotalAssetValue(player: string) {
+    let total = 0;
+    if (this.gameService.playersAssets.has(player)) {
+      for (const asset of this.gameService.playersAssets.get(player)) {
+        total += asset.price;
+      }
+    }
+    return total;
   }
 
   updatePlayerDetail(player: string, detail: any) {
     detail.name = this.gameService.getUsername(player);
     detail.cash = this.gameService.balanceOf(player);
-    detail.assets = 0;
+    detail.assets = this.getTotalAssetValue(player);
     detail.position = this.gameService.playersPosition.has(player) ? this.gameService.playersPosition.get(player) : -1;
   }
   bars = new Map();
@@ -135,8 +148,16 @@ ngAfterViewChecked(): void {
   }
 
   getPortfolio = (person: string) => {
-    return [
-    ];
+    const portfolio = this.gameService.playersAssets.get(person);
+    if (!portfolio) {
+      return [];
+    }
+    return portfolio.map((asset) => {
+      return {
+        nbFeatures: 0,
+        ...asset
+      };
+    });
   }
 
 }

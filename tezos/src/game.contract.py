@@ -71,51 +71,6 @@ class FakeTokenContract(sp.Contract):
         sp.if ~ self.data.balances.contains(address):
             self.data.balances[address] = sp.record(balance = 0, approvals = {})
 
-######################### CHANCE/COMMUNITY CONTRACT ###################################
-
-class ChanceContract(sp.Contract):
-    def __init__(self, admin, chances):
-        self.init(
-            admin = admin,
-            chances = chances,
-            gameContract = admin
-        )
-    
-    @sp.entry_point
-    def setAdministrator(self, params):
-        # params: (admin)
-        sp.verify(sp.sender == self.data.admin)
-        self.data.admin = params.admin
-
-    @sp.entry_point
-    def setGameContract(self, params):
-        sp.verify(sp.sender == self.data.admin)
-        self.data.gameContract = params.address
-    
-    @sp.entry_point
-    def perform(self, params):
-        # params: (chanceId, player)
-        sp.verify((sp.sender == self.data.admin) | (sp.sender == self.data.gameContract))
-        sp.set_type(params.chanceId, sp.TNat)
-        sp.set_type(params.player, sp.TAddress)
-        chance = self.data.chances[params.chanceId]
-        #   receive_amount (N)  -> token.mint(N, player)
-        #   pay_amount (N) -> token.burn(N, player)
-        # TODO:  pay_amount_per_mining_farm (N) -> asset.getAssets(owner, type=MINING_FARM).count -> token.burn(N*count, player)
-        # TODO:  pay_amount_per_bakery (N) -> asset.getAssets(owner, type=BAKERY).count -> token.burn(N*count, player)
-        #   go_to_quarantine: same COVID
-        #   go_to_space (X) -> player.position = X, if X < oldPosition, token.mint(200, player)
-        #   move_n_spaces (X) -> player.position += X, if newPosition >= nbSpaces, newPosition -= nbSpaces, token.mint(200, player)
-        #   covid_immunity -> player.hasImmunity = true
-        sp.if chance.type == 'covid_immunity':
-            # tk : type of params expected by 'give_immunity' entry_point
-            tk = sp.TRecord(player = sp.TAddress)
-            # h_give_immunity: handle to the 'give_immunity' entry_point of the GamedContract
-            h_give_immunity = sp.contract(tk, self.data.gameContract, entry_point = "give_immunity").open_some()
-            param = sp.record(player = params.player)
-            call(h_give_immunity, param)       
-
-
 ######################### ASSETS CONTRACT ###################################
 
 class AssetsContract(sp.Contract):
@@ -151,7 +106,7 @@ class AssetsContract(sp.Contract):
     @sp.entry_point
     def play(self, params):
         sp.set_type(params.option, sp.TString)
-        sp.set_type(params.payload, sp.TRecord(card = sp.TRecord(type = sp.TString, param = sp.TInt), dice1 = sp.TIntOrNat, dice2 = sp.TIntOrNat, newPosition = sp.TInt, options = sp.TSet(sp.TString), asset = sp.TRecord(assetId = sp.TNat, price = sp.TNat, featureCost = sp.TNat, rentRates = sp.TSet(sp.TNat), assetType = sp.TString)))
+        sp.set_type(params.payload, sp.TRecord(card = sp.TRecord(id = sp.TNat, type = sp.TString, param = sp.TInt), dice1 = sp.TIntOrNat, dice2 = sp.TIntOrNat, newPosition = sp.TInt, options = sp.TSet(sp.TString), asset = sp.TRecord(assetId = sp.TNat, price = sp.TNat, featureCost = sp.TNat, rentRates = sp.TSet(sp.TNat), assetType = sp.TString)))
         sp.set_type(params.signature, sp.TSignature)
         thingToSign = sp.pack(params.payload)
         sp.verify(sp.check_signature(self.data.originator_pubKey, params.signature, thingToSign))
@@ -365,7 +320,7 @@ class GameContract(sp.Contract):
             immunized = sp.set(t = sp.TAddress),
             nbSpaces = sp.to_int(24),
             playerPositions = sp.map(tkey = sp.TAddress, tvalue = sp.TInt),
-            quarantineSpaceId = 12,
+            quarantineSpaceId = 11,
             lapIncome = 200,
             nbLaps = 0,
             quarantinePlayers = sp.map(tkey = sp.TAddress, tvalue = sp.TInt),
@@ -438,7 +393,7 @@ class GameContract(sp.Contract):
     def play(self, params):
         sp.verify(self.data.status == 'started', 'Play only allowed when game is in started state')
         # verify signature and payload match
-        sp.set_type(params.payload, sp.TRecord(card = sp.TRecord(type = sp.TString, param = sp.TInt), dice1 = sp.TIntOrNat, dice2 = sp.TIntOrNat, newPosition = sp.TInt, options = sp.TSet(sp.TString), asset = sp.TRecord(assetId = sp.TNat, price = sp.TNat, featureCost = sp.TNat, rentRates = sp.TSet(sp.TNat), assetType = sp.TString)))
+        sp.set_type(params.payload, sp.TRecord(card = sp.TRecord(id = sp.TNat, type = sp.TString, param = sp.TInt), dice1 = sp.TIntOrNat, dice2 = sp.TIntOrNat, newPosition = sp.TInt, options = sp.TSet(sp.TString), asset = sp.TRecord(assetId = sp.TNat, price = sp.TNat, featureCost = sp.TNat, rentRates = sp.TSet(sp.TNat), assetType = sp.TString)))
         self._play(params.option, params.payload, params.signature, sp.sender)
         
     def _play(self, option, payload, signature, player):
@@ -662,44 +617,26 @@ def test():
     # Verify expected results
     scenario.verify(sp.len(contract.data.players) == 2)
     
-    scenario.h2("Test ChanceContract")
-    
     chances = {}
-    chances[0] = sp.record(type = 'receive_amount', param = sp.to_int(100))
-    chances[1] = sp.record(type = 'pay_amount', param = sp.to_int(100))
-    chances[2] = sp.record(type = 'go_to_space', param = sp.to_int(15))
-    chances[3] = sp.record(type = 'move_n_spaces', param = -3)
-    chances[4] = sp.record(type = 'covid_immunity', param = sp.to_int(0))
-    chances[5] = sp.record(type = 'go_to_quarantine', param = sp.to_int(0))
-    chances[6] = sp.record(type = 'go_to_space', param = sp.to_int(14))
-    chances[7] = sp.record(type = 'move_n_spaces', param = 3)
-    
-    chance = ChanceContract(originator.address, chances)
-    scenario += chance
-
-    scenario.h3("set game contract address in chance")
-    scenario += chance.setGameContract(address = contract.address).run(sender = originator)
-    scenario.verify(chance.data.gameContract == contract.address)
-
-    scenario.h2("Test CommunityContract")
+    chances[0] = sp.record(id = 0, type = 'receive_amount', param = sp.to_int(100))
+    chances[1] = sp.record(id = 1, type = 'pay_amount', param = sp.to_int(100))
+    chances[2] = sp.record(id = 2, type = 'go_to_space', param = sp.to_int(15))
+    chances[3] = sp.record(id = 3, type = 'move_n_spaces', param = -3)
+    chances[4] = sp.record(id = 4, type = 'covid_immunity', param = sp.to_int(0))
+    chances[5] = sp.record(id = 5, type = 'go_to_quarantine', param = sp.to_int(0))
+    chances[6] = sp.record(id = 6, type = 'go_to_space', param = sp.to_int(14))
+    chances[7] = sp.record(id = 7, type = 'move_n_spaces', param = 3)
     
     community_cards = {}
-    community_cards[0] = sp.record(type = 'receive_amount', param = sp.to_int(100))
-    community_cards[1] = sp.record(type = 'pay_amount_per_company', param = sp.to_int(110))
-    community_cards[2] = sp.record(type = 'go_to_space', param = sp.to_int(15))
-    community_cards[3] = sp.record(type = 'move_n_spaces', param = -3)
-    community_cards[4] = sp.record(type = 'covid_immunity', param = sp.to_int(0))
-    community_cards[5] = sp.record(type = 'go_to_quarantine', param = sp.to_int(0))
-    community_cards[6] = sp.record(type = 'go_to_space', param = sp.to_int(14))
-    community_cards[7] = sp.record(type = 'move_n_spaces', param = 3)
+    community_cards[0] = sp.record(id = 0, type = 'receive_amount', param = sp.to_int(100))
+    community_cards[1] = sp.record(id = 1, type = 'pay_amount_per_company', param = sp.to_int(110))
+    community_cards[2] = sp.record(id = 2, type = 'go_to_space', param = sp.to_int(15))
+    community_cards[3] = sp.record(id = 3, type = 'move_n_spaces', param = -3)
+    community_cards[4] = sp.record(id = 4, type = 'covid_immunity', param = sp.to_int(0))
+    community_cards[5] = sp.record(id = 5, type = 'go_to_quarantine', param = sp.to_int(0))
+    community_cards[6] = sp.record(id = 6, type = 'go_to_space', param = sp.to_int(14))
+    community_cards[7] = sp.record(id = 7, type = 'move_n_spaces', param = 3)
     
-    community = ChanceContract(originator.address, community_cards)
-    scenario += community
-
-    scenario.h3("set game contract address in community")
-    scenario += community.setGameContract(address = contract.address).run(sender = originator)
-    scenario.verify(community.data.gameContract == contract.address)
-
     scenario.h2("Test AssetsContract")
 
     assets = {}
@@ -1040,11 +977,6 @@ def test():
     scenario.verify(token.data.totalSupply == 3000)
     scenario += token
     
-        # be sure the admin of assets contract is set to game contract before
-    scenario.h3("Set game contract admin of Chance and Community contracts")
-    scenario += chance.setAdministrator(admin = contract.address).run(sender = originator)
-    scenario += community.setAdministrator(admin = contract.address).run(sender = originator)
-
     scenario.h2("Test register after game started (expect to fail)")
     scenario += contract.register().run(sender = charlie, valid = False)
     # Verify expected results
@@ -1163,9 +1095,9 @@ def test():
     scenario.verify(contract.data.playerPositions.get(bob.address) == 14)
     
     scenario.h2("Test force_next_player (rescue mode) from unauthorized user (expect to fail)")
-    scenario.verify(contract.data.playerPositions.get(alice.address) == 12)
+    scenario.verify(contract.data.playerPositions.get(alice.address) == contract.data.quarantineSpaceId)
     scenario += contract.force_next_player(newPosition = 15, player = alice.address).run(sender = alice, valid = False)
-    scenario.verify(contract.data.playerPositions.get(alice.address) == 12)
+    scenario.verify(contract.data.playerPositions.get(alice.address) == contract.data.quarantineSpaceId)
     
     scenario.h2("Test force_next_player (rescue mode) for a wrong player (expect to fail)")
     scenario += contract.force_next_player(newPosition = 15, player = bob.address).run(sender = originator, valid = False)

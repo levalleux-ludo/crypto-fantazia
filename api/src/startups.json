@@ -5,7 +5,9 @@
             "family": 1,
             "detail": "Secure BlockChain wth Proof-of-Work Consensus.\nThe owner is rewarding depending on the power (hashrate) it owns.",
             "image": "AntForceOne.png",
-            "price": 150
+            "price": 150,
+            "featureCost": 0,
+            "rentRates": [0, 0, 0, 0, 0]
         },
         {
             "name": "Pudding King",
@@ -13,7 +15,9 @@
             "family": 2,
             "detail": "Secure BlockChain wth Proof-of-Stake Consensus.\nThe owner is rewarding depending on the amount of his stake.",
             "image": "PuddingKing.png",
-            "price": 150
+            "price": 150,
+            "featureCost": 0,
+            "rentRates": [0, 0, 0, 0, 0]
         },
         {
             "name": "The 12 Doozers Army",
@@ -21,7 +25,9 @@
             "family": 3,
             "detail": "Secure BlockChain wth Proof-of-Work Consensus.\nThe owner is rewarding depending on the power (hashrate) it owns.",
             "image": "12DoozerArmy.png",
-            "price": 150
+            "price": 150,
+            "featureCost": 0,
+            "rentRates": [0, 0, 0, 0, 0]
         },
         {
             "name": "Boiler Room",
@@ -29,7 +35,9 @@
             "family": 4,
             "detail": "Secure BlockChain wth Proof-of-Stake Consensus.\nThe owner is rewarding depending on the amount of his stake.",
             "image": "BoilerRoom.png",
-            "price": 150
+            "price": 150,
+            "featureCost": 0,
+            "rentRates": [0, 0, 0, 0, 0]
         },
         {
             "name": "The Health Chain",
@@ -147,7 +155,9 @@
             "family": 4,
             "price": 250,
             "detail": "Every player can use the marketplace to sell/buy their assets (companies).\nThe marketplace's owner earns 10% of the price of each assets sold.",
-            "image": "TheGrandTezaar.png"
+            "image": "TheGrandTezaar.png",
+            "featureCost": 0,
+            "rentRates": [0, 0, 0, 0, 0]
         },
         {
             "name": "NYBE CryptoNext",
@@ -155,7 +165,9 @@
             "family": 5,
             "price": 250,
             "detail": "Every player can use the exchange to launch an ICO/IEO (primary market) or to buy/sell company's tokens (secondary market)\nThe exchange's owner earns 10% of the funds raised by each ICO/IEO, plus 5% fees on each token sold",
-            "image": "NYBECryptoNext.png"
+            "image": "NYBECryptoNext.png",
+            "featureCost": 0,
+            "rentRates": [0, 0, 0, 0, 0]
         }
     ]
 }

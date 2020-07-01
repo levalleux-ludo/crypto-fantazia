@@ -33,7 +33,7 @@ export enum ePlayOption {
 
 class GameService {
 
-    currentPlayer = new Map<string, string | undefined>();
+    currentPlayer = new Map<string, {player: string, position: number} | undefined>();
 
     async create(creator: string, createContract = true): Promise<IGame> {
         return new Promise(async (resolve, reject) => {
@@ -69,41 +69,12 @@ class GameService {
         });
     }
 
-    async createContracts(keyStore: KeyStore, sessionId: string, creator: string): Promise<{game: GameContract, token: TokenContract} | undefined> {
+    async createContracts(keyStore: KeyStore, sessionId: string, creator: string): Promise<{game: GameContract, token: TokenContract, assets: AssetsContract} | undefined> {
         try {
-
-            const chances = (await cardService.getAll(eCardType.CHANCE)).map(
-                cardDetail => {
-                    let param;
-                    switch(cardDetail.impl) {
-                        case 'move_n_spaces': {
-                            param = parseInt(cardDetail.properties.get('nb') as string);
-                            break;
-                        }
-                        case 'go_to_space': {
-                            param = parseInt(cardDetail.properties.get('space') as string);
-                            break;
-                        }
-                        case 'receive_amount':
-                        case 'pay_amount':
-                        case 'pay_amount_per_company':
-                        case 'pay_amount_per_mining_farm':
-                        case 'pay_amount_per_bakery': {
-                            param = parseInt(cardDetail.properties.get('amount') as string);
-                            break;
-                        }
-                        default: {
-                            param = 0;
-                            break;
-                        }
-                    }
-                    return {id: cardDetail.cardId, type: cardDetail.impl, param: param};
-                }
-            );
 
             const game = await Game.findOne({sessionId: sessionId});
             let numContract = 0;
-            const nbContracts = 5;
+            const nbContracts = 3;
             if (!game) throw new Error('Unable to find the game with sessionId ' + sessionId);
 
             const gameContract = await GameContract.deploy(keyStore, creator);
@@ -120,62 +91,11 @@ class GameService {
             await game.save();
             sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${tokenContract.address}. Creating still in progress...`);
 
-            const chanceContract = await ChanceContract.deploy(
-                keyStore,
-                gameContract.address,
-                gameContract.address,
-                chances
-            );
-            // store chanceContract.address for session
-            console.log(`Chance Contract created at ${chanceContract.address} for sessionId ${sessionId}`);
-            game.contractAddresses.chance = chanceContract.address;
-            await game.save();
-            sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${chanceContract.address}. Creating still in progress...`);
-
-            const communityChests = (await cardService.getAll(eCardType.COMMUNITY_CHEST)).map(
-                cardDetail => {
-                    let param;
-                    switch(cardDetail.impl) {
-                        case 'move_n_spaces': {
-                            param = parseInt(cardDetail.properties.get('nb') as string);
-                            break;
-                        }
-                        case 'go_to_space': {
-                            param = parseInt(cardDetail.properties.get('space') as string);
-                            break;
-                        }
-                        case 'receive_amount':
-                        case 'pay_amount':
-                        case 'pay_amount_per_company':
-                        case 'pay_amount_per_mining_farm':
-                        case 'pay_amount_per_bakery': {
-                            param = parseInt(cardDetail.properties.get('amount') as string);
-                            break;
-                        }
-                        default: {
-                            param = 0;
-                            break;
-                        }
-                    }
-                    return {id: cardDetail.cardId, type: cardDetail.impl, param: param};
-                }
-            );
-            const communityContract = await ChanceContract.deploy(
-                keyStore,
-                gameContract.address,
-                gameContract.address,
-                communityChests
-            );
-            // store communityContract.address for session
-            console.log(`Community Contract created at ${communityContract.address} for sessionId ${sessionId}`);
-            game.contractAddresses.community = communityContract.address;
-            await game.save();
-            sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${communityContract.address}. Creating still in progress...`);
-
             const assetsContract = await AssetsContract.deploy(
                 keyStore,
-                keyStore.publicKeyHash, // dont set game contract as admin because we need originator being able to call 'reset' entry-point 
-                gameContract.address
+                keyStore,
+                gameContract.address,
+                tokenContract.address
             );
             // store assetsContract.address for session
             console.log(`Assets Contract created at ${assetsContract.address} for sessionId ${sessionId}`);
@@ -183,11 +103,10 @@ class GameService {
             await game.save();
             sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${assetsContract.address}. Creating still in progress...`);
 
-
-
             return {
                 game: gameContract,
-                token: tokenContract
+                token: tokenContract,
+                assets: assetsContract
             };
 
         } catch(err) {
@@ -249,8 +168,6 @@ class GameService {
         const txOper = await gameContract.start(
             keyStore,
             game.contractAddresses.token,
-            game.contractAddresses.chance,
-            game.contractAddresses.community,
             game.contractAddresses.assets,
             1500).catch(err => {
             console.error(`Error during start call: ${err.id}, ${err.message}`);
@@ -268,7 +185,7 @@ class GameService {
         await gameContract.update().then(storage => {
             game.players = Array.from(storage.players.values());
             for (let player of game.players) {
-                game.positions.set(player, storage.playerPositions.has(player) ? storage.playerPositions.get(player) as number : 0);
+                game.positions.set(player, storage.playerPositions.has(player) ? (storage.playerPositions.get(player) as BigNumber).toNumber() as number : 0);
             }
         })
         await game.save();
@@ -322,11 +239,15 @@ class GameService {
         if (!gameContract) {
             throw new Error('Unable to retrieve GameContract from address ' + game.contractAddresses.game);
         }
+        if (!game.contractAddresses.assets) {
+            throw new Error('AssetsContract address is not set');
+        }
+        const assetsContract = await AssetsContract.retrieve(game.contractAddresses.assets);
+        if (!assetsContract) {
+            throw new Error('Unable to retrieve AssetsContract from address ' + game.contractAddresses.assets);
+        }
         if (gameContract.storage?.nextPlayer !== player) {
             throw new Error(`Player ${player} is not allowed to play now (expected player: ${gameContract.storage?.nextPlayer})`);
-        }
-        if (this.currentPlayer.get(sessionId) === player) {
-            throw new Error(`Player ${player} is already playing`);
         }
 
         let oldPosition = game.positions.get(player) as any;
@@ -337,68 +258,118 @@ class GameService {
             game.positions.set(player, oldPosition);
         }
 
-        const assets = (await spaceService.getAll()).filter(
+        if ((this.currentPlayer.get(sessionId)?.player === player) 
+        && (this.currentPlayer.get(sessionId)?.position === oldPosition)) {
+            throw new Error(`Player ${player} is already playing`);
+        }
+        this.currentPlayer.set(sessionId, {player, position: oldPosition});
+
+        const allSpaces = (await spaceService.getAll()).filter(
             space => (space.type == eSpaceType.BAKERY) || (space.type == eSpaceType.MINING_FARM)
             || (space.type == eSpaceType.MARKETPLACE) || (space.type == eSpaceType.EXCHANGE)
             || (space.type == eSpaceType.STARTUP)
         ).map(space => {
-            return {assetId: space.spaceId, type: space.type, price: space.price, featurePrice: space.featureCost, rentRates: space.rentRates};
+            return {assetId: space.spaceId, assetType: space.type, price: space.price, featurePrice: space.featureCost, rentRates: space.rentRates};
         });
+        const assets = new Map<number, {assetId: number, assetType: string, price: number, featurePrice: number, rentRates: number[]}>();
+        for (const space of allSpaces) {
+            assets.set(space.assetId, space);
+        }
 
-        this.currentPlayer.set(sessionId, player);
         const dice1 = 1 + Math.floor(6 * Math.random());
         const dice2 = 1 + Math.floor(6 * Math.random());
         const cardId = Math.floor(GameConfig.nbChancesOrCC * Math.random());
         const newPosition = (oldPosition + dice1 + dice2) % GameConfig.nbSpaces;
-        console.log(`Roll the dices player ${player}: D1:${dice1}, D2:${dice2} => new Position: ${newPosition}`);
-        const options = await this.getAvailableOptions(player, oldPosition, newPosition);
-        const payload = {
-            dice1: dice1,
-            dice2: dice2,
-            newPosition: newPosition,
-            cardId: cardId,
-            options: options, // The smart contract will verify that the chose option is in the list
-            asset: assets[newPosition]
+        const newSpace = await spaceService.getBySpaceId(newPosition);
+        if (!newSpace) {
+            throw new Error(`Unable to find the space at position ${newPosition}`);
         }
-        const keyStore = await tezosService.getAccount(originator);
-        const thingsToSign = await tezosService.packData2(GameContract.payloadFormat, payload);
-        const signature = await tezosService.make_signature(thingsToSign, keyStore.privateKey);
-        game.positions.set(player, newPosition);
-        // const turn = await turnService.create(
-        //     sessionId,
-        //     player,
-        //     oldPosition,
-        //     newPosition,
-        //     [dice1, dice2],
-        //     cardId,
-        //     signature);
-        // game.turns.push(turn.id);
-        await game.save();
-        // and update position in contract ?
+        let card = {
+            id: 0,
+            type: 'none',
+            param: 0
+        }
+        try {
+            if (newSpace?.type === eSpaceType.CHANCE) {
+                const details = await cardService.getByCardId(eCardType.CHANCE, cardId);
+                if (!details) {
+                    throw new Error(`Unable to find the chance card with id ${cardId}`);
+                }
+                card = cardService.translateCardDetails(details);
+            } else if (newSpace?.type === eSpaceType.COMMUNITY) {
+                const details = await cardService.getByCardId(eCardType.COMMUNITY_CHEST, cardId);
+                if (!details) {
+                    throw new Error(`Unable to find the community chest card with id ${cardId}`);
+                }
+                card = cardService.translateCardDetails(details);
+            }
 
-        // sseService.send (sessionId, player, newPosition, [dice1, dice2], cardId)
-        sseService.notify(sessionId, eEventType.TURN_STARTED, {
-            player,
-            dices: [dice1, dice2],
-            newPosition: newPosition,
-            oldPosition: oldPosition,
-            cardId: cardId,
-            options: options,
-            signature
-        });
+            console.log(`Roll the dices player ${player}: D1:${dice1}, D2:${dice2} => new Position: ${newPosition}`);
+            const options = await this.getAvailableOptions(player, oldPosition, newPosition, assetsContract);
+            let theAsset = assets.get(newPosition);
+            if (!theAsset) {
+                // set a default value to be able to sign the payload
+                theAsset = {
+                    assetId: 0,
+                    assetType: "",
+                    featurePrice: 0,
+                    price: 0,
+                    rentRates: [0]
+                };
+            }
+            const payload = {
+                dice1: dice1,
+                dice2: dice2,
+                newPosition: newPosition,
+                card: card,
+                options: options, // The smart contract will verify that the chose option is in the list
+                asset: theAsset
+            }
+            console.log(`payload: ${JSON.stringify(payload)}`);
+            const keyStore = await tezosService.getAccount(originator);
+            const thingsToSign = await tezosService.packData2(GameContract.payloadFormat, payload);
+            const signature = await tezosService.make_signature(thingsToSign, keyStore.privateKey);
+            game.positions.set(player, newPosition);
+            // const turn = await turnService.create(
+            //     sessionId,
+            //     player,
+            //     oldPosition,
+            //     newPosition,
+            //     [dice1, dice2],
+            //     cardId,
+            //     signature);
+            // game.turns.push(turn.id);
+            await game.save();
+            // and update position in contract ?
 
-        // Le joueur J recoit le payload et la signature
-        // La mise a jour de la position de J dans la DB est detectee par tous les joueurs qui mettent 
-        // a jour le plateau de jeu (nouvelle position de J)
-        // On stocke aussi le(s) cardId dans la DB, ainsi les joueurs peuvent afficher la description de la 
-        // case sur laquelle J est tombé (à partir de sa position et cardId si chance ou cc)
-        
-        // Le joueur J fait son choix (le cas echeant)
-        // puis il envoie la tx Play() au gamecontrat
-        // NOTE: la signature et le payload sont envoyes au GameContract dans la Tx play()
-        // Le contract peut alors verifier la nouvelle position du joueur et sa cardId et executer
-        // le contrat correspondant avec les options choisies
-        return { payload, signature };
+            // sseService.send (sessionId, player, newPosition, [dice1, dice2], cardId)
+            sseService.notify(sessionId, eEventType.TURN_STARTED, {
+                player,
+                dices: [dice1, dice2],
+                newPosition: newPosition,
+                oldPosition: oldPosition,
+                card: card,
+                options: options,
+                asset: assets.get(newPosition),
+                signature
+            });
+
+            // Le joueur J recoit le payload et la signature
+            // La mise a jour de la position de J dans la DB est detectee par tous les joueurs qui mettent 
+            // a jour le plateau de jeu (nouvelle position de J)
+            // On stocke aussi le(s) cardId dans la DB, ainsi les joueurs peuvent afficher la description de la 
+            // case sur laquelle J est tombé (à partir de sa position et cardId si chance ou cc)
+            
+            // Le joueur J fait son choix (le cas echeant)
+            // puis il envoie la tx Play() au gamecontrat
+            // NOTE: la signature et le payload sont envoyes au GameContract dans la Tx play()
+            // Le contract peut alors verifier la nouvelle position du joueur et sa cardId et executer
+            // le contrat correspondant avec les options choisies
+            return { payload, signature };
+        } catch (err) {
+            this.currentPlayer.set(sessionId, undefined);
+            throw err;
+        }
     }
 
     async played(sessionId: string, player: string, payload: any, signature: string) {
@@ -419,8 +390,8 @@ class GameService {
         if (!gameContract) {
             throw new Error('Unable to retrieve GameContract from address ' + game.contractAddresses.game);
         }
-        if (this.currentPlayer.get(sessionId) !== player) {
-            throw new Error(`Player ${player} is not allowed to play now (expected player: ${this.currentPlayer.get(sessionId)})`);
+        if (this.currentPlayer.get(sessionId)?.player !== player) {
+            throw new Error(`Player ${player} is not allowed to play now (expected player: ${this.currentPlayer.get(sessionId)?.player})`);
         }
         if (gameContract.storage?.nextPlayer === player) {
             // in case the 'play' transaction failed, we need to update playerPosition and nextPlayer in game contract to allow the game to continue
@@ -432,7 +403,7 @@ class GameService {
                 throw new Error(`[ERROR] force_next_player request failed with error: ${err}`);
             });
             console.log('returns from force_next_player call:' + txOper.txHash);
-            txOper.onConfirmed.then((blockId) => {
+            await txOper.onConfirmed.then((blockId) => {
                 console.log('Tx confirmed', txOper.txHash, blockId);
                 console.log(`force_next_player request succeed`);
             }).catch(err => {
@@ -443,7 +414,7 @@ class GameService {
         return {};
     }
 
-    async getAvailableOptions(player: string, oldPosition: number, newPosition: number): Promise<ePlayOption[]> {
+    async getAvailableOptions(player: string, oldPosition: number, newPosition: number, assetsContract: AssetsContract): Promise<ePlayOption[]> {
         const spaceDetails = await spaceService.getBySpaceId(newPosition);
         if (spaceDetails === null) {
             throw new Error(`Unable to compute options for space with id ${newPosition}`);
@@ -476,8 +447,20 @@ class GameService {
                 // already owned and same player -> options.push(ePlayOption.NOTHING);
                 // already owned and different player -> options.push(ePlayOption.BUY_PRODUCT);
                 // not already owned
-                options.push(ePlayOption.STARTUP_FOUND);
-                options.push(ePlayOption.NOTHING);
+                await assetsContract.update();
+                const ownership = assetsContract.storage?.ownership;
+                if (ownership && ownership.has(newPosition.toString())) {
+                    if (ownership.get(newPosition.toString()) !== player) {
+                        // already owned and different player
+                        options.push(ePlayOption.BUY_PRODUCT);
+                    } else {
+                        // already owned and same player
+                        options.push(ePlayOption.NOTHING);
+                    }
+                } else {
+                    options.push(ePlayOption.STARTUP_FOUND);
+                    options.push(ePlayOption.NOTHING);
+                }
                 break;
             }
         }

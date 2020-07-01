@@ -43,7 +43,8 @@
                             </ul>
                         </h4> -->
                             <div *ngIf="showOptions.length > 0 && showOptions.includes('CHANCE') && showCardId !== -1">
-                                <h4>This is your Chance Card: {{chances.get(showCardId)}}</h4>
+                                <h4>This is your Chance Card: {{showCardId}}</h4>
+                                <h4>{{getChanceText(showCardId)}}</h4>
                             </div>
                             <div *ngIf="showOptions.length > 0 && showOptions.includes('COMMUNITY_CHEST') && showCardId !== -1">
                                 <h4>This is your Community Chest Card: {{community_chests.get(showCardId)}}</h4>

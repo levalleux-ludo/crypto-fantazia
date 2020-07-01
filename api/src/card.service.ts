@@ -80,6 +80,33 @@ class CardService {
         }
     }
 
+    translateCardDetails(cardDetail: ICardDetails): {id: number, type: string, param: number} {
+        let param;
+        switch(cardDetail.impl) {
+            case 'move_n_spaces': {
+                param = parseInt(cardDetail.properties.get('nb') as string);
+                break;
+            }
+            case 'go_to_space': {
+                param = parseInt(cardDetail.properties.get('space') as string);
+                break;
+            }
+            case 'receive_amount':
+            case 'pay_amount':
+            case 'pay_amount_per_company':
+            case 'pay_amount_per_mining_farm':
+            case 'pay_amount_per_bakery': {
+                param = parseInt(cardDetail.properties.get('amount') as string);
+                break;
+            }
+            default: {
+                param = 0;
+                break;
+            }
+        }
+        return {id: cardDetail.cardId, type: cardDetail.impl, param: param};
+    }
+
 }
 
 export const cardService = new CardService();

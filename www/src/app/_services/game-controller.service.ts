@@ -4,7 +4,7 @@ import { ApiService } from './api.service';
 import { AlertService } from './alert.service';
 import { TezosService } from './tezos.service';
 import { WaiterService } from './waiter.service';
-import { KeyStore } from '../../tezos/node_modules/conseiljs/dist';
+import { KeyStore } from '../../../../tezos/node_modules/conseiljs/dist';
 
 @Injectable({
   providedIn: 'root'
@@ -104,6 +104,7 @@ export class GameControllerService {
     return new Promise<any>((resolve, reject) => {
       const sessionId = this.gameService.game.sessionId;
       const player = this.tezosService.account.account_id;
+      this.gameService.currentPlayer = this.tezosService.account.account_id;
       this.waiterTask = this.waiterService.addTask();
       this.apiService.get<any>(`game/${sessionId}/rollDices/${player}`).subscribe(async (rollResult) => {
         console.log(`Roll Results: payload:${JSON.stringify(rollResult.payload)}, signature:${rollResult.signature}`)
@@ -131,8 +132,8 @@ export class GameControllerService {
       if (lastTurn && this.gameService.iAmPlaying()) {
         this.rollDicesResult = {
           payload: {
-            assetId: lastTurn.newPosition,
-            cardId: lastTurn.cardId,
+            asset: lastTurn.asset,
+            card: lastTurn.card,
             dice1: lastTurn.dices[0],
             dice2: lastTurn.dices[1],
             newPosition: lastTurn.newPosition,
@@ -182,6 +183,7 @@ export class GameControllerService {
         this.gameService.showAlert(`Play submitted successfully (txHash:${txHash}, blockId:${blockId})`);
         this.gameService.updateFromGameContract();
         this.rollDicesResult = undefined;
+        this.gameService.currentPlayer = undefined;
       },
       () => {
         this.waiterTask = this.waiterService.addTask();
@@ -193,10 +195,12 @@ export class GameControllerService {
         this.apiService.post<any>(`game/${sessionId}/played`, body).subscribe((res) => {
           this.waiterService.removeTask(this.waiterTask);
           this.waiterTask = undefined;
+          this.gameService.currentPlayer = undefined;
         }, err => {
           this.gameService.alertError(err);
           this.waiterService.removeTask(this.waiterTask);
           this.waiterTask = undefined;
+          this.gameService.currentPlayer = undefined;
         });
       }
     );

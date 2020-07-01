@@ -69,5 +69,8 @@ function played(req: express.Request, res: express.Response, next: express.NextF
 function rollDices(req: express.Request, res: express.Response, next: express.NextFunction) {
     gameService.rollDices(req.params.sessionId, req.params.player).then((result) => {
         res.json( result );
-    }).catch(err => next(err));
+    }).catch(err => {
+        console.error(JSON.stringify(err));
+        next(err);
+    });
 }

@@ -19,7 +19,7 @@ export class CarouselComponent implements AfterViewInit, OnInit, AfterContentIni
 
   carouselWrapperStyle = {};
   @ViewChild('carousel') private carousel: ElementRef;
-  @Input() timing = '100ms ease-in-out';
+  @Input() timing = '400ms ease-in-out';
   @Input() showControls = true;
   @Input() containerWidth = 800;
   @Input() containerHeight = 300;

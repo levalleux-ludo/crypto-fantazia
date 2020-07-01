@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { tezosService, IdentityData } from '../../tezos/src/tezos.service';
+import { tezosService, IdentityData } from '../../../../tezos/src/tezos.service';
 import { KeyStore } from 'conseiljs';
 import { eLocalStorageDataKey } from 'src/constants';
 import { WaiterService } from './waiter.service';

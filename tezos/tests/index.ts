@@ -215,17 +215,45 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
         console.log('signature', signature);
     })
     const theAsset = {
-        assetId: 5,
-        assetType: "STARTUP",
+        assetId: 0,
+        assetType: "",
         featurePrice: 50,
         price: 150,
-        rentRates: [13, 60, 100, 200, 300]
+        rentRates: [0]
     }
-    const payload3 = {asset: theAsset, card: { param: allChances[4].param, type: allChances[4].type},dice1:6,dice2:6,newPosition:9,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
+    const payload3 = {
+        asset: theAsset,
+        card: {
+            id: 4,
+            param: allChances[4].param,
+            type: allChances[4].type
+        },
+        dice1:6,
+        dice2:6,
+        newPosition:9,
+        options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
 
+    // const payload3 = {
+    //     asset: {
+    //         assetId: 0,
+    //         assetType: "none",
+    //         featurePrice: 0,
+    //         price: 0,
+    //         rentRates: [0,0,0,0,0]
+    //     },
+    //     card: {
+    //         id: 0,
+    //         param: 0,
+    //         type: "none"
+    //     },
+    //     dice1:2,
+    //     dice2:4,
+    //     newPosition:11,
+    //     options:["NOTHING"]};
+    
     const values = tezosService.recursiveGetFieldsValues(payload3);
 
-    tezosService.packData2(GameContract.payloadFormat, payload3)
+    await tezosService.packData2(GameContract.payloadFormat, payload3)
     .then((thingsToSign3) => {
         tezosService.make_signature(thingsToSign3, keyStore.privateKey).then(signature => {
             console.log('payload', JSON.stringify(payload3));
@@ -466,7 +494,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
 
                 const oldPosition = await getPlayerPosition(gameContract, nextPlayerKeyStore.publicKeyHash);
 
-                const payload3 = {asset: theAsset, card: { param: allChances[0].param, type: allChances[0].type}, dice1:1, dice2:2, newPosition: oldPosition + 3, options:["NOTHING"]};
+                const payload3 = {asset: theAsset, card: { id: 0, param: allChances[0].param, type: allChances[0].type}, dice1:1, dice2:2, newPosition: oldPosition + 3, options:["NOTHING"]};
             
                 const values = tezosService.recursiveGetFieldsValues(payload3);
                 const thingsToSign3 = await tezosService.packData2(GameContract.payloadFormat, payload3).catch(err => {
@@ -495,7 +523,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
 
                     const oldPosition = await getPlayerPosition(gameContract, nextPlayerKeyStore.publicKeyHash);
 
-                    const payload3 = {asset: theAsset, card:{ param: allChances[chanceId].param, type: allChances[chanceId].type}, dice1:1, dice2:2, newPosition:oldPosition + 3, options:["CHANCE"]};
+                    const payload3 = {asset: theAsset, card:{id: chanceId, param: allChances[chanceId].param, type: allChances[chanceId].type}, dice1:1, dice2:2, newPosition:oldPosition + 3, options:["CHANCE"]};
                 
                     const values = tezosService.recursiveGetFieldsValues(payload3);
                     const thingsToSign3 = await tezosService.packData2(GameContract.payloadFormat, payload3).catch(err => {
@@ -524,7 +552,7 @@ tezosService.initAccount(originator).then(async ({keyStore, secret}) => {
 
                 const oldPosition = await getPlayerPosition(gameContract, nextPlayerKeyStore.publicKeyHash);
 
-                const payload3 = {asset: theAsset, card:{ param: allChances[4].param, type: allChances[4].type},dice1:1,dice2:2,newPosition:oldPosition + 3,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
+                const payload3 = {asset: theAsset, card:{id: 4, param: allChances[4].param, type: allChances[4].type},dice1:1,dice2:2,newPosition:oldPosition + 3,options:["NOTHING", "STARTUP_FOUND", "GENESIS"]};
             
                 const values = tezosService.recursiveGetFieldsValues(payload3);
                 const thingsToSign3 = await tezosService.packData2(GameContract.payloadFormat, payload3).catch(err => {

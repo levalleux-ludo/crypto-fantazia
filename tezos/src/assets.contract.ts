@@ -12,7 +12,7 @@ export interface AssetsContractStorage {
     gameContract: string;
     tokenContract: string;
     assets: MichelsonMap<number, any>;
-    ownership: MichelsonMap<number, string>;
+    ownership: MichelsonMap<string, string>; // should be <number, string>, but strangely keys are string (?)
     portfolio: MichelsonMap<string, BigNumber[]>;
     features: MichelsonMap<number, string>;
     debug: number;
@@ -134,6 +134,7 @@ export class AssetsContract extends AbstractContract<AssetsContractStorage> {
         payload.asset.featurePrice,
         payload.asset.price,
         payload.asset.rentRates,
+        payload.card.id,
         payload.card.param,
         payload.card.type,
         payload.dice1,
@@ -141,6 +142,14 @@ export class AssetsContract extends AbstractContract<AssetsContractStorage> {
         payload.newPosition,
         payload.options,
         signature);
+  }
+
+  getPortfolio(player: string): number[] | undefined {
+    const portfolio = this.storage?.portfolio.get(player);
+    if (!portfolio) {
+        return undefined;
+    }
+    return portfolio.map(bn => bn.toNumber());
   }
 
 

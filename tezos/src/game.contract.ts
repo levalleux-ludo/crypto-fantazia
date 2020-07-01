@@ -9,6 +9,7 @@ import { sign } from "crypto";
 import { TransactionOperation } from "@taquito/taquito/dist/types/operations/transaction-operation";
 import { AssetsContract } from "./assets.contract";
 import { MichelsonV1Expression } from '@taquito/rpc';
+import { BigNumber } from "bignumber.js";
 
 export interface GameContractStorage {
     admin: string;
@@ -21,8 +22,8 @@ export interface GameContractStorage {
     nextPlayer: string;
     nextPlayerIdx: number;
     immunized: string[];
-    nbSpaces: number
-    playerPositions: MichelsonMap<string, number>;
+    nbSpaces: number,
+    playerPositions: MichelsonMap<string, BigNumber>;
     quarantineSpaceId: number;
     lapIncome: number;
     nbLaps: number;
@@ -75,8 +76,14 @@ export class GameContract extends AbstractContract<GameContractStorage> {
                   },
                   {
                       "prim": "pair",
-                      "args": [
-                          { "prim": "pair", "args": [{ "prim": "int", "annots": ["%param"] }, { "prim": "string", "annots": ["%type"] }], "annots": ["%card"] },
+                      "args": [{
+                              "prim": "pair",
+                              "args": [
+                                  { "prim": "nat", "annots": ["%id"] },
+                                  { "prim": "pair", "args": [{ "prim": "int", "annots": ["%param"] }, { "prim": "string", "annots": ["%type"] }] }
+                              ],
+                              "annots": ["%card"]
+                          },
                           { "prim": "int", "annots": ["%dice1"] }
                       ]
                   }
@@ -93,7 +100,7 @@ export class GameContract extends AbstractContract<GameContractStorage> {
               ]
           }
       ]
-    };
+  };
     protected static getInitialStorage(originator: KeyStore, creator: string) {
       return {
         "prim": "Pair",
@@ -131,7 +138,7 @@ export class GameContract extends AbstractContract<GameContractStorage> {
                 "prim": "Pair",
                 "args": [
                   { "prim": "Pair", "args": [ [], [] ] },
-                  { "prim": "Pair", "args": [ { "int": "12" }, { "prim": "Pair", "args": [ { "string": "created" }, { "string": originator.publicKeyHash } ] } ] }
+                  { "prim": "Pair", "args": [ { "int": "11" }, { "prim": "Pair", "args": [ { "string": "created" }, { "string": originator.publicKeyHash } ] } ] }
                 ]
               }
             ]
@@ -276,6 +283,7 @@ export class GameContract extends AbstractContract<GameContractStorage> {
           payload.asset.featurePrice,
           payload.asset.price,
           payload.asset.rentRates,
+          payload.card.id,
           payload.card.param,
           payload.card.type,
           payload.dice1,
