@@ -18,5 +18,8 @@
         "docker:aws:push:api": "docker tag local/cryptofanta/backend:latest 486699961018.dkr.ecr.eu-west-2.amazonaws.com/cryptofanta-backend:latest && docker push 486699961018.dkr.ecr.eu-west-2.amazonaws.com/cryptofanta-backend:latest"
     },
     "author": "",
-    "license": "ISC"
+    "license": "ISC",
+    "engines": {
+        "node": "12.x"
+    }
 }
