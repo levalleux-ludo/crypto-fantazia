@@ -12,7 +12,7 @@ call ng build --prod
 cd /D "%OLD_DIR%"
 
 :deploy
-pscp -r -i "%~dp0\env\cryptoFanta-heficed_cryptof.ppk" "%~dp0\www\dist" cryptof@%HOST%:crypto-fantazia/www/
+pscp -scp -r -i "%~dp0\env\cryptoFanta-heficed_cryptof.ppk" "%~dp0\www\dist" cryptof@%HOST%:crypto-fantazia/www/
 
 :launch
 plink -no-antispoof -ssh -i "%~dp0\env\cryptoFanta-heficed_cryptof.ppk" cryptof@%HOST% "killall lite-server"

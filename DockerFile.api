@@ -1,5 +1,15 @@
-FROM node:lts-alpine
-RUN apk add --update git
+FROM node:12.18.2-alpine3.12
+
+# Install updates
+RUN apk upgrade --no-cache && \
+    apk add --no-cache git python2 make g++ bash
+# install dependencies for node-hid
+RUN apk add --no-cache linux-headers eudev-dev libusb-dev
+
+#RUN apt-get install libusb-1.0-0-dev
+#RUN npm cache clean -f
+#RUN npm install -g n
+#RUN n 12.16.1
 
 ENV USER=cryptofanta
 ENV UID=12345
@@ -13,6 +23,10 @@ USER cryptofanta
 WORKDIR /home/cryptofanta
 RUN ls -al 
 COPY --chown=cryptofanta . .
+#COPY --chown=cryptofanta ./.git ./original
+#RUN git clone -l original clone
+#WORKDIR clone
+RUN npm run install-api
 
 ENV TEZOS_ACCOUNTS_DIR /home/cryptofanta/tezos/accounts
-CMD env && npm install -y && npm run start-api
+CMD npm run start-api
