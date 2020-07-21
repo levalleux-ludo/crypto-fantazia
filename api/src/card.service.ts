@@ -3,6 +3,7 @@ import { Chance, dropChances, dropCCs, CommunityChest, ICardDetails } from "./db
 import { GameConfig } from "./game.service";
 import chances from './chances.json';
 import communitychests from './community-chests.json';
+import logger from "./logger.service";
 
 export enum eCardType {
     CHANCE = 'CHANCE',
@@ -25,7 +26,7 @@ class CardService {
                     });
                     await c.save();
                 }
-            }).catch((err) => console.error(err));
+            }).catch((err) => logger.error(err));
             dropCCs().then(async () => {
                 let cardId = 0;
                 for (let card of communitychests["community-chests"]) {
@@ -38,7 +39,7 @@ class CardService {
                     });
                     await c.save();
                 }
-            }).catch((err) => console.error(err));
+            }).catch((err) => logger.error(err));
         });
     }
 

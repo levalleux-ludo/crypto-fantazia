@@ -15,6 +15,7 @@ import { spaceService } from './space.service';
 import { eSpaceType } from './db/space.model';
 import { cardService, eCardType } from './card.service';
 import { isString } from 'util';
+import logger from './logger.service';
 
 export const GameConfig = {
     nbSpaces: 24,
@@ -39,7 +40,7 @@ class GameService {
         return new Promise(async (resolve, reject) => {
             try {
                 const sessionId = uuid();
-                console.log('Create game session with Id', sessionId);
+                logger.log('Create game session with Id', sessionId);
                 const keyStore = await tezosService.getAccount(originator);
                 const game = new Game({
                     sessionId: sessionId,
@@ -79,14 +80,14 @@ class GameService {
 
             const gameContract = await GameContract.deploy(keyStore, creator);
             // store gameContract.address for session
-            console.log(`Game Contract created at ${gameContract.address} for sessionId ${sessionId}`);
+            logger.log(`Game Contract created at ${gameContract.address} for sessionId ${sessionId}`);
             game.contractAddresses.game = gameContract.address;
             await game.save();
             sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${gameContract.address}. Creating still in progress...`);
 
             const tokenContract = await TokenContract.deploy(keyStore, gameContract.address);
             // store tokenContract.address for session
-            console.log(`Token Contract created at ${tokenContract.address} for sessionId ${sessionId}`);
+            logger.log(`Token Contract created at ${tokenContract.address} for sessionId ${sessionId}`);
             game.contractAddresses.token = tokenContract.address;
             await game.save();
             sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${tokenContract.address}. Creating still in progress...`);
@@ -98,7 +99,7 @@ class GameService {
                 tokenContract.address
             );
             // store assetsContract.address for session
-            console.log(`Assets Contract created at ${assetsContract.address} for sessionId ${sessionId}`);
+            logger.log(`Assets Contract created at ${assetsContract.address} for sessionId ${sessionId}`);
             game.contractAddresses.assets = assetsContract.address;
             await game.save();
             sseService.notify(sessionId, eEventType.GAME_CREATION, `Contract #${++numContract}/${nbContracts} deployed at ${assetsContract.address}. Creating still in progress...`);
@@ -110,7 +111,7 @@ class GameService {
             };
 
         } catch(err) {
-            // console.error(err);
+            // logger.error(err);
             this.deleteGame(sessionId);
             throw err;
         }
@@ -119,14 +120,14 @@ class GameService {
 
     async deleteGame(sessionId: string) {
         await Game.remove({sessionId: sessionId});
-        console.log(`Game with sessionId ${sessionId} has been deleted`);
+        logger.log(`Game with sessionId ${sessionId} has been deleted`);
     }
 
     checkGameIsCreated(game: IGame) {
         if (game.contractAddresses.game
             && game.contractAddresses.token)
         {
-            console.log(`Game with sessionId ${game.sessionId} is now created`)
+            logger.log(`Game with sessionId ${game.sessionId} is now created`)
             game.status = 'created';
         }
     }
@@ -163,22 +164,22 @@ class GameService {
         const keyStore = await tezosService.getAccount(originator);
         const gameContract = await GameContract.retrieve(game.contractAddresses.game);
         // const opResult = await gameContract.start(keyStore, game.contractAddresses.token, 1500);
-        // console.log(`START GAME requested: txHash:${opResult.txHash} ...`);
+        // logger.log(`START GAME requested: txHash:${opResult.txHash} ...`);
         // opResult.onConfirmed.then((blockId) => {
         const txOper = await gameContract.start(
             keyStore,
             game.contractAddresses.token,
             game.contractAddresses.assets,
             1500).catch(err => {
-            console.error(`Error during start call: ${err.id}, ${err.message}`);
+            logger.error(`Error during start call: ${err.id}, ${err.message}`);
             throw new Error(`[ERROR] START GAME request failed with error: ${err}`);
         });
-        console.log('returns from start call:' + txOper.txHash);
+        logger.log('returns from start call:' + txOper.txHash);
         txOper.onConfirmed.then((blockId) => {
-            console.log('Tx confirmed', txOper.txHash, blockId);
-            console.log(`START GAME request succeed`);
+            logger.log('Tx confirmed', txOper.txHash, blockId);
+            logger.log(`START GAME request succeed`);
         }).catch(err => {
-            console.log(`[ERROR] START GAME request failed with error: ${err}`);
+            logger.log(`[ERROR] START GAME request failed with error: ${err}`);
             throw new Error(`[ERROR] START GAME request failed with error: ${err}`);
         });
         game.status = 'started';
@@ -201,18 +202,18 @@ class GameService {
         const keyStore = await tezosService.getAccount(originator);
         const gameContract = await GameContract.retrieve(game.contractAddresses.game);
         // const opResult = await gameContract.start(keyStore, game.contractAddresses.token, 1500);
-        // console.log(`START GAME requested: txHash:${opResult.txHash} ...`);
+        // logger.log(`START GAME requested: txHash:${opResult.txHash} ...`);
         // opResult.onConfirmed.then((blockId) => {
         const txOper = await gameContract.reset(keyStore).catch(err => {
-            console.error(`Error during reset call: ${err.id}, ${err.message}`);
+            logger.error(`Error during reset call: ${err.id}, ${err.message}`);
             throw new Error(`[ERROR] RESET GAME request failed with error: ${err}`);
         });
-        console.log('returns from reset call:' + txOper.txHash);
+        logger.log('returns from reset call:' + txOper.txHash);
         txOper.onConfirmed.then((blockId) => {
-            console.log('Tx confirmed', txOper.txHash, blockId);
-            console.log(`RESET GAME request succeed`);
+            logger.log('Tx confirmed', txOper.txHash, blockId);
+            logger.log(`RESET GAME request succeed`);
         }).catch(err => {
-            console.log(`[ERROR] RESET GAME request failed with error: ${err}`);
+            logger.log(`[ERROR] RESET GAME request failed with error: ${err}`);
             throw new Error(`[ERROR] RESET GAME request failed with error: ${err}`);
         });
         game.status = 'created';
@@ -253,7 +254,7 @@ class GameService {
         let oldPosition = game.positions.get(player) as any;
         // check oldPosition is the same is GameContract and in DB
         if ((gameContract.storage.playerPositions.get(player) as unknown as BigNumber).toNumber() !== oldPosition) {
-            console.warn(`Not consistent position for player ${player}: position in DB: ${oldPosition}, position in smart contract: ${gameContract.storage.playerPositions.get(player)}`);
+            logger.warn(`Not consistent position for player ${player}: position in DB: ${oldPosition}, position in smart contract: ${gameContract.storage.playerPositions.get(player)}`);
             oldPosition = (gameContract.storage.playerPositions.get(player) as unknown as BigNumber).toNumber();
             game.positions.set(player, oldPosition);
         }
@@ -304,7 +305,7 @@ class GameService {
                 card = cardService.translateCardDetails(details);
             }
 
-            console.log(`Roll the dices player ${player}: D1:${dice1}, D2:${dice2} => new Position: ${newPosition}`);
+            logger.log(`Roll the dices player ${player}: D1:${dice1}, D2:${dice2} => new Position: ${newPosition}`);
             const options = await this.getAvailableOptions(player, oldPosition, newPosition, assetsContract);
             let theAsset = assets.get(newPosition);
             if (!theAsset) {
@@ -325,7 +326,7 @@ class GameService {
                 options: options, // The smart contract will verify that the chose option is in the list
                 asset: theAsset
             }
-            console.log(`payload: ${JSON.stringify(payload)}`);
+            logger.log(`payload: ${JSON.stringify(payload)}`);
             const keyStore = await tezosService.getAccount(originator);
             const thingsToSign = await tezosService.packData2(GameContract.payloadFormat, payload);
             const signature = await tezosService.make_signature(thingsToSign, keyStore.privateKey);
@@ -395,19 +396,19 @@ class GameService {
         }
         if (gameContract.storage?.nextPlayer === player) {
             // in case the 'play' transaction failed, we need to update playerPosition and nextPlayer in game contract to allow the game to continue
-            console.log("I need to call contract to restore consistent player position");
+            logger.log("I need to call contract to restore consistent player position");
             const keyStore = await tezosService.getAccount(originator);
 
             const txOper = await gameContract.force_next_player(keyStore, player, payload.newPosition).catch(err => {
-                console.error(`Error during force_next_player call: ${err.id}, ${err.message}`);
+                logger.error(`Error during force_next_player call: ${err.id}, ${err.message}`);
                 throw new Error(`[ERROR] force_next_player request failed with error: ${err}`);
             });
-            console.log('returns from force_next_player call:' + txOper.txHash);
+            logger.log('returns from force_next_player call:' + txOper.txHash);
             await txOper.onConfirmed.then((blockId) => {
-                console.log('Tx confirmed', txOper.txHash, blockId);
-                console.log(`force_next_player request succeed`);
+                logger.log('Tx confirmed', txOper.txHash, blockId);
+                logger.log(`force_next_player request succeed`);
             }).catch(err => {
-                console.log(`[ERROR] force_next_player request failed with error: ${err}`);
+                logger.log(`[ERROR] force_next_player request failed with error: ${err}`);
                 throw new Error(`[ERROR] force_next_player request failed with error: ${err}`);
             });
         }

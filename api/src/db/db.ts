@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import config from '../config.json';
 import { EventEmitter } from 'events';
+import logger from '../logger.service';
 
 let isConnected = false;
 
@@ -14,27 +15,27 @@ export const connect = () => {
 
     mongoose.connection
         .on('connecting', function() {
-            console.log('connecting to MongoDB...');
+            logger.log('connecting to MongoDB...');
         }).on('error', function(error) {
             if (isConnected) {
-                console.error('Error in MongoDb connection: ' + error);
+                logger.error('Error in MongoDb connection: ' + error);
             }
             isConnected = false;
             mongoose.disconnect();
         }).on('connected', function() {
-            console.log('MongoDB connected!');
+            logger.log('MongoDB connected!');
             isConnected = true;
             dbEvents.emit('connected');
         }).once('open', function() {
-            console.log('MongoDB connection opened!');
+            logger.log('MongoDB connection opened!');
             isConnected = true;
         }).on('reconnected', function() {
-            console.log('MongoDB reconnected!');
+            logger.log('MongoDB reconnected!');
             isConnected = true;
             dbEvents.emit('connected');
         }).on('disconnected', function() {
-            console.log('MongoDB disconnected!');
-            console.log(getStatus());
+            logger.log('MongoDB disconnected!');
+            logger.log(getStatus());
             isConnected = false;
             dbEvents.emit('disconnected');
             mongoose.connect(dbURI, dbOptions);
@@ -58,10 +59,10 @@ export async function dropCollectionIfExist(collectionName: string): Promise<voi
             if (collInfo) {
                 await mongoose.connection.db.dropCollection(collectionName, (err, result) => {
                     if (err) {
-                        console.error(`Error while dropping collection ${collectionName}:${err}`);
+                        logger.error(`Error while dropping collection ${collectionName}:${err}`);
                         reject(err);
                     } else {
-                        console.log(`Collection ${collectionName} successfully dropped`);
+                        logger.log(`Collection ${collectionName} successfully dropped`);
                         resolve();
                     }
                 });   

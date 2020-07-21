@@ -1,5 +1,6 @@
 import express from 'express';
 import { gameService } from './game.service';
+import logger from './logger.service';
 
 export const router = express.Router();
 
@@ -70,7 +71,7 @@ function rollDices(req: express.Request, res: express.Response, next: express.Ne
     gameService.rollDices(req.params.sessionId, req.params.player).then((result) => {
         res.json( result );
     }).catch(err => {
-        console.error(JSON.stringify(err));
+        logger.error(JSON.stringify(err));
         next(err);
     });
 }

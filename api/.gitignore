@@ -1,5 +1,6 @@
 build
 node_modules
+logs
 env/*
 !env/.put-here-env-files-with-credentials
 !env/*.bat

@@ -4,6 +4,7 @@ import { GameConfig } from "./game.service";
 import startups from './startups.json';
 import playground from './playground.json';
 import { start } from "repl";
+import logger from "./logger.service";
 
 class SpaceService {
     constructor() {
@@ -38,7 +39,7 @@ class SpaceService {
                 for (let space of playground.spaces) {
                     const spaceParams: any = {};
                     spaceParams.spaceId = spaceId++;
-                    console.log('Create space of type', space.type);
+                    logger.log('Create space of type', space.type);
                     spaceParams.type = space.type;
                     switch (spaceParams.type) {
                         case eSpaceType.GENESIS: {
@@ -108,7 +109,7 @@ class SpaceService {
                     const s = new Space(spaceParams);
                     await s.save();
                 }
-            }).catch((err) => console.error(err));
+            }).catch((err) => logger.error(err));
         });
     }
 

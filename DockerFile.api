@@ -15,4 +15,5 @@ RUN ls -al
 COPY --chown=cryptofanta . .
 
 ENV TEZOS_ACCOUNTS_DIR /home/cryptofanta/tezos/accounts
+ENV NODE_ENV production
 CMD env && npm install -y && npm run start-api
