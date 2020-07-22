@@ -1,7 +1,8 @@
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { ApiUrlService } from './api-url.service';
 
 @Injectable({
   providedIn: 'root'
@@ -17,8 +18,27 @@ export class ApiService {
 
   constructor(
     protected http: HttpClient,
-    protected zone: NgZone
-    ) { }
+    protected zone: NgZone,
+    protected apiUrlService: ApiUrlService
+    ) {
+      this.apiUrlService.apiUrl.subscribe((url) => {
+        if (url) {
+          this.test(url).subscribe(() => {
+            console.log('Set API URL: ', url);
+            this.hostApiUrl = url;
+            this.ready.next(true);
+          }, err => {
+            console.error('Bad url: ' + url);
+          });
+        }
+      });
+    }
+
+  ready: BehaviorSubject<boolean> = new BehaviorSubject(false);
+
+  test(apiUrl: string): Observable<any> {
+    return this.http.get(apiUrl, {responseType: 'text'});
+  }
 
   get<T>(apiUrl: string): Observable<T> {
     const url = `${this.hostApiUrl}/${apiUrl}`;

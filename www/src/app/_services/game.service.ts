@@ -3,7 +3,7 @@ import { ApiService } from './api.service';
 import { Observable, interval, Subject } from 'rxjs';
 import { GameContract } from '../../../../tezos/src/game.contract';
 import { TokenContract } from '../../../../tezos/src/token.contract';
-import { IGame } from '../../../../api/src/db/game.model';
+import { Game as IGame } from '../../../../common/model/game';
 import { ConnectionService } from './connection.service';
 import { AbstractContract } from '../../../../tezos/src/abstract.contract';
 import { AlertService } from './alert.service';

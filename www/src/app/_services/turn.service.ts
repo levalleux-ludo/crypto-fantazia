@@ -24,18 +24,22 @@ export class TurnService {
     private apiService: ApiService
   ) {
 
-    this.spaceService.getSpaces().then((spaces) => {
-      this.spaces = spaces.sort((a, b) => a.spaceId - b.spaceId);
+    this.apiService.ready.subscribe((ready) => {
+      if (ready) {
+
+        this.spaceService.getSpaces().then((spaces) => {
+          this.spaces = spaces.sort((a, b) => a.spaceId - b.spaceId);
+        });
+
+        this.apiService.get<any[]>('card/chance').subscribe((cards: any[]) => {
+          this.chances = cards.sort((a, b) => a.cardId - b.cardId);
+        }, err => alertService.error(err));
+
+        this.apiService.get<any[]>('card/cc').subscribe((cards: any[]) => {
+          this.community_chests = cards.sort((a, b) => a.cardId - b.cardId);
+        }, err => alertService.error(err));
+      }
     });
-
-    this.apiService.get<any[]>('card/chance').subscribe((cards: any[]) => {
-      this.chances = cards.sort((a, b) => a.cardId - b.cardId);
-    }, err => alertService.error(err));
-
-    this.apiService.get<any[]>('card/cc').subscribe((cards: any[]) => {
-      this.community_chests = cards.sort((a, b) => a.cardId - b.cardId);
-    }, err => alertService.error(err));
-
     this.gameService.onPlayerMove.subscribe(({player, newPosition, oldPosition}) => {
       if (player === tezosService.account.account_id) {
         const space = this.spaces[newPosition];
