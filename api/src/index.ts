@@ -26,10 +26,10 @@ app.get( "/", ( req: express.Request, res: express.Response ) => {
     logger.log('GET', req.body);
     // res.send( { "message": "Hello world 2!" } );
     logger.getAll().then((logs) => {
-        logs =  replaceAll(logs.toString('utf-8'), '}' + os.EOL + '{', '},{' );
-        logs = '{"messages":[' + logs  + ']}';
+        // logs =  replaceAll(logs.toString('utf-8'), '}' + os.EOL + '{', '},{' );
+        // logs = '{"messages":[' + logs  + ']}';
         const obj = JSON.parse(logs);
-        const messages = obj.messages.reverse();
+        const messages = obj.reverse();
         const html_rows = messages.map((element: any) => `<tr><td>${element.timestamp}</td><td>${element.level}</td><td>${element.message}</td></tr>`).join('');
         res.send(`<html><body><h1>Logs</h1><table><thead>
         <th style="width: 200px;">TimeStamp</th>

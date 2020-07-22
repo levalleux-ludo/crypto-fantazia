@@ -2,6 +2,7 @@
     "name": "crypto-fantasia",
     "version": "0.0.0",
     "scripts": {
+        "preinstall": "cd ../tezos && npm install && cd ../www",
         "ng": "ng",
         "start": "ng serve",
         "start:prod": "lite-server",

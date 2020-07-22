@@ -1,0 +1,73 @@
+# Stage 0, "build-stage", based on Node.js, to build and compile Angular
+FROM node:12.18.2-alpine3.12 as build
+
+# Install updates
+RUN apk upgrade --no-cache && \
+    apk add --no-cache git python2 make g++ bash
+# install dependencies for node-hid
+RUN apk add --no-cache linux-headers eudev-dev libusb-dev
+
+# set working directory
+WORKDIR /app
+
+# add `/app/node_modules/.bin` to $PATH
+ENV PATH /app/node_modules/.bin:$PATH
+
+RUN npm config set registry http://host.docker.internal:8081/repository/npm-group/
+RUN npm config set cache-min 86400
+RUN npm config set fetch-retries 3
+RUN npm config set fetch-retry-maxtimeout 90000
+RUN npm config set fetch-retry-mintimeout 15000
+RUN npm config set loglevel "warn"
+RUN npm config set timeout "60000"
+RUN npm config set strict-ssl false
+RUN npm config list
+
+RUN npm install -g @angular/cli@9.0.7
+
+
+# install and cache app dependencies
+RUN mkdir -p /app/tezos && mkdir -p /app/www
+WORKDIR /app/tezos
+COPY tezos/package.json .
+RUN npm install
+WORKDIR /app/www
+COPY www/package.json .
+RUN npm install
+# WORKDIR /app
+# COPY package.json .
+# RUN npm run install-www
+
+# add app
+COPY ./tezos /app/tezos
+COPY ./common /app/common
+COPY ./www /app/www
+
+# run tests
+
+# generate build
+WORKDIR /app/www
+RUN ng build --output-path=dist --prod
+
+############
+### prod ###
+############
+
+# Stage 1, based on Nginx, to have only the compiled app, ready for production with Nginx
+FROM nginx:stable-alpine
+
+## Remove default Nginx website
+RUN rm -rf /usr/share/nginx/html/*
+
+# copy artifact build from the 'build environment'
+COPY --from=build /app/www/dist /usr/share/nginx/html
+
+# a custom NGINX configuration is needed in our setup to ensure that the built-in Angular routing module can be activated
+COPY ./.docker/nginx.conf /etc/nginx/conf.d/default.conf
+
+# expose port 80
+EXPOSE 80
+
+# run nginx
+CMD ["nginx", "-g", "daemon off;"]
+

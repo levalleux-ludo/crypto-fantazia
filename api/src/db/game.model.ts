@@ -1,21 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import { Game } from '../../../common/model/game';
 
-export interface IGame extends Document {
-    sessionId: string;
-    status: string;
-    creator: string;
-    creationDate: Date;
-    contractAddresses: {
-        game: string;
-        token: string;
-        chance: string;
-        community: string;
-        assets: string;
-    },
-    players: string[];
-    turns: string[];
-    positions: Map<string, number>;
-}
+export interface IGame extends Document, Game {}
 
 const GameSchema: Schema = new Schema({
     sessionId: { type: String, required: true, unique: true },

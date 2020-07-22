@@ -1,12 +1,19 @@
 import { createLogger, format, transports, Logger as WinstonLogger } from 'winston';
+import  Transport from 'winston-transport';
 import * as util from 'util';
 import { path as appRoot } from 'app-root-path';
 
 import * as fs from 'fs';
 import path from 'path';
+import winston from 'winston/lib/winston/config';
 
-const { label, combine, timestamp , prettyPrint, json } = format;
+const { label, combine, timestamp , prettyPrint, json, printf } = format;
 const logFile = `${appRoot}/logs/app.log`;
+
+
+const myFormat = printf(({ level, message, label, timestamp }) => {
+    return `${timestamp} [${label}] ${level}: ${message}`;
+  });
 
 var options = {
     file: {
@@ -26,7 +33,86 @@ var options = {
     },
   };
 
-const fileTransport = new transports.File(options.file);
+class jsonTransport extends Transport {
+
+    public filename: string;
+    constructor(opts: any) {
+        super(opts);
+        this.filename = opts.filename;
+        this.setup();
+    }
+    
+    initialize() {
+        try {
+            fs.writeFileSync(this.filename, JSON.stringify([]), 'utf8');
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    setup() {
+        // This checks if the file exists
+        if (fs.existsSync(this.filename)) {
+            // The content of the file is checked to know if it is necessary to adapt the array
+            try {
+                const data = fs.readFileSync(this.filename, 'utf8');
+                // If the content of the file is not an array, it is set
+                const content = JSON.parse(data);
+                if (!Array.isArray(content)) {
+                    this.initialize();
+                }
+            } catch (error) {
+                this.initialize();
+                console.log(error);
+            }
+        }
+        // Otherwise create the file with the desired format
+        else {
+            this.initialize();
+        }
+    }
+
+    readLog() {
+        let data = null;
+        try {
+            data = fs.readFileSync(this.filename, 'utf8');
+        } catch (error) {
+
+            console.log(error);
+        }
+        return data;
+    }
+
+    writeLog(info: any) {
+        const data = this.readLog();
+        let arr = [];
+        if (data) {
+            arr = JSON.parse(data);
+        }
+        //add data
+        arr.push(info);
+        //convert it back to json
+        const json = JSON.stringify(arr);
+        try {
+            // Writing the array again
+            fs.writeFileSync(this.filename, json, 'utf8');
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    log(info: any, next: () => void) {
+        setImmediate(() => {
+            this.emit('logged', info);
+        });
+        // Perform the writing
+        this.writeLog(info);
+
+        next();
+    }
+}
+
+const fileTransport = new jsonTransport(options.file);
 
 class Logger {
     protected logger: WinstonLogger;
@@ -66,7 +152,7 @@ class Logger {
     public async getAll(): Promise<any> {
         return new Promise((resolve, reject) => {
             const now = Date.now();
-            fs.readFile(path.join(fileTransport.dirname, fileTransport.filename), (err, data) => {
+            fs.readFile(fileTransport.filename, (err, data) => {
                 if (err) {
                     reject(err);
                 } else {

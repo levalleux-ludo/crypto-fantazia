@@ -1,5 +1,20 @@
-FROM node:lts-alpine
-RUN apk add --update git
+FROM node:12.18.2-alpine3.12
+
+# Install updates
+RUN apk upgrade --no-cache && \
+    apk add --no-cache git python2 make g++ bash
+# install dependencies for node-hid
+RUN apk add --no-cache linux-headers eudev-dev libusb-dev
+
+RUN npm config set registry http://host.docker.internal:8081/repository/npm-group/
+RUN npm config set cache-min 86400
+RUN npm config set fetch-retries 3
+RUN npm config set fetch-retry-maxtimeout 90000
+RUN npm config set fetch-retry-mintimeout 15000
+RUN npm config set loglevel "warn"
+RUN npm config set timeout "60000"
+RUN npm config set strict-ssl false
+RUN npm config list
 
 ENV USER=cryptofanta
 ENV UID=12345
@@ -11,9 +26,25 @@ RUN adduser \
 
 USER cryptofanta
 WORKDIR /home/cryptofanta
-RUN ls -al 
-COPY --chown=cryptofanta . .
+RUN mkdir -p /home/cryptofanta/tezos
+RUN ls -al /home/cryptofanta/tezos
+WORKDIR /home/cryptofanta/tezos
+COPY --chown=cryptofanta tezos/package.json .
+RUN npm install
+RUN mkdir -p /home/cryptofanta/api
+WORKDIR /home/cryptofanta/api
+COPY --chown=cryptofanta api/package.json .
+RUN npm install
+WORKDIR /home/cryptofanta
+COPY --chown=cryptofanta package.json .
+RUN npm run install-api
+
+COPY --chown=cryptofanta ./tezos /home/cryptofanta/tezos
+COPY --chown=cryptofanta ./common /home/cryptofanta/common
+COPY --chown=cryptofanta ./api /home/cryptofanta/api
+
+RUN npm run build-api
 
 ENV TEZOS_ACCOUNTS_DIR /home/cryptofanta/tezos/accounts
 ENV NODE_ENV production
-CMD env && npm install -y && npm run start-api
+CMD npm run start-api

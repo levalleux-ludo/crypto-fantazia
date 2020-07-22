@@ -14,7 +14,8 @@
     "dependencies": {
         "@taquito/taquito": "^6.3.0-wallet.4",
         "bignumber.js": "^9.0.0",
-        "conseiljs": "^0.4.2"
+        "conseiljs": "^0.4.2",
+        "node-gyp": "^6.1.0"
     },
     "devDependencies": {
         "@types/chai": "^4.2.11",

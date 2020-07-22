@@ -20,7 +20,7 @@
             <mat-spinner *ngIf="gameService.creationStatus === 'IN_CREATION'"></mat-spinner>
             <div class="btn-group btn-primary">
                 <div class="btn-group btn-primary" *ngIf="gameService.isGameMaster && gameService.isRegistered">
-                    <button [disabled]="(gameService.playingStatus !== 'created') && (gameService.players.length >= 2)" class="btn btn-primary" (click)="gameController.start()">Start</button>
+                    <button [disabled]="(gameService.playingStatus !== 'created') && (gameService.players.length < 2)" class="btn btn-primary" (click)="gameController.start()">Start</button>
                     <!-- <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameController.reset()">Reset</button>
         <button [disabled]="gameService.playingStatus !== 'started'" class="btn btn-primary" (click)="gameController.freeze()">Freeze</button>
         <button [disabled]="gameService.playingStatus !== 'frozen'" class="btn btn-primary" (click)="gameController.resume()">Resume</button>
